@@ -1,11 +1,37 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
+import fs from 'fs';
 import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
   return {
-    plugins: [react(), tailwindcss()],
+    plugins: [
+      react(),
+      tailwindcss(),
+      {
+        name: 'cloudflare-spa-fallback',
+        buildStart() {
+          const publicDir = path.resolve(import.meta.dirname ?? process.cwd(), 'public');
+          const publicRedirects = path.join(publicDir, '_redirects');
+          if (fs.existsSync(publicRedirects)) {
+            fs.unlinkSync(publicRedirects);
+          }
+        },
+        closeBundle() {
+          const distDir = path.resolve(import.meta.dirname ?? process.cwd(), 'dist');
+          const distRedirects = path.join(distDir, '_redirects');
+          if (fs.existsSync(distRedirects)) {
+            fs.unlinkSync(distRedirects);
+          }
+          const indexHtml = path.join(distDir, 'index.html');
+          const fallbackHtml = path.join(distDir, '200.html');
+          if (fs.existsSync(indexHtml)) {
+            fs.copyFileSync(indexHtml, fallbackHtml);
+          }
+        },
+      },
+    ],
     resolve: {
       alias: {
         '@': path.resolve(import.meta.dirname ?? process.cwd(), '.'),

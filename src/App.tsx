@@ -28,8 +28,22 @@ function MainAppContent() {
   const [hasShownSplash, setHasShownSplash] = useState<boolean>(() => {
     return safeSessionStorage.getItem('qbite_splash_done') === 'true';
   });
-  const [currentRoute, setCurrentRoute] = useState<string>('/home');
+
+  const getInitialRoute = () => {
+    const validRoutes = ['/home', '/menu', '/cart', '/checkout', '/orders', '/queue', '/favorites', '/notifications', '/profile', '/display', '/staff', '/admin'];
+    const path = window.location.pathname;
+    return validRoutes.includes(path) ? path : '/home';
+  };
+
+  const [currentRoute, setCurrentRoute] = useState<string>(getInitialRoute);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+
+  const navigate = React.useCallback((route: string) => {
+    setCurrentRoute(route);
+    if (window.location.pathname !== route) {
+      window.history.pushState(null, '', route);
+    }
+  }, []);
 
   const handleSplashComplete = React.useCallback(() => {
     safeSessionStorage.setItem('qbite_splash_done', 'true');
@@ -48,12 +62,17 @@ function MainAppContent() {
     }
   }, []);
 
-  // Handle URL hash or path initialization (e.g. /display)
+  // Handle browser back/forward and direct path initialization
   useEffect(() => {
-    const path = window.location.pathname;
-    if (path === '/display') {
-      setCurrentRoute('/display');
-    }
+    const handlePopState = () => {
+      const validRoutes = ['/home', '/menu', '/cart', '/checkout', '/orders', '/queue', '/favorites', '/notifications', '/profile', '/display', '/staff', '/admin'];
+      const path = window.location.pathname;
+      if (validRoutes.includes(path)) {
+        setCurrentRoute(path);
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
   // 1. Splash Screen Display (Requirement 1: First 3 seconds)
@@ -63,22 +82,22 @@ function MainAppContent() {
 
   // 2. Authentication Gate: If not logged in and not on public TV display, show Welcome/Login Screen
   if (!currentUser && currentRoute !== '/display') {
-    return <WelcomePage onLoginSuccess={() => setCurrentRoute('/home')} />;
+    return <WelcomePage onLoginSuccess={() => navigate('/home')} />;
   }
 
   // 3. Public TV Canteen Display (/display)
   if (currentRoute === '/display') {
-    return <PublicDisplayPage onBack={() => setCurrentRoute('/home')} />;
+    return <PublicDisplayPage onBack={() => navigate('/home')} />;
   }
 
   // 4. Kitchen Staff Interface (/staff)
   if (currentRoute === '/staff') {
-    return <StaffPage onBackToHome={() => setCurrentRoute('/home')} />;
+    return <StaffPage onBackToHome={() => navigate('/home')} />;
   }
 
   // 5. Admin Interface (/admin)
   if (currentRoute === '/admin') {
-    return <AdminPage onBackToHome={() => setCurrentRoute('/home')} />;
+    return <AdminPage onBackToHome={() => navigate('/home')} />;
   }
 
   // Standard Student App Experience with Header & Bottom Navigation
@@ -86,15 +105,15 @@ function MainAppContent() {
     <div className="min-h-screen bg-stone-50 text-stone-900 flex flex-col justify-between">
       {/* Top Navbar */}
       <Navbar
-        onOpenNotifications={() => setCurrentRoute('/notifications')}
-        onNavigate={(route) => setCurrentRoute(route)}
+        onOpenNotifications={() => navigate('/notifications')}
+        onNavigate={(route) => navigate(route)}
         currentRoute={currentRoute}
       />
 
       {/* Main Page Routing */}
       <main className="flex-1">
         {currentRoute === '/home' && (
-          <HomePage onNavigate={(route) => setCurrentRoute(route)} />
+          <HomePage onNavigate={(route) => navigate(route)} />
         )}
 
         {currentRoute === '/menu' && (
@@ -103,17 +122,17 @@ function MainAppContent() {
 
         {currentRoute === '/cart' && (
           <CartPage
-            onProceedToCheckout={() => setCurrentRoute('/checkout')}
-            onBrowseMenu={() => setCurrentRoute('/menu')}
+            onProceedToCheckout={() => navigate('/checkout')}
+            onBrowseMenu={() => navigate('/menu')}
           />
         )}
 
         {currentRoute === '/checkout' && (
           <CheckoutPage
-            onBack={() => setCurrentRoute('/cart')}
+            onBack={() => navigate('/cart')}
             onOrderSuccess={(order) => {
               setSelectedOrderId(order.id);
-              setCurrentRoute('/queue');
+              navigate('/queue');
             }}
           />
         )}
@@ -122,43 +141,43 @@ function MainAppContent() {
           <OrdersPage
             onSelectOrder={(id) => {
               setSelectedOrderId(id);
-              setCurrentRoute('/queue');
+              navigate('/queue');
             }}
-            onBrowseMenu={() => setCurrentRoute('/menu')}
+            onBrowseMenu={() => navigate('/menu')}
           />
         )}
 
         {currentRoute === '/queue' && (
           <TokenDetailPage
             orderId={selectedOrderId}
-            onBack={() => setCurrentRoute('/home')}
-            onBrowseMenu={() => setCurrentRoute('/menu')}
+            onBack={() => navigate('/home')}
+            onBrowseMenu={() => navigate('/menu')}
           />
         )}
 
         {currentRoute === '/favorites' && (
           <FavoritesPage
-            onBack={() => setCurrentRoute('/home')}
-            onBrowseMenu={() => setCurrentRoute('/menu')}
+            onBack={() => navigate('/home')}
+            onBrowseMenu={() => navigate('/menu')}
           />
         )}
 
         {currentRoute === '/notifications' && (
           <NotificationsPage
-            onBack={() => setCurrentRoute('/home')}
+            onBack={() => navigate('/home')}
             onSelectOrder={(id) => {
               setSelectedOrderId(id);
-              setCurrentRoute('/queue');
+              navigate('/queue');
             }}
           />
         )}
 
         {currentRoute === '/profile' && (
           <ProfilePage
-            onNavigate={(route) => setCurrentRoute(route)}
+            onNavigate={(route) => navigate(route)}
             onLogout={async () => {
               await logout();
-              setCurrentRoute('/home');
+              navigate('/home');
             }}
           />
         )}
@@ -170,7 +189,7 @@ function MainAppContent() {
           currentRoute={currentRoute}
           onNavigate={(route) => {
             setSelectedOrderId(null);
-            setCurrentRoute(route);
+            navigate(route);
           }}
         />
       )}

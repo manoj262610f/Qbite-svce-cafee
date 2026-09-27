@@ -1,33 +1,24 @@
 {
-  "id": "/",
-  "name": "QBite – SVCE Cafe",
-  "short_name": "QBite",
-  "description": "Smart college canteen ordering and queue management.",
+  "name": "qBite",
+  "short_name": "qBite",
+  "description": "Order Smart. Skip the Queue.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "orientation": "portrait-primary",
   "background_color": "#ffffff",
-  "theme_color": "#ea580c",
+  "theme_color": "#ffffff",
   "icons": [
     {
-      "src": "/icons/icon-192.svg",
+      "src": "/icons/qbite-192.png",
       "sizes": "192x192",
-      "type": "image/svg+xml",
-      "purpose": "any"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
-      "src": "/icons/icon-512.svg",
+      "src": "/icons/qbite-512.png",
       "sizes": "512x512",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    },
-    {
-      "src": "/icons/icon-maskable.svg",
-      "sizes": "512x512",
-      "type": "image/svg+xml",
-      "purpose": "maskable"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
-  ],
-  "categories": ["food", "productivity", "utilities"]
+  ]
 }

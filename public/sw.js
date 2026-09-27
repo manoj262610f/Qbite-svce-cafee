@@ -1,10 +1,10 @@
 // QBite Service Worker
-const CACHE_NAME = 'qbite-cache-v1';
+const CACHE_NAME = 'qbite-cache-v2';
 const ASSETS_TO_CACHE = [
   '/',
   '/manifest.json',
-  '/icons/icon-192.svg',
-  '/icons/icon-512.svg'
+  '/icons/qbite-192.png',
+  '/icons/qbite-512.png'
 ];
 
 self.addEventListener('install', (event) => {

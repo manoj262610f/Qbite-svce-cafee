@@ -1,0 +1,50 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Food menu items
+    match /foods/{foodId} {
+      allow read, write: if true;
+    }
+
+    // Categories
+    match /categories/{categoryId} {
+      allow read, write: if true;
+    }
+
+    // Users collection
+    match /users/{userId} {
+      allow read, write: if true;
+    }
+
+    // Orders
+    match /orders/{orderId} {
+      allow read, write: if true;
+    }
+
+    // Daily Queue State (counter & live token tracking)
+    match /queue/{dateKey} {
+      allow read, write: if true;
+    }
+
+    // Real-time notifications
+    match /notifications/{notificationId} {
+      allow read, write: if true;
+    }
+
+    // User favorites
+    match /favorites/{favoriteId} {
+      allow read, write: if true;
+    }
+
+    // Coupons
+    match /coupons/{couponId} {
+      allow read, write: if true;
+    }
+
+    // Canteen Settings (open/closed, announcement, etc.)
+    match /settings/{settingId} {
+      allow read, write: if true;
+    }
+  }
+}

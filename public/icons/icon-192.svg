@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <defs>
+    <linearGradient id="qbiteGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ea580c"/>
+      <stop offset="100%" stop-color="#c2410c"/>
+    </linearGradient>
+  </defs>
+  <rect width="192" height="192" rx="44" fill="url(#qbiteGrad)"/>
+  <circle cx="96" cy="96" r="56" fill="none" stroke="#ffffff" stroke-width="12" stroke-dasharray="270 50" stroke-linecap="round"/>
+  <!-- Token / fork motif -->
+  <path d="M96 66 L96 98 L118 112" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="132" cy="132" r="14" fill="#facc15" stroke="#ffffff" stroke-width="5"/>
+  <text x="96" y="165" font-family="system-ui, sans-serif" font-weight="900" font-size="22" fill="#ffffff" text-anchor="middle" letter-spacing="1">Q</text>
+</svg>

@@ -1,0 +1,8 @@
+{
+  "name": "QBite – SVCE Cafe",
+  "description": "Smart college canteen ordering and queue management. Be Smart. Leave the Queue.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

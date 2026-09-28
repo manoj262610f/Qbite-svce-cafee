@@ -20,6 +20,7 @@ import { NotificationsPage } from './pages/NotificationsPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { testFirestoreConnection } from './firebase/connectionTest';
 import { safeSessionStorage } from './services/safeStorage';
+import { UtensilsCrossed } from 'lucide-react';
 
 function MainAppContent() {
   const { currentUser, loading: authLoading, logout } = useAuth();
@@ -80,9 +81,27 @@ function MainAppContent() {
     return <SplashScreen onComplete={handleSplashComplete} />;
   }
 
-  // 2. Authentication Gate: If not logged in and not on public TV display, show Welcome/Login Screen
+  // 2. Auth Loading state while checking persistent session
+  if (authLoading && !currentUser) {
+    return (
+      <div className="min-h-screen bg-stone-50 flex flex-col items-center justify-center p-6 text-center">
+        <div className="w-12 h-12 rounded-2xl bg-orange-600 flex items-center justify-center text-white shadow-md shadow-orange-600/20 mb-3 animate-pulse">
+          <UtensilsCrossed className="w-6 h-6" />
+        </div>
+        <p className="font-extrabold text-sm text-stone-900 tracking-tight">QBite · SVCE Cafe</p>
+        <p className="text-[11px] text-stone-400 mt-1">Checking session...</p>
+      </div>
+    );
+  }
+
+  // 3. Authentication Gate: If not logged in and not on public TV display, show Welcome/Google Login Screen
   if (!currentUser && currentRoute !== '/display') {
-    return <WelcomePage onLoginSuccess={() => navigate('/home')} />;
+    return (
+      <WelcomePage
+        onLoginSuccess={() => navigate('/home')}
+        onNavigateToDisplay={() => navigate('/display')}
+      />
+    );
   }
 
   // 3. Public TV Canteen Display (/display)

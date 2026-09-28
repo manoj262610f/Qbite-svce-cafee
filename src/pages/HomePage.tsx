@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { Search, Flame, Sparkles, Filter, ChevronRight, AlertTriangle } from 'lucide-react';
 import { useCanteen } from '../context/CanteenContext';
+import { useAuth } from '../context/AuthContext';
 import { LiveQueueCard } from '../components/LiveQueueCard';
 import { FoodCard } from '../components/FoodCard';
 import { FoodCardSkeleton } from '../components/Skeletons';
@@ -12,6 +13,7 @@ interface HomePageProps {
 
 export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
   const { foods, categories, loading, settings, activeOrder } = useCanteen();
+  const { userProfile } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
@@ -43,7 +45,10 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
       {/* Greeting & Headline */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-extrabold text-stone-900 tracking-tight">
+          <p className="text-xs font-semibold text-orange-600 uppercase tracking-wider">
+            {userProfile?.name ? `Hello, ${userProfile.name.split(' ')[0]}` : 'Welcome to SVCE Cafe'}
+          </p>
+          <h2 className="text-xl font-extrabold text-stone-900 tracking-tight mt-0.5">
             Good food. Less waiting.
           </h2>
           <p className="text-xs text-stone-500 mt-0.5">

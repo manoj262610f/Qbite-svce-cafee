@@ -9,7 +9,9 @@
         "name": { "type": "string", "maxLength": 100 },
         "email": { "type": "string", "maxLength": 120 },
         "role": { "type": "string", "enum": ["student", "staff", "admin"] },
-        "createdAt": { "type": "string" }
+        "photoURL": { "type": "string", "maxLength": 500 },
+        "createdAt": { "type": "string" },
+        "lastLoginAt": { "type": "string" }
       },
       "required": ["name", "email", "role"]
     },

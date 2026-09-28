@@ -6,6 +6,8 @@ export interface UserProfile {
   email: string;
   role: UserRole;
   createdAt: string;
+  photoURL?: string | null;
+  lastLoginAt?: string;
 }
 
 export interface FoodItem {

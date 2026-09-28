@@ -3,6 +3,8 @@ import {
   User as FirebaseUser,
   GoogleAuthProvider,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signOut,
   onAuthStateChanged
 } from 'firebase/auth';
@@ -18,13 +20,24 @@ export interface AuthUser {
   photoURL: string | null;
 }
 
+export interface AuthErrorInfo {
+  code: string;
+  message: string;
+  domain: string;
+  isUnauthorizedDomain: boolean;
+  isOperationNotAllowed: boolean;
+  isPopupBlocked: boolean;
+  firebaseConsoleUrl: string;
+}
+
 interface AuthContextType {
   currentUser: AuthUser | null;
   userProfile: UserProfile | null;
   loading: boolean;
   authError: string | null;
+  authErrorDetails: AuthErrorInfo | null;
   role: UserRole;
-  loginWithGoogle: () => Promise<UserProfile>;
+  loginWithGoogle: (useRedirect?: boolean) => Promise<UserProfile | void>;
   logout: () => Promise<void>;
   switchRole: (role: UserRole) => Promise<void>;
   clearAuthError: () => void;
@@ -63,8 +76,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const [loading, setLoading] = useState<boolean>(true);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [authErrorDetails, setAuthErrorDetails] = useState<AuthErrorInfo | null>(null);
 
-  const clearAuthError = () => setAuthError(null);
+  const clearAuthError = () => {
+    setAuthError(null);
+    setAuthErrorDetails(null);
+  };
 
   // Sync state & local storage
   const saveSession = (profile: UserProfile | null) => {
@@ -94,60 +111,145 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Listen to Firebase Auth state on mount and across sessions
+  // Process a Firebase User into a local UserProfile
+  const handleFirebaseUser = async (fbUser: FirebaseUser): Promise<UserProfile> => {
+    const uid = fbUser.uid;
+    const email = fbUser.email || '';
+    const name = fbUser.displayName || (email ? email.split('@')[0] : 'SVCE Student');
+    const photoURL = fbUser.photoURL || null;
+
+    let existingRole: UserRole | undefined;
+    let existingCreatedAt: string | undefined;
+
+    try {
+      const userDocRef = doc(db, 'users', uid);
+      const userSnap = await getDoc(userDocRef);
+      if (userSnap.exists()) {
+        const data = userSnap.data() as UserProfile;
+        existingRole = data.role;
+        existingCreatedAt = data.createdAt;
+      }
+    } catch (err) {
+      console.warn('handleFirebaseUser: could not fetch existing profile:', err);
+    }
+
+    const isAdminEmail = email.toLowerCase() === 'manojreddy8022@gmail.com';
+    const assignedRole: UserRole = isAdminEmail
+      ? 'admin'
+      : (existingRole || userProfile?.role || 'student');
+
+    const profile: UserProfile = {
+      id: uid,
+      name,
+      email,
+      role: assignedRole,
+      photoURL,
+      createdAt: existingCreatedAt || userProfile?.createdAt || new Date().toISOString(),
+      lastLoginAt: new Date().toISOString()
+    };
+
+    saveSession(profile);
+    await syncProfileToFirestore(profile);
+    return profile;
+  };
+
+  // Parse errors into friendly messages and details
+  const parseAuthError = (error: any): { friendlyMessage: string; details: AuthErrorInfo } => {
+    const code = error?.code || '';
+    const rawMessage = error?.message || '';
+    const hostname = window.location.hostname || 'localhost';
+    const projectId = auth.app.options.projectId || 'hypnic-factor-nlcf1';
+
+    const isUnauthorizedDomain =
+      code === 'auth/unauthorized-domain' ||
+      rawMessage.toLowerCase().includes('unauthorized domain') ||
+      rawMessage.toLowerCase().includes('unauthorized-domain') ||
+      rawMessage.toLowerCase().includes('authorized domain');
+
+    const isOperationNotAllowed =
+      code === 'auth/operation-not-allowed' ||
+      rawMessage.toLowerCase().includes('operation-not-allowed');
+
+    const isPopupBlocked =
+      code === 'auth/popup-blocked' ||
+      rawMessage.toLowerCase().includes('popup-blocked');
+
+    let friendlyMessage = 'Google Sign-In failed. Please try again.';
+
+    if (isUnauthorizedDomain) {
+      friendlyMessage = `Domain "${hostname}" is not authorized in Firebase. Add it to Firebase Console > Authentication > Settings > Authorized domains.`;
+    } else if (isOperationNotAllowed) {
+      friendlyMessage = 'Google Sign-In provider is disabled in Firebase. Enable it in Firebase Console > Authentication > Sign-in method.';
+    } else if (code === 'auth/popup-closed-by-user') {
+      friendlyMessage = 'Google sign-in was cancelled before completion.';
+    } else if (code === 'auth/cancelled-popup-request') {
+      friendlyMessage = 'Sign-in was interrupted. Please click Continue with Google again.';
+    } else if (isPopupBlocked) {
+      friendlyMessage = 'Pop-up window was blocked by your browser. Please allow pop-ups or use Redirect Sign-In.';
+    } else if (code === 'auth/network-request-failed') {
+      friendlyMessage = 'Network error. Please check your internet connection and try again.';
+    } else if (rawMessage) {
+      friendlyMessage = rawMessage;
+    }
+
+    const consoleUrl = isOperationNotAllowed
+      ? `https://console.firebase.google.com/project/${projectId}/authentication/providers`
+      : `https://console.firebase.google.com/project/${projectId}/authentication/settings`;
+
+    const details: AuthErrorInfo = {
+      code,
+      message: friendlyMessage,
+      domain: hostname,
+      isUnauthorizedDomain,
+      isOperationNotAllowed,
+      isPopupBlocked,
+      firebaseConsoleUrl: consoleUrl
+    };
+
+    return { friendlyMessage, details };
+  };
+
+  // Handle Redirect Result and onAuthStateChanged on mount
   useEffect(() => {
     setLoading(true);
     let isMounted = true;
 
+    // Check if returning from a signInWithRedirect
+    getRedirectResult(auth)
+      .then(async (result) => {
+        if (!isMounted) return;
+        if (result && result.user) {
+          const profile = await handleFirebaseUser(result.user);
+          if (isMounted) {
+            saveSession(profile);
+            setLoading(false);
+          }
+        }
+      })
+      .catch((err) => {
+        if (!isMounted) return;
+        console.warn('getRedirectResult notice:', err);
+        const { friendlyMessage, details } = parseAuthError(err);
+        setAuthError(friendlyMessage);
+        setAuthErrorDetails(details);
+      });
+
+    // Listen to Firebase Auth state on mount and across sessions
     try {
       const unsubscribe = onAuthStateChanged(auth, async (fbUser: FirebaseUser | null) => {
         if (!isMounted) return;
 
         if (fbUser) {
-          const uid = fbUser.uid;
-          const email = fbUser.email || '';
-          const name = fbUser.displayName || email.split('@')[0] || 'SVCE Student';
-          const photoURL = fbUser.photoURL || null;
-
-          // Check if user already has an existing role in Firestore
-          let existingRole: UserRole | undefined;
-          let existingCreatedAt: string | undefined;
-
           try {
-            const userDocRef = doc(db, 'users', uid);
-            const userSnap = await getDoc(userDocRef);
-            if (userSnap.exists()) {
-              const data = userSnap.data() as UserProfile;
-              existingRole = data.role;
-              existingCreatedAt = data.createdAt;
+            const profile = await handleFirebaseUser(fbUser);
+            if (isMounted) {
+              saveSession(profile);
+              setLoading(false);
             }
           } catch (err) {
-            console.warn('onAuthStateChanged: could not fetch user profile from Firestore:', err);
+            console.error('Error handling user auth change:', err);
+            if (isMounted) setLoading(false);
           }
-
-          // Dedicated Admin check for project owner
-          const isAdminEmail = email.toLowerCase() === 'manojreddy8022@gmail.com';
-          const assignedRole: UserRole = isAdminEmail
-            ? 'admin'
-            : (existingRole || userProfile?.role || 'student');
-
-          const profile: UserProfile = {
-            id: uid,
-            name,
-            email,
-            role: assignedRole,
-            photoURL,
-            createdAt: existingCreatedAt || userProfile?.createdAt || new Date().toISOString(),
-            lastLoginAt: new Date().toISOString()
-          };
-
-          if (isMounted) {
-            saveSession(profile);
-            setLoading(false);
-          }
-
-          // Merge profile into Firestore
-          syncProfileToFirestore(profile);
         } else {
           if (isMounted) {
             saveSession(null);
@@ -167,77 +269,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   // Google Sign-In with Firebase Authentication
-  const loginWithGoogle = async (): Promise<UserProfile> => {
+  const loginWithGoogle = async (useRedirect = false): Promise<UserProfile | void> => {
     setLoading(true);
     setAuthError(null);
+    setAuthErrorDetails(null);
 
     const provider = new GoogleAuthProvider();
-    // Force prompt to ensure user can select their Google account
     provider.setCustomParameters({
       prompt: 'select_account'
     });
 
+    if (useRedirect) {
+      try {
+        await signInWithRedirect(auth, provider);
+        // Page will redirect to Google
+        return;
+      } catch (error: any) {
+        setLoading(false);
+        const { friendlyMessage, details } = parseAuthError(error);
+        setAuthError(friendlyMessage);
+        setAuthErrorDetails(details);
+        throw new Error(friendlyMessage);
+      }
+    }
+
     try {
       const result = await signInWithPopup(auth, provider);
-      const fbUser = result.user;
-
-      const uid = fbUser.uid;
-      const email = fbUser.email || '';
-      const name = fbUser.displayName || (email ? email.split('@')[0] : 'SVCE Student');
-      const photoURL = fbUser.photoURL || null;
-
-      // Check for existing profile in Firestore
-      let existingProfile: UserProfile | null = null;
-      try {
-        const userDocRef = doc(db, 'users', uid);
-        const snap = await getDoc(userDocRef);
-        if (snap.exists()) {
-          existingProfile = snap.data() as UserProfile;
-        }
-      } catch (e) {
-        console.warn('Google sign-in profile lookup notice:', e);
-      }
-
-      const isAdminEmail = email.toLowerCase() === 'manojreddy8022@gmail.com';
-      const assignedRole: UserRole = isAdminEmail
-        ? 'admin'
-        : (existingProfile?.role || 'student');
-
-      const profile: UserProfile = {
-        id: uid,
-        name,
-        email,
-        role: assignedRole,
-        photoURL,
-        createdAt: existingProfile?.createdAt || new Date().toISOString(),
-        lastLoginAt: new Date().toISOString()
-      };
-
-      // Save user profile to Firestore users collection
-      await syncProfileToFirestore(profile);
-
-      saveSession(profile);
+      const profile = await handleFirebaseUser(result.user);
       setLoading(false);
       return profile;
     } catch (error: any) {
       setLoading(false);
-      let friendlyMessage = 'Google Sign-In failed. Please try again.';
-
-      if (error?.code === 'auth/popup-closed-by-user') {
-        friendlyMessage = 'Google sign-in was cancelled before completion.';
-      } else if (error?.code === 'auth/cancelled-popup-request') {
-        friendlyMessage = 'Sign-in was interrupted. Please click Continue with Google again.';
-      } else if (error?.code === 'auth/popup-blocked') {
-        friendlyMessage = 'The Google sign-in pop-up was blocked by your browser. Please allow pop-ups for this site and try again.';
-      } else if (error?.code === 'auth/network-request-failed') {
-        friendlyMessage = 'Network error. Please check your internet connection and try again.';
-      } else if (error?.code === 'auth/unauthorized-domain') {
-        friendlyMessage = `This domain (${window.location.hostname}) is not authorized for Google Sign-In in Firebase Console. Add it under Firebase Authentication > Settings > Authorized domains.`;
-      } else if (error?.message) {
-        friendlyMessage = error.message;
-      }
-
+      const { friendlyMessage, details } = parseAuthError(error);
       setAuthError(friendlyMessage);
+      setAuthErrorDetails(details);
       throw new Error(friendlyMessage);
     }
   };
@@ -280,6 +345,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         userProfile,
         loading,
         authError,
+        authErrorDetails,
         role,
         loginWithGoogle,
         logout,

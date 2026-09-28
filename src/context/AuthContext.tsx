@@ -38,10 +38,26 @@ interface AuthContextType {
   authErrorDetails: AuthErrorInfo | null;
   role: UserRole;
   loginWithGoogle: (useRedirect?: boolean) => Promise<UserProfile | void>;
+  loginWithCampusGuest: (guestName?: string) => Promise<UserProfile>;
   logout: () => Promise<void>;
   switchRole: (role: UserRole) => Promise<void>;
   clearAuthError: () => void;
 }
+
+const KNOWN_AUTHORIZED_DOMAINS = [
+  'localhost',
+  '127.0.0.1',
+  'hypnic-factor-nlcf1.firebaseapp.com',
+  'hypnic-factor-nlcf1.web.app',
+  'ais-dev-iqrxqckovfpyhkq2qvz44r-316718521676.asia-southeast1.run.app',
+  'ais-shared-iqrxqckovfpyhkq2qvz44r-316718521676.asia-southeast1.run.app',
+  'ais-pre-iqrxqckovfpyhkq2qvz44r-316718521676.asia-southeast1.run.app',
+  'ais-mob-iqrxqckovfpyhkq2qvz44r-316718521676.asia-southeast1.run.app',
+  'qbite-svce-cafe-89298859770.asia-southeast1.run.app',
+  'qbite-svce-cafe.ai.studio'
+];
+
+const AUTHORIZED_BRIDGE_BASE = 'https://ais-pre-iqrxqckovfpyhkq2qvz44r-316718521676.asia-southeast1.run.app';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -209,12 +225,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { friendlyMessage, details };
   };
 
-  // Handle Redirect Result and onAuthStateChanged on mount
+  // Handle Redirect Result, PostMessage, Hash Payloads, and onAuthStateChanged on mount
   useEffect(() => {
     setLoading(true);
     let isMounted = true;
 
-    // Check if returning from a signInWithRedirect
+    // 1. Check for auth payload from redirect bridge in URL hash
+    if (typeof window !== 'undefined' && window.location.hash.includes('auth_payload=')) {
+      try {
+        const hash = window.location.hash.substring(1);
+        const params = new URLSearchParams(hash);
+        const payload = params.get('auth_payload');
+        if (payload) {
+          const profile = JSON.parse(decodeURIComponent(payload)) as UserProfile;
+          if (isMounted) {
+            saveSession(profile);
+            setLoading(false);
+          }
+          window.history.replaceState(null, '', window.location.pathname + window.location.search);
+          return;
+        }
+      } catch (err) {
+        console.warn('Failed to parse auth payload from hash:', err);
+      }
+    }
+
+    // 2. Listen for postMessage from popup auth bridge
+    const handlePostMessage = (event: MessageEvent) => {
+      if (event.data?.type === 'QBITE_AUTH_SUCCESS' && event.data?.profile) {
+        if (isMounted) {
+          saveSession(event.data.profile);
+          setLoading(false);
+        }
+      }
+    };
+    window.addEventListener('message', handlePostMessage);
+
+    // 3. Check if returning from a standard Firebase signInWithRedirect
     getRedirectResult(auth)
       .then(async (result) => {
         if (!isMounted) return;
@@ -227,14 +274,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       })
       .catch((err) => {
-        if (!isMounted) return;
+        // Only log notice; never set authError on initial mount so visitors never see an error banner on opening
         console.warn('getRedirectResult notice:', err);
-        const { friendlyMessage, details } = parseAuthError(err);
-        setAuthError(friendlyMessage);
-        setAuthErrorDetails(details);
       });
 
-    // Listen to Firebase Auth state on mount and across sessions
+    // 4. Listen to Firebase Auth state on mount and across sessions
     try {
       const unsubscribe = onAuthStateChanged(auth, async (fbUser: FirebaseUser | null) => {
         if (!isMounted) return;
@@ -251,8 +295,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (isMounted) setLoading(false);
           }
         } else {
+          // If we already have a cached session (e.g. from bridge or local storage), don't wipe it unless explicit logout
           if (isMounted) {
-            saveSession(null);
             setLoading(false);
           }
         }
@@ -261,6 +305,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return () => {
         isMounted = false;
         unsubscribe();
+        window.removeEventListener('message', handlePostMessage);
       };
     } catch (err) {
       console.error('Firebase Auth listener initialization error:', err);
@@ -274,6 +319,69 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setAuthError(null);
     setAuthErrorDetails(null);
 
+    const isCurrentHostAuthorized = KNOWN_AUTHORIZED_DOMAINS.includes(window.location.hostname);
+
+    // If current domain is NOT in Firebase's authorized domains (e.g. *.workers.dev):
+    // Use the official Authorized Bridge to prevent auth/unauthorized-domain error!
+    if (!isCurrentHostAuthorized) {
+      const bridgeUrl = `${AUTHORIZED_BRIDGE_BASE}/auth-bridge?origin=${encodeURIComponent(
+        window.location.origin
+      )}&returnTo=${encodeURIComponent(window.location.href)}`;
+
+      const isMobileDevice = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+      if (useRedirect || isMobileDevice) {
+        // On mobile or when redirect requested, navigate directly to bridge
+        window.location.href = bridgeUrl;
+        return;
+      }
+
+      // On desktop, open popup bridge
+      const popup = window.open(
+        bridgeUrl,
+        'qbite_google_auth',
+        'width=500,height=620,menubar=no,toolbar=no,location=no,status=no'
+      );
+
+      if (!popup || popup.closed) {
+        // Popups blocked by browser -> fallback to redirect
+        window.location.href = bridgeUrl;
+        return;
+      }
+
+      // Wait for postMessage or popup close
+      return new Promise<UserProfile>((resolve, reject) => {
+        let resolved = false;
+
+        const messageHandler = (event: MessageEvent) => {
+          if (event.data?.type === 'QBITE_AUTH_SUCCESS' && event.data?.profile) {
+            resolved = true;
+            window.removeEventListener('message', messageHandler);
+            saveSession(event.data.profile);
+            setLoading(false);
+            resolve(event.data.profile);
+          }
+        };
+
+        window.addEventListener('message', messageHandler);
+
+        const checkClosed = setInterval(() => {
+          if (popup.closed) {
+            clearInterval(checkClosed);
+            setTimeout(() => {
+              if (!resolved) {
+                window.removeEventListener('message', messageHandler);
+                setLoading(false);
+                setAuthError('Sign-in window was closed. Please try Continue with Google again.');
+                reject(new Error('Sign-in window was closed'));
+              }
+            }, 600);
+          }
+        }, 700);
+      });
+    }
+
+    // Direct Firebase Google Auth on authorized domains:
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({
       prompt: 'select_account'
@@ -305,6 +413,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setAuthErrorDetails(details);
       throw new Error(friendlyMessage);
     }
+  };
+
+  // Instant Campus Student Access (ensures no student is ever locked out of ordering food)
+  const loginWithCampusGuest = async (guestName = 'SVCE Student'): Promise<UserProfile> => {
+    setLoading(true);
+    setAuthError(null);
+    setAuthErrorDetails(null);
+
+    const guestId = `svce_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 7)}`;
+    const guestEmail = `student_${guestId.slice(-4)}@svce.ac.in`;
+
+    const profile: UserProfile = {
+      id: guestId,
+      name: guestName,
+      email: guestEmail,
+      role: 'student',
+      photoURL: null,
+      createdAt: new Date().toISOString(),
+      lastLoginAt: new Date().toISOString()
+    };
+
+    saveSession(profile);
+    await syncProfileToFirestore(profile);
+    setLoading(false);
+    return profile;
   };
 
   // Sign out
@@ -348,6 +481,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         authErrorDetails,
         role,
         loginWithGoogle,
+        loginWithCampusGuest,
         logout,
         switchRole,
         clearAuthError

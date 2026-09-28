@@ -18,11 +18,17 @@ import { AdminPage } from './pages/AdminPage';
 import { FavoritesPage } from './pages/FavoritesPage';
 import { NotificationsPage } from './pages/NotificationsPage';
 import { ProfilePage } from './pages/ProfilePage';
+import { AuthBridgePage } from './pages/AuthBridgePage';
 import { testFirestoreConnection } from './firebase/connectionTest';
 import { safeSessionStorage } from './services/safeStorage';
 import { UtensilsCrossed } from 'lucide-react';
 
 function MainAppContent() {
+  // If navigating directly to auth bridge gateway, render immediately
+  if (typeof window !== 'undefined' && window.location.pathname === '/auth-bridge') {
+    return <AuthBridgePage />;
+  }
+
   const { currentUser, loading: authLoading, logout } = useAuth();
   const { activeOrder } = useCanteen();
 

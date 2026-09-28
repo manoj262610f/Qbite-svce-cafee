@@ -9,11 +9,8 @@ import {
   Clock,
   Monitor,
   X,
-  Copy,
-  Check,
-  ExternalLink,
   Smartphone,
-  RefreshCw
+  GraduationCap
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -26,13 +23,11 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({
   onLoginSuccess,
   onNavigateToDisplay
 }) => {
-  const { loginWithGoogle, authError, authErrorDetails, clearAuthError } = useAuth();
+  const { loginWithGoogle, loginWithCampusGuest, authError, clearAuthError } = useAuth();
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const [isGuestSigningIn, setIsGuestSigningIn] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
-
-  const currentDomain = typeof window !== 'undefined' ? window.location.hostname : '';
 
   const handleGoogleSignIn = async (useRedirect = false) => {
     if (useRedirect) {
@@ -49,7 +44,7 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({
         onLoginSuccess();
       }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Google sign-in failed. Please try again.';
+      const msg = err instanceof Error ? err.message : 'Google sign-in encountered an issue. Please try again.';
       setLocalError(msg);
     } finally {
       setIsSigningIn(false);
@@ -57,28 +52,23 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({
     }
   };
 
-  const handleCopyDomain = async () => {
+  const handleCampusGuestSignIn = async () => {
+    setIsGuestSigningIn(true);
+    setLocalError(null);
+    clearAuthError();
+
     try {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(currentDomain);
-      } else {
-        const textarea = document.createElement('textarea');
-        textarea.value = currentDomain;
-        document.body.appendChild(textarea);
-        textarea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textarea);
-      }
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
-    } catch (e) {
-      console.warn('Could not copy domain:', e);
+      await loginWithCampusGuest('SVCE Student');
+      onLoginSuccess();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Campus login failed. Please try again.';
+      setLocalError(msg);
+    } finally {
+      setIsGuestSigningIn(false);
     }
   };
 
   const displayedError = localError || authError;
-  const isUnauthorized = authErrorDetails?.isUnauthorizedDomain ||
-    (displayedError && displayedError.toLowerCase().includes('authorized domain'));
 
   return (
     <div className="min-h-screen bg-stone-50 flex flex-col justify-between p-5 max-w-md mx-auto selection:bg-orange-100">
@@ -151,122 +141,49 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({
           </p>
         </div>
 
-        {/* Error Notification Alert & Domain Authorization Wizard */}
+        {/* Error Notification Alert */}
         <AnimatePresence>
           {displayedError && (
             <motion.div
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
-              className={`mb-4 p-4 rounded-2xl border text-xs shadow-xs ${
-                isUnauthorized
-                  ? 'bg-amber-50/90 border-amber-300 text-amber-950'
-                  : 'bg-rose-50 border-rose-200 text-rose-800'
-              }`}
+              className="mb-4 p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs shadow-xs flex items-start gap-2.5"
             >
-              <div className="flex items-start gap-2.5">
-                <AlertCircle
-                  className={`w-4 h-4 shrink-0 mt-0.5 ${
-                    isUnauthorized ? 'text-amber-600' : 'text-rose-600'
-                  }`}
-                />
-                <div className="flex-1">
-                  <p
-                    className={`font-extrabold text-[12px] leading-tight ${
-                      isUnauthorized ? 'text-amber-900' : 'text-rose-900'
-                    }`}
-                  >
-                    {isUnauthorized ? 'Firebase Domain Authorization Needed' : 'Sign-In Notice'}
-                  </p>
-                  <p className="text-[11px] leading-relaxed mt-1 opacity-90">
-                    {displayedError}
-                  </p>
-                </div>
-                <button
-                  onClick={() => {
-                    setLocalError(null);
-                    clearAuthError();
-                  }}
-                  className="text-stone-400 hover:text-stone-700 cursor-pointer p-0.5"
-                  aria-label="Dismiss alert"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
+              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="font-bold text-[11px] text-rose-900">Sign-In Notice</p>
+                <p className="text-[11px] leading-relaxed mt-0.5 opacity-90">{displayedError}</p>
               </div>
-
-              {/* Step-by-step domain authorization guidance */}
-              {isUnauthorized && (
-                <div className="mt-3 pt-3 border-t border-amber-200/80 space-y-2.5">
-                  <p className="text-[11px] font-bold text-amber-900">
-                    Quick 1-Minute Fix:
-                  </p>
-
-                  <div className="bg-white/80 rounded-xl p-2.5 border border-amber-200 flex items-center justify-between gap-2">
-                    <div className="min-w-0 flex-1">
-                      <span className="text-[10px] uppercase font-bold text-stone-400 block">
-                        Your Hosting Domain:
-                      </span>
-                      <code className="text-[11px] font-mono font-bold text-stone-900 truncate block">
-                        {currentDomain}
-                      </code>
-                    </div>
-                    <button
-                      onClick={handleCopyDomain}
-                      className="px-2.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-[11px] font-bold flex items-center gap-1.5 cursor-pointer shrink-0 transition-colors shadow-2xs"
-                    >
-                      {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                      <span>{copied ? 'Copied!' : 'Copy'}</span>
-                    </button>
-                  </div>
-
-                  <ol className="list-decimal list-inside space-y-1 text-[11px] text-amber-950 font-medium pl-1">
-                    <li>Open Firebase Console Settings below</li>
-                    <li>Scroll down to <strong>Authorized domains</strong></li>
-                    <li>Click <strong>Add domain</strong> and paste your domain</li>
-                    <li>Click <strong>Save</strong> and tap Retry below!</li>
-                  </ol>
-
-                  <div className="flex items-center gap-2 pt-1">
-                    <a
-                      href={authErrorDetails?.firebaseConsoleUrl || 'https://console.firebase.google.com/project/hypnic-factor-nlcf1/authentication/settings'}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-1 py-2 px-3 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-center font-bold text-[11px] flex items-center justify-center gap-1.5 transition-colors shadow-xs"
-                    >
-                      <span>Open Firebase Console</span>
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </a>
-
-                    <button
-                      onClick={() => handleGoogleSignIn(false)}
-                      disabled={isSigningIn}
-                      className="py-2 px-3 rounded-xl bg-white hover:bg-stone-50 border border-amber-300 text-amber-900 font-bold text-[11px] flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
-                    >
-                      <RefreshCw className={`w-3.5 h-3.5 ${isSigningIn ? 'animate-spin' : ''}`} />
-                      <span>Retry</span>
-                    </button>
-                  </div>
-                </div>
-              )}
+              <button
+                onClick={() => {
+                  setLocalError(null);
+                  clearAuthError();
+                }}
+                className="text-stone-400 hover:text-stone-700 cursor-pointer p-0.5"
+                aria-label="Dismiss alert"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
             </motion.div>
           )}
         </AnimatePresence>
 
         {/* Google Authentication Box */}
-        <div className="bg-white rounded-3xl p-5 border border-stone-200 shadow-sm space-y-4">
+        <div className="bg-white rounded-3xl p-5 border border-stone-200 shadow-sm space-y-3.5">
           <div className="text-center space-y-0.5">
             <h2 className="text-base font-extrabold text-stone-900">
               Sign In to SVCE Cafe
             </h2>
             <p className="text-[11px] text-stone-500">
-              One-click Google authentication with your SVCE or personal account
+              One-click authentication for SVCE students, faculty & staff
             </p>
           </div>
 
           {/* Primary Call to Action: Continue with Google */}
           <button
             onClick={() => handleGoogleSignIn(false)}
-            disabled={isSigningIn || isRedirecting}
+            disabled={isSigningIn || isRedirecting || isGuestSigningIn}
             className="w-full py-3.5 px-4 rounded-2xl bg-white hover:bg-stone-50 text-stone-800 font-extrabold text-sm border-2 border-stone-200 hover:border-orange-500 shadow-xs flex items-center justify-center gap-3 cursor-pointer transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed group"
           >
             {isSigningIn ? (
@@ -302,22 +219,40 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({
             )}
           </button>
 
+          {/* Quick Campus Student Instant Access */}
+          <button
+            onClick={handleCampusGuestSignIn}
+            disabled={isSigningIn || isRedirecting || isGuestSigningIn}
+            className="w-full py-2.5 px-3 rounded-2xl bg-orange-50 hover:bg-orange-100/90 text-orange-900 border border-orange-200 text-xs font-bold flex items-center justify-center gap-2 cursor-pointer transition-colors disabled:opacity-60"
+          >
+            {isGuestSigningIn ? (
+              <>
+                <span className="w-3.5 h-3.5 border-2 border-orange-600 border-t-transparent rounded-full animate-spin" />
+                <span>Logging into SVCE Cafe...</span>
+              </>
+            ) : (
+              <>
+                <GraduationCap className="w-4 h-4 text-orange-600 shrink-0" />
+                <span>Quick Student Entry (1-Tap)</span>
+              </>
+            )}
+          </button>
+
           {/* Secondary Mobile Friendly Redirect Button */}
           <button
             onClick={() => handleGoogleSignIn(true)}
-            disabled={isSigningIn || isRedirecting}
-            className="w-full py-2 px-3 rounded-xl text-stone-500 hover:text-stone-800 hover:bg-stone-50 text-[11px] font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-colors disabled:opacity-50"
-            title="Alternative sign-in method for mobile browsers where pop-ups may be blocked"
+            disabled={isSigningIn || isRedirecting || isGuestSigningIn}
+            className="w-full py-1.5 px-3 rounded-xl text-stone-400 hover:text-stone-700 text-[11px] font-medium flex items-center justify-center gap-1.5 cursor-pointer transition-colors disabled:opacity-50"
           >
             {isRedirecting ? (
               <>
                 <span className="w-3 h-3 border-2 border-stone-500 border-t-transparent rounded-full animate-spin" />
-                <span>Redirecting to Google...</span>
+                <span>Opening Google Gateway...</span>
               </>
             ) : (
               <>
-                <Smartphone className="w-3.5 h-3.5" />
-                <span>Mobile browser having pop-up issues? Tap here</span>
+                <Smartphone className="w-3 h-3" />
+                <span>Mobile browser popup issues? Tap for full page</span>
               </>
             )}
           </button>
@@ -337,16 +272,12 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({
       </div>
 
       {/* Footer Info */}
-      <div className="text-center pt-2 border-t border-stone-200/60 space-y-1">
+      <div className="text-center pt-2 border-t border-stone-200/60">
         <p className="text-[11px] text-stone-400">
           QBite for Sri Venkateswara College of Engineering (SVCE) · Bengaluru
         </p>
-        {currentDomain && currentDomain !== 'localhost' && (
-          <p className="text-[10px] text-stone-400/80 font-mono">
-            Host: {currentDomain}
-          </p>
-        )}
       </div>
     </div>
   );
 };
+

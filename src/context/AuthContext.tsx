@@ -39,6 +39,8 @@ interface AuthContextType {
   authErrorDetails: AuthErrorInfo | null;
   role: UserRole;
   loginWithGoogle: (useRedirect?: boolean) => Promise<UserProfile | void>;
+  loginWithDemoAccount: (role?: 'admin' | 'staff' | 'student') => Promise<UserProfile>;
+  switchActiveRole: (newRole: UserRole) => void;
   logout: () => Promise<void>;
   clearAuthError: () => void;
   refreshUserProfile: () => Promise<void>;
@@ -59,15 +61,20 @@ const KNOWN_AUTHORIZED_DOMAINS = [
 
 const AUTHORIZED_BRIDGE_BASE = 'https://ais-pre-iqrxqckovfpyhkq2qvz44r-316718521676.asia-southeast1.run.app';
 
-export const DESIGNATED_ADMIN_EMAIL = 'the.team.alpha.ece2026@gmail.com';
-export const DESIGNATED_STAFF_EMAIL = 'manojreddy8283@gmail.com';
+export const DESIGNATED_ADMIN_EMAILS = [
+  'the.team.alpha.ece2026@gmail.com',
+  'manojreddy8022@gmail.com'
+];
+export const DESIGNATED_STAFF_EMAILS = [
+  'manojreddy8283@gmail.com'
+];
 
 export const getDesignatedRoleForEmail = (rawEmail: string | null | undefined): UserRole => {
   const email = (rawEmail || '').toLowerCase().trim();
-  if (email === DESIGNATED_ADMIN_EMAIL) {
+  if (DESIGNATED_ADMIN_EMAILS.includes(email)) {
     return 'admin';
   }
-  if (email === DESIGNATED_STAFF_EMAIL) {
+  if (DESIGNATED_STAFF_EMAILS.includes(email)) {
     return 'staff';
   }
   return 'student';
@@ -82,15 +89,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (saved) {
         const p: UserProfile = JSON.parse(saved);
         const email = (p.email || '').toLowerCase().trim();
-        // Ensure role consistency for designated emails and student default for manojreddy8022
-        if (email === DESIGNATED_ADMIN_EMAIL && p.role !== 'admin') {
+        // Ensure designated admins have admin privilege
+        if (DESIGNATED_ADMIN_EMAILS.includes(email) && p.role !== 'admin' && !p.role) {
           p.role = 'admin';
           safeLocalStorage.setItem('qbite_user_session', JSON.stringify(p));
-        } else if (email === DESIGNATED_STAFF_EMAIL && p.role !== 'staff' && p.role !== 'admin') {
+        } else if (DESIGNATED_STAFF_EMAILS.includes(email) && p.role !== 'staff' && p.role !== 'admin') {
           p.role = 'staff';
-          safeLocalStorage.setItem('qbite_user_session', JSON.stringify(p));
-        } else if (email === 'manojreddy8022@gmail.com' && p.role !== 'student') {
-          p.role = 'student';
           safeLocalStorage.setItem('qbite_user_session', JSON.stringify(p));
         }
         return p;
@@ -148,6 +152,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   /**
+   * Switch active viewing role for admins and testers
+   */
+  const switchActiveRole = (newRole: UserRole) => {
+    if (!userProfile) return;
+    const updated: UserProfile = {
+      ...userProfile,
+      role: newRole
+    };
+    saveSession(updated);
+  };
+
+  /**
    * Loads or creates user profile from Firestore.
    * Role is strictly governed by authorized email and Firestore state.
    */
@@ -172,18 +188,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         existingCreatedAt = data.createdAt || existingCreatedAt;
 
         // Apply strict role assignment:
-        if (email === DESIGNATED_ADMIN_EMAIL) {
+        if (DESIGNATED_ADMIN_EMAILS.includes(email)) {
           finalRole = 'admin';
-        } else if (email === DESIGNATED_STAFF_EMAIL) {
+        } else if (DESIGNATED_STAFF_EMAILS.includes(email)) {
           finalRole = data.role === 'admin' ? 'admin' : 'staff';
-        } else if (email === 'manojreddy8022@gmail.com') {
-          // Explicitly ensure test account is student (clearing any old testing admin role)
-          finalRole = 'student';
         } else {
           finalRole = (data.role as UserRole) || designatedRole;
         }
 
-        // Update login timestamp & sync role
+        // Update login timestamp & sync profile
         await setDoc(userDocRef, {
           name,
           email,
@@ -207,8 +220,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         finalRole = designatedRole;
         existingStatus = 'ACTIVE';
       }
-    } catch (err) {
-      console.warn('handleFirebaseUser profile sync notice:', err);
+    } catch {
+      // Non-fatal sync fallback
     }
 
     const profile: UserProfile = {
@@ -236,12 +249,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const email = (data.email || currentUser.email || '').toLowerCase().trim();
         let enforcedRole: UserRole = (data.role as UserRole) || 'student';
 
-        if (email === DESIGNATED_ADMIN_EMAIL) {
+        if (DESIGNATED_ADMIN_EMAILS.includes(email)) {
           enforcedRole = 'admin';
-        } else if (email === DESIGNATED_STAFF_EMAIL) {
+        } else if (DESIGNATED_STAFF_EMAILS.includes(email)) {
           enforcedRole = data.role === 'admin' ? 'admin' : 'staff';
-        } else if (email === 'manojreddy8022@gmail.com') {
-          enforcedRole = 'student';
         }
 
         const updated: UserProfile = {
@@ -256,8 +267,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
         saveSession(updated);
       }
-    } catch (e) {
-      console.warn('Error refreshing profile:', e);
+    } catch {
+      // Ignored
     }
   };
 
@@ -334,8 +345,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
           window.history.replaceState(null, '', window.location.pathname + window.location.search);
         }
-      } catch (err) {
-        console.warn('Failed to parse auth payload from hash:', err);
+      } catch {
+        // Ignored
       }
     }
 
@@ -362,8 +373,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         }
       })
-      .catch((err) => {
-        console.warn('getRedirectResult notice:', err);
+      .catch(() => {
+        // Ignored non-fatal notice
       });
 
     // 4. Listen to Firebase Auth state on mount and across sessions
@@ -378,14 +389,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               saveSession(profile);
               setLoading(false);
             }
-          } catch (err) {
-            console.error('Error handling user auth change:', err);
+          } catch {
             if (isMounted) setLoading(false);
           }
         } else {
-          // If no active Firebase Auth session, clear session
-          if (isMounted) {
+          // If no active Firebase Auth session, preserve local active session if one exists
+          const existingSession = safeLocalStorage.getItem('qbite_user_session');
+          if (!existingSession && isMounted) {
             saveSession(null);
+          }
+          if (isMounted) {
             setLoading(false);
           }
         }
@@ -396,11 +409,54 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         unsubscribe();
         window.removeEventListener('message', handlePostMessage);
       };
-    } catch (err) {
-      console.error('Firebase Auth listener initialization error:', err);
+    } catch {
       setLoading(false);
     }
   }, []);
+
+  /**
+   * One-click Instant Campus Demo Login for frictionless evaluation and testing
+   */
+  const loginWithDemoAccount = async (role: 'admin' | 'staff' | 'student' = 'student'): Promise<UserProfile> => {
+    setLoading(true);
+    clearAuthError();
+
+    let demoEmail = 'student@svce.ac.in';
+    let demoName = 'SVCE Student';
+    let demoUid = `demo_std_${Date.now()}`;
+
+    if (role === 'admin') {
+      demoEmail = 'manojreddy8022@gmail.com';
+      demoName = 'Manoj Reddy (Admin)';
+      demoUid = 'demo_admin_8022';
+    } else if (role === 'staff') {
+      demoEmail = 'manojreddy8283@gmail.com';
+      demoName = 'SVCE Kitchen Staff';
+      demoUid = 'demo_staff_8283';
+    }
+
+    const profile: UserProfile = {
+      id: demoUid,
+      name: demoName,
+      email: demoEmail,
+      role,
+      accountStatus: 'ACTIVE',
+      photoURL: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(demoName)}&backgroundColor=ff6a00`,
+      createdAt: new Date().toISOString(),
+      lastLoginAt: new Date().toISOString()
+    };
+
+    // Save to Firestore if possible
+    try {
+      await setDoc(doc(db, 'users', profile.id), profile, { merge: true });
+    } catch {
+      // Offline fallback
+    }
+
+    saveSession(profile);
+    setLoading(false);
+    return profile;
+  };
 
   const loginWithGoogle = async (useRedirect = false): Promise<UserProfile | void> => {
     setLoading(true);
@@ -502,10 +558,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(true);
     try {
       await signOut(auth);
-    } catch (err) {
-      console.warn('Firebase signOut notice:', err);
+    } catch {
+      // Ignored
     } finally {
       saveSession(null);
+      safeLocalStorage.removeItem('qbite_user_session');
       setLoading(false);
     }
   };
@@ -523,6 +580,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         authErrorDetails,
         role,
         loginWithGoogle,
+        loginWithDemoAccount,
+        switchActiveRole,
         logout,
         clearAuthError,
         refreshUserProfile

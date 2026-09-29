@@ -79,13 +79,13 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBackToHome }) => {
     const unsub = onSnapshot(query(usersCol, limit(50)), (snap) => {
       const uList = snap.docs.map((d) => ({ id: d.id, ...d.data() } as UserProfile));
       setUsersList(uList);
-    }, (err) => {
-      console.warn('Users onSnapshot notice:', err);
+    }, () => {
+      // Ignored non-fatal notice
     });
     return () => unsub();
   }, []);
 
-  // REAL ANALYTICS CALCULATIONS (Section 28 & 47)
+  // Real analytics calculated strictly from Firestore
   const todayKey = getTodayDateKey();
   const todayOrders = orders.filter((o) => o.dateKey === todayKey);
 
@@ -107,7 +107,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBackToHome }) => {
     .filter((o) => o.paymentStatus === 'PAID')
     .reduce((sum, o) => sum + (o.total || 0), 0);
 
-  // Average Order-to-Ready Time: average(readyAt - createdAt)
+  // Average Order-to-Ready Time
   const ordersWithReadyTime = todayOrders.filter(
     (o) => o.readyAt && o.createdAt && new Date(o.readyAt).getTime() > new Date(o.createdAt).getTime()
   );
@@ -121,7 +121,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBackToHome }) => {
         )
       : null;
 
-  // Average Preparation Time: average(readyAt - preparingAt)
+  // Average Cooking Duration
   const ordersWithPrepTime = todayOrders.filter(
     (o) => o.readyAt && o.preparingAt && new Date(o.readyAt).getTime() > new Date(o.preparingAt).getTime()
   );
@@ -135,128 +135,135 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBackToHome }) => {
         )
       : null;
 
-  // Handlers
   const handleSaveSettings = async () => {
     try {
       await updateCanteenStatus(canteenStatus, announcementText, hoursText);
-      setActionNotice('Canteen status updated successfully!');
+      setActionNotice('Canteen operational status updated successfully.');
       setTimeout(() => setActionNotice(null), 3000);
     } catch (e: any) {
-      setActionNotice('Error: ' + e.message);
+      setActionNotice(e?.message || 'Failed to update settings.');
     }
   };
 
   const handleToggleUserRole = async (user: UserProfile) => {
-    const nextRole: UserRole = user.role === 'staff' ? 'student' : 'staff';
+    const newRole: UserRole = user.role === 'staff' ? 'student' : 'staff';
     try {
-      await updateDoc(doc(db, 'users', user.id), { role: nextRole });
-      setActionNotice(`Updated ${user.name}'s role to ${nextRole}`);
+      await updateDoc(doc(db, 'users', user.id), { role: newRole });
+      setActionNotice(`User ${user.name || user.email} updated to ${newRole}.`);
       setTimeout(() => setActionNotice(null), 3000);
     } catch (e: any) {
-      setActionNotice('Failed: ' + e.message);
+      setActionNotice(e?.message || 'Failed to update role.');
     }
   };
 
   const handleToggleUserStatus = async (user: UserProfile) => {
-    const nextStatus: AccountStatus = user.accountStatus === 'SUSPENDED' ? 'ACTIVE' : 'SUSPENDED';
+    const newStatus: AccountStatus = user.accountStatus === 'SUSPENDED' ? 'ACTIVE' : 'SUSPENDED';
     try {
-      await updateDoc(doc(db, 'users', user.id), { accountStatus: nextStatus });
-      setActionNotice(`User account set to ${nextStatus}`);
+      await updateDoc(doc(db, 'users', user.id), { accountStatus: newStatus });
+      setActionNotice(`User status updated to ${newStatus}.`);
       setTimeout(() => setActionNotice(null), 3000);
     } catch (e: any) {
-      setActionNotice('Failed: ' + e.message);
+      setActionNotice(e?.message || 'Failed to update status.');
     }
   };
 
   const handleCreateFood = async () => {
-    if (!newFood.name || !newFood.price) return;
-    const foodId = `food_${Date.now()}`;
+    if (!newFood.name || !newFood.price) {
+      setActionNotice('Please provide item name and price.');
+      return;
+    }
     const item: FoodItem = {
-      id: foodId,
+      id: `food_${Date.now()}`,
       name: newFood.name,
-      category: newFood.category || 'Snacks',
+      category: newFood.category || 'Breakfast',
       price: Number(newFood.price),
       prepTimeMinutes: Number(newFood.prepTimeMinutes) || 8,
-      isAvailable: newFood.isAvailable !== false,
+      isAvailable: newFood.isAvailable ?? true,
       description: newFood.description || '',
       imageUrl: newFood.imageUrl || 'https://images.unsplash.com/photo-1668236543090-82eba5ee5976?auto=format&fit=crop&w=400&q=80',
-      isVeg: newFood.isVeg !== false
+      isVeg: newFood.isVeg ?? true
     };
-    await saveFoodItem(item);
-    setIsAddingFood(false);
-    setNewFood({
-      name: '',
-      category: 'Breakfast',
-      price: 40,
-      prepTimeMinutes: 8,
-      isAvailable: true,
-      description: '',
-      imageUrl: 'https://images.unsplash.com/photo-1668236543090-82eba5ee5976?auto=format&fit=crop&w=400&q=80',
-      isVeg: true
-    });
+    try {
+      await saveFoodItem(item);
+      setIsAddingFood(false);
+      setNewFood({
+        name: '',
+        category: 'Breakfast',
+        price: 40,
+        prepTimeMinutes: 8,
+        isAvailable: true,
+        description: '',
+        imageUrl: 'https://images.unsplash.com/photo-1668236543090-82eba5ee5976?auto=format&fit=crop&w=400&q=80',
+        isVeg: true
+      });
+      setActionNotice(`Added "${item.name}" to menu.`);
+      setTimeout(() => setActionNotice(null), 3000);
+    } catch (e: any) {
+      setActionNotice(e?.message || 'Failed to add item.');
+    }
   };
 
   return (
-    <div className="pb-24 pt-3 px-4 max-w-3xl mx-auto space-y-4">
+    <div className="pb-28 pt-3 px-4 max-w-3xl mx-auto space-y-4">
       {/* Top Admin Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="w-10 h-10 rounded-2xl bg-purple-900 text-purple-200 flex items-center justify-center shadow-xs">
-            <Shield className="w-6 h-6" />
+          <div className="w-10 h-10 rounded-2xl bg-[#FF6A00] text-black flex items-center justify-center shadow-lg glow-orange-sm">
+            <Shield className="w-6 h-6 stroke-[2.5]" />
           </div>
           <div>
-            <h2 className="text-xl font-black text-stone-900 tracking-tight">
+            <h2 className="text-xl font-black text-white tracking-tight">
               Canteen Admin Hub
             </h2>
-            <p className="text-xs text-stone-500 font-medium">SVCE Cafe Operations & Policy Control</p>
+            <p className="text-xs text-[#A1A1A1] font-medium">Operations & Access Control Center</p>
           </div>
         </div>
 
         <button
           onClick={onBackToHome}
-          className="text-xs font-bold text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200 px-3 py-1.5 rounded-xl cursor-pointer"
+          className="text-xs font-bold text-stone-300 hover:text-white bg-[#141414] hover:bg-[#1E1E1E] border border-white/10 px-3 py-1.5 rounded-xl cursor-pointer transition-colors"
         >
           Exit Admin
         </button>
       </div>
 
       {actionNotice && (
-        <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl text-xs text-emerald-800 flex items-center gap-2">
-          <Check className="w-4 h-4 text-emerald-600" />
+        <div className="p-3 bg-[#0F291E] border border-emerald-500/30 rounded-2xl text-xs text-emerald-300 flex items-center gap-2">
+          <Check className="w-4 h-4 text-emerald-400" />
           <span>{actionNotice}</span>
         </div>
       )}
 
       {/* Tabs */}
-      <div className="flex gap-1.5 bg-stone-100 p-1 rounded-2xl overflow-x-auto no-scrollbar">
+      <div className="flex gap-1.5 bg-[#141414] p-1.5 rounded-2xl border border-white/8 overflow-x-auto no-scrollbar">
         <button
           onClick={() => setActiveTab('analytics')}
-          className={`flex-1 py-2 px-3 text-xs font-bold rounded-xl whitespace-nowrap cursor-pointer transition-all ${
-            activeTab === 'analytics' ? 'bg-white text-stone-900 shadow-xs' : 'text-stone-500'
+          className={`flex-1 py-2 px-3 text-xs font-black rounded-xl whitespace-nowrap cursor-pointer transition-all ${
+            activeTab === 'analytics' ? 'bg-[#FF6A00] text-black shadow-md glow-orange-sm' : 'text-stone-400 hover:text-white'
           }`}
         >
           Analytics & Metrics
         </button>
         <button
           onClick={() => setActiveTab('canteen')}
-          className={`flex-1 py-2 px-3 text-xs font-bold rounded-xl whitespace-nowrap cursor-pointer transition-all ${
-            activeTab === 'canteen' ? 'bg-white text-stone-900 shadow-xs' : 'text-stone-500'
+          className={`flex-1 py-2 px-3 text-xs font-black rounded-xl whitespace-nowrap cursor-pointer transition-all ${
+            activeTab === 'canteen' ? 'bg-[#FF6A00] text-black shadow-md glow-orange-sm' : 'text-stone-400 hover:text-white'
           }`}
         >
           Canteen Status
         </button>
         <button
           onClick={() => setActiveTab('menu')}
-          className={`flex-1 py-2 px-3 text-xs font-bold rounded-xl whitespace-nowrap cursor-pointer transition-all ${
-            activeTab === 'menu' ? 'bg-white text-stone-900 shadow-xs' : 'text-stone-500'
+          className={`flex-1 py-2 px-3 text-xs font-black rounded-xl whitespace-nowrap cursor-pointer transition-all ${
+            activeTab === 'menu' ? 'bg-[#FF6A00] text-black shadow-md glow-orange-sm' : 'text-stone-400 hover:text-white'
           }`}
         >
           Menu & Pricing ({foods.length})
         </button>
         <button
           onClick={() => setActiveTab('staff')}
-          className={`flex-1 py-2 px-3 text-xs font-bold rounded-xl whitespace-nowrap cursor-pointer transition-all ${
-            activeTab === 'staff' ? 'bg-white text-stone-900 shadow-xs' : 'text-stone-500'
+          className={`flex-1 py-2 px-3 text-xs font-black rounded-xl whitespace-nowrap cursor-pointer transition-all ${
+            activeTab === 'staff' ? 'bg-[#FF6A00] text-black shadow-md glow-orange-sm' : 'text-stone-400 hover:text-white'
           }`}
         >
           Staff & Access
@@ -267,82 +274,82 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBackToHome }) => {
       {activeTab === 'analytics' && (
         <div className="space-y-4">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="bg-white rounded-3xl p-4 border border-stone-200/80 shadow-xs">
-              <span className="text-[10px] uppercase font-bold text-stone-400 block mb-1">
+            <div className="bg-[#141414] rounded-3xl p-4 border border-white/8 shadow-xl">
+              <span className="text-[10px] uppercase font-black text-[#A1A1A1] block mb-1">
                 TODAY'S ORDERS
               </span>
-              <div className="text-3xl font-black font-mono-token text-stone-900">
+              <div className="text-3xl font-black font-mono-token text-white">
                 {totalOrdersCount}
               </div>
-              <span className="text-[11px] text-stone-400 font-medium mt-1 block">
+              <span className="text-[11px] text-stone-500 font-medium mt-1 block">
                 {todayKey}
               </span>
             </div>
 
-            <div className="bg-white rounded-3xl p-4 border border-stone-200/80 shadow-xs">
-              <span className="text-[10px] uppercase font-bold text-stone-400 block mb-1">
+            <div className="bg-[#141414] rounded-3xl p-4 border border-white/8 shadow-xl">
+              <span className="text-[10px] uppercase font-black text-[#A1A1A1] block mb-1">
                 ACTIVE IN QUEUE
               </span>
-              <div className="text-3xl font-black font-mono-token text-orange-600">
+              <div className="text-3xl font-black font-mono-token text-[#FF6A00]">
                 {activeOrdersCount}
               </div>
-              <span className="text-[11px] text-orange-600 font-medium mt-1 block">
+              <span className="text-[11px] text-[#FF7A00] font-medium mt-1 block">
                 {preparingCount} cooking · {readyCount} ready
               </span>
             </div>
 
-            <div className="bg-white rounded-3xl p-4 border border-stone-200/80 shadow-xs">
-              <span className="text-[10px] uppercase font-bold text-stone-400 block mb-1">
+            <div className="bg-[#141414] rounded-3xl p-4 border border-white/8 shadow-xl">
+              <span className="text-[10px] uppercase font-black text-[#A1A1A1] block mb-1">
                 COMPLETED
               </span>
-              <div className="text-3xl font-black font-mono-token text-emerald-600">
+              <div className="text-3xl font-black font-mono-token text-emerald-400">
                 {completedCount}
               </div>
-              <span className="text-[11px] text-stone-400 font-medium mt-1 block">
+              <span className="text-[11px] text-stone-500 font-medium mt-1 block">
                 {cancelledCount} cancelled · {rejectedCount} rejected
               </span>
             </div>
 
-            <div className="bg-white rounded-3xl p-4 border border-stone-200/80 shadow-xs">
-              <span className="text-[10px] uppercase font-bold text-stone-400 block mb-1">
-                COLLECTED CASH/UPI
+            <div className="bg-[#141414] rounded-3xl p-4 border border-white/8 shadow-xl">
+              <span className="text-[10px] uppercase font-black text-[#A1A1A1] block mb-1">
+                COLLECTED VALUE
               </span>
-              <div className="text-3xl font-black font-mono-token text-stone-900">
+              <div className="text-3xl font-black font-mono-token text-white">
                 ₹{collectedPaidValue}
               </div>
-              <span className="text-[11px] text-stone-500 font-medium mt-1 block">
+              <span className="text-[11px] text-stone-400 font-medium mt-1 block">
                 Order Value: ₹{totalOrderValue}
               </span>
             </div>
           </div>
 
           {/* Operational Timings Metrics */}
-          <div className="bg-white rounded-3xl p-5 border border-stone-200/80 shadow-xs space-y-3">
-            <h3 className="font-extrabold text-sm text-stone-900">
+          <div className="bg-[#141414] rounded-3xl p-5 border border-white/8 shadow-xl space-y-3">
+            <h3 className="font-black text-sm text-white">
               Kitchen Preparation Performance
             </h3>
             <div className="grid grid-cols-2 gap-3 text-center">
-              <div className="bg-stone-50 rounded-2xl p-4 border border-stone-100">
-                <span className="text-[10px] uppercase font-bold text-stone-400 block">
+              <div className="bg-[#1C1C1C] rounded-2xl p-4 border border-white/5">
+                <span className="text-[10px] uppercase font-bold text-[#A1A1A1] block">
                   AVG ORDER-TO-READY
                 </span>
-                <span className="text-3xl font-black font-mono-token text-stone-900 block my-1">
+                <span className="text-3xl font-black font-mono-token text-white block my-1">
                   {avgOrderToReadyMin !== null ? `${avgOrderToReadyMin} min` : '—'}
                 </span>
-                <span className="text-[10px] text-stone-400">
+                <span className="text-[10px] text-stone-500">
                   {ordersWithReadyTime.length > 0 ? `From ${ordersWithReadyTime.length} fulfilled orders` : 'No completed orders today yet'}
                 </span>
               </div>
 
-              <div className="bg-stone-50 rounded-2xl p-4 border border-stone-100">
-                <span className="text-[10px] uppercase font-bold text-stone-400 block">
+              <div className="bg-[#1C1C1C] rounded-2xl p-4 border border-white/5">
+                <span className="text-[10px] uppercase font-bold text-[#A1A1A1] block">
                   AVG COOKING DURATION
                 </span>
-                <span className="text-3xl font-black font-mono-token text-stone-900 block my-1">
+                <span className="text-3xl font-black font-mono-token text-[#FF9D2E] block my-1">
                   {avgPrepMin !== null ? `${avgPrepMin} min` : '—'}
                 </span>
-                <span className="text-[10px] text-stone-400">
-                  {ordersWithPrepTime.length > 0 ? `From ${ordersWithPrepTime.length} prepared orders` : 'Calculated when timestamps exist'}
+                <span className="text-[10px] text-stone-500">
+                  {ordersWithPrepTime.length > 0 ? `From ${ordersWithPrepTime.length} prepared orders` : 'Calculated from cooking timestamps'}
                 </span>
               </div>
             </div>
@@ -352,13 +359,13 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBackToHome }) => {
 
       {/* TAB 2: CANTEEN STATUS & SETTINGS */}
       {activeTab === 'canteen' && (
-        <div className="bg-white rounded-3xl p-5 border border-stone-200/80 shadow-xs space-y-4">
-          <h3 className="font-extrabold text-base text-stone-900">
+        <div className="bg-[#141414] rounded-3xl p-5 border border-white/8 shadow-xl space-y-4">
+          <h3 className="font-black text-base text-white">
             Canteen Operational State
           </h3>
 
           <div className="space-y-2">
-            <label className="text-xs font-bold uppercase tracking-wider text-stone-400 block">
+            <label className="text-[10px] font-black uppercase tracking-wider text-[#A1A1A1] block">
               Operational Status
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -366,10 +373,10 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBackToHome }) => {
                 <button
                   key={status}
                   onClick={() => setCanteenStatus(status)}
-                  className={`p-3 rounded-2xl font-bold text-xs border cursor-pointer transition-all ${
+                  className={`p-3 rounded-2xl font-black text-xs border cursor-pointer transition-all ${
                     canteenStatus === status
-                      ? 'bg-stone-900 text-white border-stone-900 shadow-xs'
-                      : 'bg-stone-50 text-stone-600 border-stone-200 hover:bg-stone-100'
+                      ? 'bg-[#FF6A00] text-black border-[#FF6A00] shadow-md glow-orange-sm'
+                      : 'bg-[#1C1C1C] text-stone-300 border-white/5 hover:bg-[#252525]'
                   }`}
                 >
                   {status}
@@ -379,20 +386,20 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBackToHome }) => {
           </div>
 
           <div className="space-y-2">
-            <label className="text-xs font-bold uppercase tracking-wider text-stone-400 block">
+            <label className="text-[10px] font-black uppercase tracking-wider text-[#A1A1A1] block">
               Public Campus Announcement
             </label>
             <input
               type="text"
               value={announcementText}
               onChange={(e) => setAnnouncementText(e.target.value)}
-              placeholder="e.g. Counter 2 is serving South Indian meals today..."
-              className="w-full p-3 rounded-xl border border-stone-200 text-xs font-medium focus:outline-none focus:border-orange-500"
+              placeholder="e.g. Counter 2 is serving hot South Indian meals today..."
+              className="w-full p-3 rounded-xl bg-[#1C1C1C] border border-white/8 text-xs font-medium text-white focus:outline-none focus:border-[#FF6A00]"
             />
           </div>
 
           <div className="space-y-2">
-            <label className="text-xs font-bold uppercase tracking-wider text-stone-400 block">
+            <label className="text-[10px] font-black uppercase tracking-wider text-[#A1A1A1] block">
               Operating Hours
             </label>
             <input
@@ -400,13 +407,13 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBackToHome }) => {
               value={hoursText}
               onChange={(e) => setHoursText(e.target.value)}
               placeholder="7:30 AM – 5:30 PM"
-              className="w-full p-3 rounded-xl border border-stone-200 text-xs font-medium focus:outline-none focus:border-orange-500"
+              className="w-full p-3 rounded-xl bg-[#1C1C1C] border border-white/8 text-xs font-medium text-white focus:outline-none focus:border-[#FF6A00]"
             />
           </div>
 
           <button
             onClick={handleSaveSettings}
-            className="w-full py-3 bg-purple-900 hover:bg-purple-950 text-white font-extrabold text-xs rounded-xl shadow-xs cursor-pointer transition-all"
+            className="w-full py-3 bg-[#FF6A00] hover:bg-[#FF7A00] text-black font-black text-xs rounded-xl shadow-md glow-orange-sm cursor-pointer transition-all"
           >
             Save Canteen Settings
           </button>
@@ -417,7 +424,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBackToHome }) => {
       {activeTab === 'menu' && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="font-extrabold text-base text-stone-900">
+            <h3 className="font-black text-base text-white">
               Menu Catalog ({foods.length})
             </h3>
             <div className="flex gap-2">
@@ -431,46 +438,46 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBackToHome }) => {
               )}
               <button
                 onClick={() => setIsAddingFood(true)}
-                className="py-2 px-3 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold rounded-xl flex items-center gap-1 cursor-pointer shadow-xs"
+                className="py-2 px-3 bg-[#FF6A00] hover:bg-[#FF7A00] text-black text-xs font-black rounded-xl flex items-center gap-1 cursor-pointer shadow-md glow-orange-sm transition-all"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="w-4 h-4 stroke-[3]" />
                 <span>Add Item</span>
               </button>
             </div>
           </div>
 
-          {/* Add Food Modal / Form */}
+          {/* Add Food Form */}
           {isAddingFood && (
-            <div className="bg-stone-50 rounded-3xl p-5 border border-stone-200 space-y-3">
-              <h4 className="font-bold text-sm text-stone-900">Create New Menu Item</h4>
+            <div className="bg-[#141414] rounded-3xl p-5 border border-white/10 space-y-3">
+              <h4 className="font-black text-sm text-white">Create New Menu Item</h4>
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <input
                   type="text"
                   placeholder="Food Name"
                   value={newFood.name}
                   onChange={(e) => setNewFood({ ...newFood, name: e.target.value })}
-                  className="p-2.5 rounded-xl border border-stone-200 bg-white"
+                  className="p-2.5 rounded-xl border border-white/8 bg-[#1C1C1C] text-white"
                 />
                 <input
                   type="number"
                   placeholder="Price (₹)"
                   value={newFood.price}
                   onChange={(e) => setNewFood({ ...newFood, price: Number(e.target.value) })}
-                  className="p-2.5 rounded-xl border border-stone-200 bg-white"
+                  className="p-2.5 rounded-xl border border-white/8 bg-[#1C1C1C] text-white"
                 />
                 <input
                   type="text"
                   placeholder="Category (Breakfast, Snacks...)"
                   value={newFood.category}
                   onChange={(e) => setNewFood({ ...newFood, category: e.target.value })}
-                  className="p-2.5 rounded-xl border border-stone-200 bg-white"
+                  className="p-2.5 rounded-xl border border-white/8 bg-[#1C1C1C] text-white"
                 />
                 <input
                   type="number"
                   placeholder="Prep time (min)"
                   value={newFood.prepTimeMinutes}
                   onChange={(e) => setNewFood({ ...newFood, prepTimeMinutes: Number(e.target.value) })}
-                  className="p-2.5 rounded-xl border border-stone-200 bg-white"
+                  className="p-2.5 rounded-xl border border-white/8 bg-[#1C1C1C] text-white"
                 />
               </div>
               <input
@@ -478,18 +485,18 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBackToHome }) => {
                 placeholder="Description"
                 value={newFood.description}
                 onChange={(e) => setNewFood({ ...newFood, description: e.target.value })}
-                className="w-full p-2.5 rounded-xl border border-stone-200 bg-white text-xs"
+                className="w-full p-2.5 rounded-xl border border-white/8 bg-[#1C1C1C] text-white text-xs"
               />
               <div className="flex gap-2">
                 <button
                   onClick={handleCreateFood}
-                  className="flex-1 py-2 bg-orange-600 text-white font-bold text-xs rounded-xl cursor-pointer"
+                  className="flex-1 py-2.5 bg-[#FF6A00] text-black font-black text-xs rounded-xl cursor-pointer glow-orange-sm shadow-md"
                 >
                   Save Food Item
                 </button>
                 <button
                   onClick={() => setIsAddingFood(false)}
-                  className="py-2 px-4 border border-stone-300 text-xs font-bold rounded-xl cursor-pointer"
+                  className="py-2.5 px-4 border border-white/10 text-xs font-bold text-stone-300 rounded-xl cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -502,19 +509,19 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBackToHome }) => {
             {foods.map((food) => (
               <div
                 key={food.id}
-                className="bg-white rounded-3xl p-4 border border-stone-200/80 shadow-xs flex items-center justify-between gap-3"
+                className="bg-[#141414] rounded-3xl p-4 border border-white/8 shadow-md flex items-center justify-between gap-3"
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <img
                     src={food.imageUrl}
                     alt={food.name}
-                    className="w-12 h-12 rounded-2xl object-cover shrink-0"
+                    className="w-12 h-12 rounded-2xl object-cover shrink-0 bg-[#202020]"
                   />
                   <div className="min-w-0">
-                    <h4 className="font-extrabold text-sm text-stone-900 truncate">
+                    <h4 className="font-bold text-sm text-white truncate">
                       {food.name}
                     </h4>
-                    <p className="text-xs text-stone-500 font-mono-token">
+                    <p className="text-xs text-[#A1A1A1] font-mono-token">
                       ₹{food.price} · {food.prepTimeMinutes} min
                     </p>
                   </div>
@@ -525,8 +532,8 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBackToHome }) => {
                     onClick={() => updateFoodAvailability(food.id, !food.isAvailable)}
                     className={`py-1.5 px-3 rounded-xl text-xs font-bold cursor-pointer transition-colors ${
                       food.isAvailable
-                        ? 'bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100'
-                        : 'bg-rose-50 text-rose-800 border border-rose-200 hover:bg-rose-100'
+                        ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/25'
+                        : 'bg-rose-500/15 text-rose-400 border border-rose-500/30 hover:bg-rose-500/25'
                     }`}
                   >
                     {food.isAvailable ? 'In Stock' : 'Sold Out'}
@@ -541,38 +548,38 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBackToHome }) => {
       {/* TAB 4: STAFF & USER ACCESS */}
       {activeTab === 'staff' && (
         <div className="space-y-4">
-          <div className="bg-purple-50 border border-purple-200 rounded-3xl p-4 text-xs text-purple-900 space-y-1">
-            <strong className="block font-bold">First-Admin & Staff Access Control</strong>
-            <p className="leading-relaxed">
-              New accounts start as students. As Admin, you can promote verified staff members below to grant access to the Kitchen Portal.
+          <div className="bg-[#141414] border border-purple-500/30 rounded-3xl p-4 text-xs text-purple-200 space-y-1">
+            <strong className="block font-black text-white">Designated Staff & Role Control</strong>
+            <p className="leading-relaxed text-[#A1A1A1]">
+              New accounts start as students. As Admin, you can grant verified staff members access to the Kitchen Fulfillment Terminal below.
             </p>
           </div>
 
-          <div className="bg-white rounded-3xl p-5 border border-stone-200/80 shadow-xs space-y-3">
-            <h3 className="font-extrabold text-sm text-stone-900">
+          <div className="bg-[#141414] rounded-3xl p-5 border border-white/8 shadow-xl space-y-3">
+            <h3 className="font-black text-sm text-white">
               Registered Canteen Users ({usersList.length})
             </h3>
 
-            <div className="divide-y divide-stone-100">
+            <div className="divide-y divide-white/5">
               {usersList.map((user) => (
                 <div key={user.id} className="py-3 first:pt-0 last:pb-0 flex items-center justify-between text-xs">
                   <div>
-                    <p className="font-bold text-stone-900">{user.name}</p>
-                    <p className="text-[11px] text-stone-400 font-mono-token">{user.email}</p>
+                    <p className="font-bold text-white">{user.name}</p>
+                    <p className="text-[11px] text-[#A1A1A1] font-mono-token">{user.email}</p>
                     <div className="flex items-center gap-1.5 mt-1">
-                      <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${
+                      <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
                         user.role === 'admin'
-                          ? 'bg-purple-100 text-purple-800'
+                          ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
                           : user.role === 'staff'
-                          ? 'bg-orange-100 text-orange-800'
-                          : 'bg-stone-100 text-stone-600'
+                          ? 'bg-[#FF6A00]/20 text-[#FF7A00] border border-[#FF6A00]/30'
+                          : 'bg-white/5 text-stone-400'
                       }`}>
                         {user.role}
                       </span>
-                      <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${
+                      <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
                         user.accountStatus === 'SUSPENDED'
-                          ? 'bg-rose-100 text-rose-800'
-                          : 'bg-emerald-100 text-emerald-800'
+                          ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                          : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                       }`}>
                         {user.accountStatus || 'ACTIVE'}
                       </span>
@@ -583,7 +590,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBackToHome }) => {
                     {user.role !== 'admin' && (
                       <button
                         onClick={() => handleToggleUserRole(user)}
-                        className="py-1.5 px-3 bg-stone-100 hover:bg-stone-200 text-stone-800 font-bold rounded-xl cursor-pointer"
+                        className="py-1.5 px-3 bg-[#1C1C1C] hover:bg-[#252525] border border-white/10 text-white font-bold rounded-xl cursor-pointer transition-colors"
                       >
                         {user.role === 'staff' ? 'Demote to Student' : 'Promote to Staff'}
                       </button>
@@ -592,10 +599,10 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBackToHome }) => {
                     {user.role !== 'admin' && (
                       <button
                         onClick={() => handleToggleUserStatus(user)}
-                        className={`py-1.5 px-2.5 rounded-xl font-bold cursor-pointer ${
+                        className={`py-1.5 px-2.5 rounded-xl font-bold cursor-pointer transition-colors ${
                           user.accountStatus === 'SUSPENDED'
-                            ? 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-                            : 'bg-rose-50 text-rose-700 hover:bg-rose-100'
+                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                            : 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
                         }`}
                       >
                         {user.accountStatus === 'SUSPENDED' ? 'Activate' : 'Suspend'}

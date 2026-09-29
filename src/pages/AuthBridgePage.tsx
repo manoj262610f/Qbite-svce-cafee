@@ -3,7 +3,8 @@ import { GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from 'firebas
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase/config';
 import { UserProfile, UserRole } from '../types';
-import { UtensilsCrossed, ShieldCheck, CheckCircle2, AlertCircle } from 'lucide-react';
+import { ShieldCheck, CheckCircle2, AlertCircle } from 'lucide-react';
+import { QbiteLogo } from '../components/QbiteLogo';
 
 export const AuthBridgePage: React.FC = () => {
   const [isSigningIn, setIsSigningIn] = useState(false);
@@ -33,18 +34,16 @@ export const AuthBridgePage: React.FC = () => {
         existingRole = data.role;
         existingCreatedAt = data.createdAt;
       }
-    } catch (e) {
-      console.warn('Bridge Firestore lookup notice:', e);
+    } catch {
+      // Safe fallback when unauthenticated
     }
 
     const normalizedEmail = email.toLowerCase().trim();
     let role: UserRole = 'student';
-    if (normalizedEmail === 'the.team.alpha.ece2026@gmail.com') {
+    if (normalizedEmail === 'the.team.alpha.ece2026@gmail.com' || normalizedEmail === 'manojreddy8022@gmail.com') {
       role = 'admin';
     } else if (normalizedEmail === 'manojreddy8283@gmail.com') {
       role = existingRole === 'admin' ? 'admin' : 'staff';
-    } else if (normalizedEmail === 'manojreddy8022@gmail.com') {
-      role = 'student';
     } else {
       role = existingRole || 'student';
     }
@@ -62,8 +61,8 @@ export const AuthBridgePage: React.FC = () => {
 
     try {
       await setDoc(doc(db, 'users', uid), profile, { merge: true });
-    } catch (e) {
-      console.warn('Bridge Firestore write notice:', e);
+    } catch {
+      // Handled silently
     }
 
     return profile;
@@ -71,7 +70,7 @@ export const AuthBridgePage: React.FC = () => {
 
   const completeAuth = (profile: UserProfile) => {
     setSuccessUser(profile);
-    setStatusMessage('Authenticated successfully! Returning to QBite...');
+    setStatusMessage('Authenticated successfully! Returning to qBite...');
 
     // Post to opener window if opened via popup
     if (window.opener && !window.opener.closed) {
@@ -83,8 +82,8 @@ export const AuthBridgePage: React.FC = () => {
           },
           targetOrigin === '*' ? '*' : targetOrigin
         );
-      } catch (e) {
-        console.warn('Could not postMessage to opener:', e);
+      } catch {
+        // Ignored
       }
       setTimeout(() => {
         window.close();
@@ -99,8 +98,8 @@ export const AuthBridgePage: React.FC = () => {
         url.hash = `auth_payload=${encodeURIComponent(JSON.stringify(profile))}`;
         window.location.href = url.toString();
         return;
-      } catch (e) {
-        console.warn('Invalid returnTo URL:', e);
+      } catch {
+        // Fallback below
       }
     }
 
@@ -142,37 +141,39 @@ export const AuthBridgePage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-stone-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl p-6 max-w-sm w-full border border-stone-200 shadow-xl text-center space-y-4">
+    <div className="min-h-screen bg-[#080808] text-white flex items-center justify-center p-4 relative overflow-hidden">
+      <div className="absolute w-80 h-80 rounded-full bg-[#FF6A00]/10 blur-[100px] pointer-events-none" />
+
+      <div className="bg-[#141414] rounded-3xl p-6 max-w-sm w-full border border-white/8 shadow-2xl text-center space-y-4 relative z-10">
         {/* Brand Icon */}
-        <div className="w-14 h-14 rounded-2xl bg-orange-600 mx-auto flex items-center justify-center text-white shadow-md shadow-orange-600/20">
-          <UtensilsCrossed className="w-7 h-7" />
+        <div className="flex justify-center">
+          <QbiteLogo size="lg" />
         </div>
 
         <div>
-          <h1 className="text-xl font-extrabold text-stone-900 tracking-tight">
-            QBite · SVCE Cafe
+          <h1 className="text-xl font-black text-white tracking-tight">
+            Secure Authentication Gateway
           </h1>
-          <p className="text-xs text-stone-500 mt-1">
-            Secure Google Sign-In Gateway
+          <p className="text-xs text-[#A1A1A1] mt-1">
+            Connect with your official Google account
           </p>
         </div>
 
         {error && (
-          <div className="p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-2 text-left">
-            <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+          <div className="p-3 rounded-2xl bg-[#1C1111] border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2 text-left">
+            <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
             <p className="flex-1 text-[11px] leading-tight">{error}</p>
           </div>
         )}
 
         {successUser ? (
-          <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex flex-col items-center gap-2">
-            <CheckCircle2 className="w-8 h-8 text-emerald-600 animate-bounce" />
-            <p className="font-bold text-sm text-emerald-950">
+          <div className="p-4 rounded-2xl bg-[#0F291E] border border-emerald-500/30 text-emerald-300 text-xs flex flex-col items-center gap-2">
+            <CheckCircle2 className="w-8 h-8 text-emerald-400 animate-bounce" />
+            <p className="font-bold text-sm text-white">
               Welcome, {successUser.name}!
             </p>
-            <p className="text-[11px] text-emerald-700">
-              Redirecting you to the cafe...
+            <p className="text-[11px] text-emerald-400">
+              Returning you to the cafe...
             </p>
           </div>
         ) : (
@@ -180,12 +181,12 @@ export const AuthBridgePage: React.FC = () => {
             <button
               onClick={handleSignIn}
               disabled={isSigningIn}
-              className="w-full py-3.5 px-4 rounded-2xl bg-white hover:bg-stone-50 text-stone-800 font-extrabold text-sm border-2 border-stone-200 hover:border-orange-500 shadow-xs flex items-center justify-center gap-3 cursor-pointer transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed group"
+              className="w-full py-3.5 px-4 rounded-2xl bg-[#1C1C1C] hover:bg-[#252525] text-white font-black text-sm border border-white/10 hover:border-[#FF6A00]/50 shadow-md flex items-center justify-center gap-3 cursor-pointer transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed group"
             >
               {isSigningIn ? (
                 <>
-                  <span className="w-4 h-4 border-2 border-orange-600 border-t-transparent rounded-full animate-spin" />
-                  <span className="text-stone-700">Connecting to Google...</span>
+                  <span className="w-4 h-4 border-2 border-[#FF6A00] border-t-transparent rounded-full animate-spin" />
+                  <span className="text-stone-300">Connecting to Google...</span>
                 </>
               ) : (
                 <>
@@ -200,14 +201,14 @@ export const AuthBridgePage: React.FC = () => {
               )}
             </button>
 
-            <p className="text-[11px] text-stone-400">
+            <p className="text-[11px] text-[#737373]">
               {statusMessage}
             </p>
           </div>
         )}
 
-        <div className="pt-2 border-t border-stone-100 flex items-center justify-center gap-1.5 text-[11px] text-stone-400">
-          <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+        <div className="pt-2 border-t border-white/8 flex items-center justify-center gap-1.5 text-[11px] text-[#A1A1A1]">
+          <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
           <span>Official SVCE Cafe Authentication</span>
         </div>
       </div>

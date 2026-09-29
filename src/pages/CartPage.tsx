@@ -7,7 +7,8 @@ import {
   ArrowRight,
   UtensilsCrossed,
   MapPin,
-  Clock
+  Clock,
+  Sparkles
 } from 'lucide-react';
 import { useCanteen } from '../context/CanteenContext';
 
@@ -35,21 +36,21 @@ export const CartPage: React.FC<CartPageProps> = ({
 
   if (cart.length === 0) {
     return (
-      <div className="pb-24 pt-12 px-6 max-w-md mx-auto text-center">
-        <div className="w-20 h-20 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center mx-auto mb-4">
+      <div className="pb-24 pt-16 px-6 max-w-md mx-auto text-center">
+        <div className="w-20 h-20 rounded-3xl bg-[#141414] border border-white/8 text-[#FF6A00] flex items-center justify-center mx-auto mb-5 shadow-2xl glow-orange-sm">
           <ShoppingBag className="w-10 h-10" />
         </div>
-        <h2 className="text-xl font-extrabold text-stone-900">
-          Your tray is empty
+        <h2 className="text-2xl font-black text-white tracking-tight">
+          Your queue starts here.
         </h2>
-        <p className="text-xs text-stone-500 mt-1 max-w-xs mx-auto leading-relaxed">
-          Looks like you haven't added any snacks or meals yet. Check out today's fresh campus specials!
+        <p className="text-xs text-[#A1A1A1] mt-2 max-w-xs mx-auto leading-relaxed">
+          Add something delicious from today's fresh campus kitchen menu.
         </p>
         <button
           onClick={onBrowseMenu}
-          className="mt-6 py-3.5 px-6 rounded-2xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-sm shadow-md shadow-orange-600/20 inline-flex items-center gap-2 cursor-pointer active:scale-95"
+          className="mt-6 py-3.5 px-6 rounded-2xl bg-[#FF6A00] hover:bg-[#FF7A00] text-black font-black text-xs shadow-lg glow-orange-sm inline-flex items-center gap-2 cursor-pointer transition-all active:scale-95"
         >
-          <UtensilsCrossed className="w-4 h-4" />
+          <UtensilsCrossed className="w-4 h-4 stroke-[2.5]" />
           <span>BROWSE CANTEEN MENU</span>
         </button>
       </div>
@@ -57,30 +58,30 @@ export const CartPage: React.FC<CartPageProps> = ({
   }
 
   return (
-    <div className="pb-32 pt-3 px-4 max-w-md mx-auto space-y-4">
+    <div className="pb-36 pt-3 px-4 max-w-md mx-auto space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-extrabold text-stone-900 tracking-tight">
+          <h2 className="text-xl font-black text-white tracking-tight">
             Order Tray
           </h2>
-          <p className="text-xs text-stone-500">
+          <p className="text-xs text-[#A1A1A1]">
             {cart.length} {cart.length === 1 ? 'item' : 'items'} ready for counter pickup
           </p>
         </div>
         <button
           onClick={clearCart}
-          className="text-xs font-bold text-stone-400 hover:text-rose-600 cursor-pointer flex items-center gap-1"
+          className="text-xs font-bold text-[#A1A1A1] hover:text-rose-400 cursor-pointer flex items-center gap-1 transition-colors"
         >
           <Trash2 className="w-3.5 h-3.5" />
-          <span>Clear</span>
+          <span>Clear All</span>
         </button>
       </div>
 
       {/* Canteen Status Warning */}
       {(isCanteenClosed || isCanteenPaused) && (
-        <div className="bg-amber-50 border border-amber-300 rounded-2xl p-3 text-xs text-amber-900 flex items-center gap-2">
-          <Clock className="w-4 h-4 text-amber-600 shrink-0" />
+        <div className="bg-[#1C170E] border border-amber-500/30 rounded-2xl p-3.5 text-xs text-amber-300 flex items-center gap-2.5">
+          <Clock className="w-4 h-4 text-amber-500 shrink-0" />
           <span>
             {isCanteenClosed
               ? 'Canteen is currently closed. Orders cannot be submitted.'
@@ -90,37 +91,34 @@ export const CartPage: React.FC<CartPageProps> = ({
       )}
 
       {/* Cart Items List */}
-      <div className="bg-white rounded-2xl p-4 border border-stone-100 shadow-sm divide-y divide-stone-100">
+      <div className="bg-[#141414] rounded-3xl p-4 border border-white/8 shadow-xl divide-y divide-white/8">
         {cart.map((item) => (
-          <div key={item.foodId} className="py-3 first:pt-0 last:pb-0 flex items-center justify-between gap-3">
-            <div className="flex-1">
-              <div className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 shrink-0" />
-                <h4 className="font-bold text-sm text-stone-900 leading-tight">
-                  {item.name}
-                </h4>
-              </div>
-              <p className="text-xs font-mono-token text-stone-500 mt-1 pl-4.5">
-                ₹{item.price} each · <strong className="text-stone-800">₹{item.price * item.quantity}</strong>
+          <div key={item.foodId} className="py-3.5 first:pt-0 last:pb-0 flex items-center justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <h4 className="font-black text-sm text-white leading-tight truncate">
+                {item.name}
+              </h4>
+              <p className="text-xs font-mono-token text-[#A1A1A1] mt-1">
+                ₹{item.price} each · <strong className="text-white font-black">₹{item.price * item.quantity}</strong>
               </p>
             </div>
 
             {/* Stepper */}
-            <div className="flex items-center gap-2 bg-stone-50 border border-stone-200 rounded-xl p-1">
+            <div className="flex items-center gap-1.5 bg-[#1C1C1C] border border-white/10 rounded-xl p-1 shrink-0">
               <button
                 onClick={() => updateCartQuantity(item.foodId, item.quantity - 1)}
-                className="w-7 h-7 rounded-lg bg-white text-stone-700 font-bold shadow-xs flex items-center justify-center cursor-pointer active:scale-95"
+                className="w-6 h-6 rounded-lg bg-[#262626] text-stone-200 font-bold flex items-center justify-center cursor-pointer active:scale-95 hover:bg-[#333333] transition-colors"
               >
                 <Minus className="w-3 h-3" />
               </button>
-              <span className="text-sm font-bold text-stone-900 px-1 min-w-[18px] text-center font-mono-token">
+              <span className="text-xs font-mono-token font-bold text-white px-1.5 min-w-[16px] text-center">
                 {item.quantity}
               </span>
               <button
                 onClick={() => updateCartQuantity(item.foodId, item.quantity + 1)}
-                className="w-7 h-7 rounded-lg bg-orange-600 text-white font-bold shadow-xs flex items-center justify-center cursor-pointer active:scale-95"
+                className="w-6 h-6 rounded-lg bg-[#FF6A00] text-black font-bold flex items-center justify-center cursor-pointer active:scale-95 glow-orange-sm transition-colors"
               >
-                <Plus className="w-3 h-3" />
+                <Plus className="w-3 h-3 stroke-[2.5]" />
               </button>
             </div>
           </div>
@@ -128,50 +126,50 @@ export const CartPage: React.FC<CartPageProps> = ({
       </div>
 
       {/* Pickup Location Info */}
-      <div className="bg-white rounded-2xl p-4 border border-stone-100 shadow-sm space-y-1.5">
-        <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-stone-400">
-          <MapPin className="w-3.5 h-3.5 text-orange-600" />
+      <div className="bg-[#141414] rounded-3xl p-4 border border-white/8 shadow-sm space-y-1">
+        <div className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wider text-[#A1A1A1]">
+          <MapPin className="w-3.5 h-3.5 text-[#FF6A00]" />
           <span>Pickup Location</span>
         </div>
-        <p className="text-xs font-bold text-stone-800">
+        <p className="text-xs font-black text-white">
           SVCE Central Canteen · Ground Floor Counters 1 & 2
         </p>
-        <p className="text-[11px] text-stone-500">
+        <p className="text-[11px] text-[#737373]">
           Show your live token on your phone when order status turns READY.
         </p>
       </div>
 
       {/* Bill Breakdown */}
-      <div className="bg-white rounded-2xl p-4 border border-stone-100 shadow-sm space-y-2 text-xs">
-        <div className="flex justify-between text-stone-500">
-          <span>Items Total</span>
-          <span className="font-mono-token font-bold text-stone-900">₹{cartSubtotal}</span>
+      <div className="bg-[#141414] rounded-3xl p-4 border border-white/8 shadow-sm space-y-2 text-xs">
+        <div className="flex justify-between text-[#A1A1A1]">
+          <span>Subtotal</span>
+          <span className="font-mono-token font-bold text-white">₹{cartSubtotal}</span>
         </div>
-        <div className="flex justify-between text-stone-500">
-          <span>Payment Mode</span>
-          <span className="font-bold text-orange-700">Pay at Counter on Pickup</span>
+        <div className="flex justify-between text-[#A1A1A1]">
+          <span>Pickup Method</span>
+          <span className="font-bold text-[#FF7A00]">Counter Pickup</span>
         </div>
-        <div className="pt-2 border-t border-stone-100 flex justify-between text-base font-extrabold text-stone-900">
+        <div className="pt-2 border-t border-white/8 flex justify-between text-base font-black text-white">
           <span>To Pay</span>
-          <span className="font-mono-token text-orange-600">₹{cartTotal}</span>
+          <span className="font-mono-token text-[#FF6A00]">₹{cartTotal}</span>
         </div>
       </div>
 
       {/* Bottom Sticky Checkout Button */}
-      <div className="fixed bottom-16 left-0 right-0 p-4 bg-white/95 backdrop-blur-md border-t border-stone-200/80 max-w-md mx-auto z-30">
+      <div className="fixed bottom-16 left-0 right-0 p-4 bg-[#080808]/90 backdrop-blur-xl border-t border-white/8 max-w-md mx-auto z-30">
         <button
           onClick={onProceedToCheckout}
           disabled={isCanteenClosed || isCanteenPaused}
-          className="w-full py-3.5 px-5 bg-orange-600 hover:bg-orange-700 text-white font-extrabold text-sm rounded-2xl shadow-lg shadow-orange-600/25 flex items-center justify-between cursor-pointer transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full py-3.5 px-5 bg-[#FF6A00] hover:bg-[#FF7A00] text-black font-black text-sm rounded-2xl shadow-xl glow-orange-sm flex items-center justify-between cursor-pointer transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <div className="text-left leading-tight">
-            <span className="text-[10px] uppercase font-bold text-orange-200 block">Total</span>
+            <span className="text-[10px] uppercase font-bold text-black/70 block">Total</span>
             <span className="font-mono-token text-base font-black">₹{cartTotal}</span>
           </div>
 
-          <div className="flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider">
+          <div className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider">
             <span>Proceed to Checkout</span>
-            <ArrowRight className="w-4 h-4" />
+            <ArrowRight className="w-4 h-4 stroke-[2.5]" />
           </div>
         </button>
       </div>

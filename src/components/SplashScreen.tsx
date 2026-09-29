@@ -1,32 +1,23 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { Clock, UtensilsCrossed, ArrowRight } from 'lucide-react';
+import React, { useEffect, useRef } from 'react';
+import { motion } from 'motion/react';
+import { ArrowRight } from 'lucide-react';
 
 interface SplashScreenProps {
   onComplete: () => void;
 }
 
 export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
-  const [step, setStep] = useState<number>(0);
   const onCompleteRef = useRef(onComplete);
   onCompleteRef.current = onComplete;
 
   useEffect(() => {
-    // Step 0: Initial Brand Display (0 - 700ms)
-    const t1 = setTimeout(() => setStep(1), 700);
-    // Step 1: "Be Smart. Leave the Queue." (700ms - 1700ms)
-    const t2 = setTimeout(() => setStep(2), 1600);
-    // Step 2: "Order ahead. Pick up faster." -> Complete after 2.8 seconds
-    const t3 = setTimeout(() => {
+    // Premium fast startup (1.35 seconds max)
+    const timer = setTimeout(() => {
       onCompleteRef.current();
-    }, 2800);
+    }, 1350);
 
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-      clearTimeout(t3);
-    };
-  }, []); // Empty dependency array ensures timer runs uninterrupted!
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleSkip = () => {
     onCompleteRef.current();
@@ -35,10 +26,10 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
   return (
     <motion.div
       initial={{ opacity: 1 }}
-      exit={{ opacity: 0, transition: { duration: 0.4, ease: 'easeInOut' } }}
+      exit={{ opacity: 0, transition: { duration: 0.35, ease: 'easeOut' } }}
       onClick={handleSkip}
-      className="fixed inset-0 z-50 flex flex-col items-center justify-between bg-stone-950 text-white select-none px-6 py-8 cursor-pointer"
-      title="Click or tap anywhere to continue"
+      className="fixed inset-0 z-50 flex flex-col items-center justify-between bg-[#050505] text-white select-none px-6 py-8 cursor-pointer overflow-hidden"
+      title="Tap anywhere to skip"
     >
       {/* Top right quick skip button */}
       <div className="w-full flex justify-end">
@@ -47,118 +38,91 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
             e.stopPropagation();
             handleSkip();
           }}
-          className="text-xs text-stone-400 hover:text-white font-medium flex items-center gap-1 bg-white/10 px-3 py-1.5 rounded-full backdrop-blur-xs cursor-pointer active:scale-95 transition-all"
+          className="text-xs text-stone-400 hover:text-white font-medium flex items-center gap-1 bg-white/5 border border-white/10 px-3 py-1.5 rounded-full cursor-pointer active:scale-95 transition-all"
         >
           <span>Skip</span>
           <ArrowRight className="w-3.5 h-3.5" />
         </button>
       </div>
 
-      {/* Background Ambient Warm Glow */}
-      <div className="absolute w-72 h-72 rounded-full bg-orange-600/20 blur-3xl pointer-events-none -top-10" />
-      <div className="absolute w-72 h-72 rounded-full bg-amber-500/10 blur-3xl pointer-events-none -bottom-10" />
+      {/* Atmospheric Orange Ambient Glow */}
+      <div className="absolute w-96 h-96 rounded-full bg-[#FF6A00]/15 blur-[100px] pointer-events-none -top-16" />
+      <div className="absolute w-72 h-72 rounded-full bg-[#FF9D2E]/10 blur-[80px] pointer-events-none -bottom-16" />
 
+      {/* Core Brand Revelation */}
       <div className="relative flex flex-col items-center text-center max-w-sm w-full my-auto">
-        {/* Animated Brand Emblem */}
         <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
+          initial={{ scale: 0.75, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.6, ease: 'easeOut' }}
-          className="relative mb-6"
+          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+          className="relative mb-5"
         >
-          <div className="w-20 h-20 rounded-2xl bg-gradient-to-tr from-orange-600 via-orange-500 to-amber-500 p-0.5 shadow-2xl shadow-orange-500/30 flex items-center justify-center">
-            <div className="w-full h-full bg-stone-900 rounded-[14px] flex items-center justify-center relative overflow-hidden">
-              {/* Rotating token countdown ring */}
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ repeat: Infinity, duration: 4, ease: 'linear' }}
-                className="absolute inset-1 rounded-full border border-dashed border-orange-500/40"
+          {/* Logo container with dark glass surface & orange glow */}
+          <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-[#1E1E1E] to-[#0A0A0A] p-0.5 border border-white/15 shadow-2xl glow-orange-lg flex items-center justify-center relative overflow-hidden">
+            {/* Subtle rotating glow ring */}
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ repeat: Infinity, duration: 3, ease: 'linear' }}
+              className="absolute inset-1 rounded-full border border-dashed border-[#FF6A00]/40"
+            />
+
+            {/* Custom SVG mark: Geometric "q" formed with a token ring & bite cutout */}
+            <svg
+              viewBox="0 0 32 32"
+              className="w-12 h-12 relative z-10"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M16 6C10.477 6 6 10.477 6 16C6 21.523 10.477 26 16 26C18.2 26 20.22 25.29 21.87 24.1L24.5 26.5C24.8 26.8 25.3 26.6 25.3 26.2V15C25.3 10.03 21.14 6 16 6ZM16 22C12.686 22 10 19.314 10 16C10 12.686 12.686 10 16 10C19.314 10 22 12.686 22 16C22 19.314 19.314 22 16 22Z"
+                fill="#FFFFFF"
               />
-              <div className="flex items-center gap-1 text-orange-400">
-                <UtensilsCrossed className="w-7 h-7 text-white" />
-              </div>
-            </div>
+              <circle cx="16" cy="16" r="3.2" fill="#FF6A00" />
+              <circle cx="21" cy="11" r="1.5" fill="#FF9D2E" />
+            </svg>
           </div>
-          {/* Subtle token pulse badge */}
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.3, type: 'spring' }}
-            className="absolute -bottom-2 -right-2 bg-amber-400 text-stone-950 text-[10px] font-mono-token font-bold px-1.5 py-0.5 rounded-full shadow-md flex items-center gap-0.5"
-          >
-            <Clock className="w-2.5 h-2.5" />
-            #047
-          </motion.div>
         </motion.div>
 
-        {/* Primary App Name */}
-        <motion.h1
-          initial={{ opacity: 0, y: 10 }}
+        {/* Brand Name */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.15 }}
-          className="text-4xl font-extrabold tracking-tight text-white flex items-center gap-2"
+          transition={{ duration: 0.4, delay: 0.15 }}
+          className="space-y-1"
         >
-          <span>QBite</span>
-        </motion.h1>
+          <h1 className="text-4xl font-black tracking-tight text-white">
+            q<span className="text-[#FF6A00]">Bite</span>
+          </h1>
+          <p className="text-[11px] uppercase tracking-[0.25em] text-[#A1A1A1] font-bold">
+            SVCE Cafe
+          </p>
+        </motion.div>
 
-        {/* Secondary Brand Location */}
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
+        {/* Tagline */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.3 }}
-          className="text-xs uppercase tracking-[0.25em] text-orange-400 font-semibold mt-1"
+          className="mt-4"
         >
-          SVCE Cafe
-        </motion.p>
+          <p className="text-sm font-bold text-stone-200">
+            Order Smart. <span className="text-[#FF7A00]">Skip the Queue.</span>
+          </p>
+        </motion.div>
 
-        {/* Sequential Tagline Transitions */}
-        <div className="h-16 flex flex-col items-center justify-center mt-6">
-          <AnimatePresence mode="wait">
-            {step === 1 && (
-              <motion.div
-                key="step1"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.3 }}
-                className="text-center"
-              >
-                <p className="text-lg font-bold text-stone-100">
-                  Be Smart. <span className="text-orange-400">Leave the Queue.</span>
-                </p>
-              </motion.div>
-            )}
-
-            {step >= 2 && (
-              <motion.div
-                key="step2"
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.3 }}
-                className="text-center"
-              >
-                <p className="text-base font-medium text-stone-300">
-                  Order ahead. <span className="text-amber-300 font-semibold">Pick up faster.</span>
-                </p>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        {/* Startup Loading Bar */}
-        <div className="w-36 h-1 bg-stone-800 rounded-full mt-4 overflow-hidden">
+        {/* Fast Smooth Progress Bar */}
+        <div className="w-32 h-1 bg-white/10 rounded-full mt-6 overflow-hidden">
           <motion.div
             initial={{ width: '0%' }}
             animate={{ width: '100%' }}
-            transition={{ duration: 2.5, ease: 'easeInOut' }}
-            className="h-full bg-gradient-to-r from-orange-500 to-amber-400 rounded-full"
+            transition={{ duration: 1.25, ease: 'easeInOut' }}
+            className="h-full bg-gradient-to-r from-[#FF6A00] to-[#FF9D2E] rounded-full glow-orange-sm"
           />
         </div>
       </div>
 
-      {/* Tap anywhere hint */}
-      <div className="text-stone-500 text-[11px] font-medium text-center">
+      {/* Tap hint */}
+      <div className="text-stone-600 text-[11px] font-medium text-center">
         Tap anywhere to enter
       </div>
     </motion.div>

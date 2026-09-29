@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
-  UtensilsCrossed,
   Sparkles,
   AlertCircle,
   ShieldCheck,
@@ -12,6 +11,7 @@ import {
   Smartphone
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { QbiteLogo } from '../components/QbiteLogo';
 
 interface WelcomePageProps {
   onLoginSuccess: () => void;
@@ -22,7 +22,7 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({
   onLoginSuccess,
   onNavigateToDisplay
 }) => {
-  const { loginWithGoogle, authError, clearAuthError } = useAuth();
+  const { loginWithGoogle, loginWithDemoAccount, authError, clearAuthError } = useAuth();
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
@@ -50,76 +50,84 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({
     }
   };
 
+  const handleDemoSignIn = async (demoRole: 'admin' | 'staff' | 'student') => {
+    setIsSigningIn(true);
+    setLocalError(null);
+    clearAuthError();
+
+    try {
+      await loginWithDemoAccount(demoRole);
+      onLoginSuccess();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Demo sign-in failed.';
+      setLocalError(msg);
+    } finally {
+      setIsSigningIn(false);
+    }
+  };
+
   const displayedError = localError || authError;
 
   return (
-    <div className="min-h-screen bg-stone-50 flex flex-col justify-between p-5 max-w-md mx-auto selection:bg-orange-100">
+    <div className="min-h-screen bg-[#080808] text-white flex flex-col justify-between p-5 max-w-md mx-auto selection:bg-[#FF6A00] selection:text-black relative overflow-hidden">
+      {/* Ambient Orange Glow */}
+      <div className="absolute w-96 h-96 rounded-full bg-[#FF6A00]/10 blur-[120px] pointer-events-none -top-20 -right-20" />
+      <div className="absolute w-80 h-80 rounded-full bg-[#FF9D2E]/8 blur-[100px] pointer-events-none -bottom-20 -left-20" />
+
       {/* Top Header Branding */}
-      <div className="flex items-center justify-between pt-1">
-        <div className="flex items-center gap-2">
-          <div className="w-9 h-9 rounded-xl bg-orange-600 flex items-center justify-center text-white shadow-xs">
-            <UtensilsCrossed className="w-5 h-5" />
-          </div>
-          <div>
-            <span className="font-extrabold text-base tracking-tight text-stone-900 block leading-tight">
-              QBite
-            </span>
-            <span className="text-[10px] text-stone-400 font-semibold leading-none">
-              SVCE Cafe
-            </span>
-          </div>
-        </div>
+      <div className="flex items-center justify-between pt-1 relative z-10">
+        <QbiteLogo size="md" />
 
         {onNavigateToDisplay && (
           <button
             onClick={onNavigateToDisplay}
             title="Open Live Canteen TV Display"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-stone-200 text-[11px] font-bold text-stone-700 hover:bg-stone-50 cursor-pointer shadow-2xs transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#141414] hover:bg-[#1E1E1E] border border-white/8 text-[11px] font-bold text-stone-300 hover:text-white cursor-pointer shadow-md transition-colors"
           >
-            <Monitor className="w-3.5 h-3.5 text-stone-500" />
+            <Monitor className="w-3.5 h-3.5 text-[#FF6A00]" />
             <span>TV Display</span>
           </button>
         )}
       </div>
 
       {/* Main Content Area */}
-      <div className="my-auto py-3">
+      <div className="my-auto py-4 relative z-10">
         {/* Visual Hero Illustration */}
-        <div className="relative w-52 h-52 mx-auto mb-4">
-          <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-orange-500/20 to-amber-400/20 blur-2xl" />
-          <div className="relative w-full h-full rounded-3xl overflow-hidden shadow-xl border-4 border-white bg-stone-100">
+        <div className="relative w-56 h-56 mx-auto mb-4">
+          <div className="absolute inset-0 rounded-3xl bg-gradient-to-tr from-[#FF6A00]/25 to-[#FF9D2E]/10 blur-xl" />
+          <div className="relative w-full h-full rounded-3xl overflow-hidden shadow-2xl border border-white/10 bg-[#121212]">
             <img
               src="https://images.unsplash.com/photo-1668236543090-82eba5ee5976?auto=format&fit=crop&w=600&q=80"
               alt="SVCE Cafe Hot Meals"
               className="w-full h-full object-cover"
             />
             {/* Floating Token Tag */}
-            <div className="absolute bottom-3 left-3 right-3 bg-stone-900/90 backdrop-blur-md rounded-xl p-2.5 text-white flex items-center justify-between shadow-lg">
-              <div className="flex items-center gap-2 text-left">
-                <div className="w-7 h-7 rounded-lg bg-orange-600 flex items-center justify-center font-mono-token font-bold text-xs shadow-xs">
+            <div className="absolute bottom-3 left-3 right-3 bg-[#0A0A0A]/90 backdrop-blur-md rounded-2xl p-2.5 text-white flex items-center justify-between border border-white/10 shadow-xl">
+              <div className="flex items-center gap-2.5 text-left">
+                <div className="w-7 h-7 rounded-xl bg-[#FF6A00] flex items-center justify-center font-mono-token font-black text-xs text-black shadow-md glow-orange-sm">
                   #047
                 </div>
                 <div>
-                  <p className="text-[10px] text-stone-400 leading-tight">Order Smart</p>
-                  <p className="text-xs font-bold text-amber-300 leading-tight">Skip the Queue</p>
+                  <p className="text-[10px] text-[#A1A1A1] leading-tight font-bold uppercase tracking-wider">Live Token</p>
+                  <p className="text-xs font-black text-white leading-tight">Ready at Counter 1</p>
                 </div>
               </div>
-              <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
+              <Sparkles className="w-4 h-4 text-[#FF9D2E] shrink-0" />
             </div>
           </div>
         </div>
 
         {/* Branding Typography */}
         <div className="text-center space-y-1 mb-5">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-orange-50 border border-orange-200/80 text-orange-700 text-[11px] font-bold uppercase tracking-wider mb-1">
-            <Zap className="w-3 h-3 text-orange-600" />
-            <span>Official SVCE Campus Canteen</span>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#181818] border border-[#FF6A00]/30 text-[#FF7A00] text-[10px] font-black uppercase tracking-wider mb-1">
+            <Zap className="w-3 h-3 text-[#FF6A00]" />
+            <span>Sri Venkateswara College of Engineering</span>
           </div>
-          <h1 className="text-2xl font-extrabold text-stone-950 tracking-tight leading-tight">
-            Order Smart. Skip the Queue.
+          <h1 className="text-2xl font-black text-white tracking-tight leading-tight">
+            Order Smart. <span className="text-[#FF7A00]">Skip the Queue.</span>
           </h1>
-          <p className="text-xs text-stone-500 max-w-xs mx-auto leading-relaxed pt-1">
-            Order your food before reaching the canteen. Track your token live and pick up with zero waiting.
+          <p className="text-xs text-[#A1A1A1] max-w-xs mx-auto leading-relaxed pt-1">
+            Order food from campus before reaching the cafe. Track your live token and pick up fresh hot meals with zero waiting.
           </p>
         </div>
 
@@ -130,11 +138,11 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({
               initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
-              className="mb-4 p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs shadow-xs flex items-start gap-2.5"
+              className="mb-4 p-3.5 rounded-2xl bg-[#1C1111] border border-rose-500/30 text-rose-300 text-xs shadow-md flex items-start gap-2.5"
             >
-              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+              <AlertCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
               <div className="flex-1">
-                <p className="font-bold text-[11px] text-rose-900">Sign-In Notice</p>
+                <p className="font-bold text-[11px] text-white">Sign-In Notice</p>
                 <p className="text-[11px] leading-relaxed mt-0.5 opacity-90">{displayedError}</p>
               </div>
               <button
@@ -142,7 +150,7 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({
                   setLocalError(null);
                   clearAuthError();
                 }}
-                className="text-stone-400 hover:text-stone-700 cursor-pointer p-0.5"
+                className="text-stone-400 hover:text-white cursor-pointer p-0.5"
                 aria-label="Dismiss alert"
               >
                 <X className="w-3.5 h-3.5" />
@@ -152,12 +160,12 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({
         </AnimatePresence>
 
         {/* Google Authentication Box */}
-        <div className="bg-white rounded-3xl p-5 border border-stone-200 shadow-sm space-y-3.5">
+        <div className="bg-[#141414] rounded-3xl p-5 border border-white/8 shadow-2xl space-y-3.5">
           <div className="text-center space-y-0.5">
-            <h2 className="text-base font-extrabold text-stone-900">
-              Sign In to SVCE Cafe
+            <h2 className="text-base font-black text-white">
+              Sign In to qBite
             </h2>
-            <p className="text-[11px] text-stone-500">
+            <p className="text-[11px] text-[#A1A1A1]">
               Authenticate with your Google account to place and track orders
             </p>
           </div>
@@ -166,12 +174,12 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({
           <button
             onClick={() => handleGoogleSignIn(false)}
             disabled={isSigningIn || isRedirecting}
-            className="w-full py-3.5 px-4 rounded-2xl bg-white hover:bg-stone-50 text-stone-800 font-extrabold text-sm border-2 border-stone-200 hover:border-orange-500 shadow-xs flex items-center justify-center gap-3 cursor-pointer transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed group"
+            className="w-full py-3.5 px-4 rounded-2xl bg-[#1C1C1C] hover:bg-[#252525] text-white font-black text-sm border border-white/10 hover:border-[#FF6A00]/50 shadow-md flex items-center justify-center gap-3 cursor-pointer transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed group"
           >
             {isSigningIn ? (
               <>
-                <span className="w-4 h-4 border-2 border-orange-600 border-t-transparent rounded-full animate-spin" />
-                <span className="text-stone-700">Connecting to Google...</span>
+                <span className="w-4 h-4 border-2 border-[#FF6A00] border-t-transparent rounded-full animate-spin" />
+                <span className="text-stone-300">Connecting to Google...</span>
               </>
             ) : (
               <>
@@ -194,7 +202,7 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({
                     d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
                   />
                 </svg>
-                <span className="tracking-tight text-stone-900 font-bold">
+                <span className="tracking-tight text-white font-bold">
                   Continue with Google
                 </span>
               </>
@@ -205,12 +213,12 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({
           <button
             onClick={() => handleGoogleSignIn(true)}
             disabled={isSigningIn || isRedirecting}
-            className="w-full py-1.5 px-3 rounded-xl text-stone-400 hover:text-stone-700 text-[11px] font-medium flex items-center justify-center gap-1.5 cursor-pointer transition-colors disabled:opacity-50"
+            className="w-full py-1.5 px-3 rounded-xl text-[#737373] hover:text-[#A1A1A1] text-[11px] font-medium flex items-center justify-center gap-1.5 cursor-pointer transition-colors disabled:opacity-50"
           >
             {isRedirecting ? (
               <>
-                <span className="w-3 h-3 border-2 border-stone-500 border-t-transparent rounded-full animate-spin" />
-                <span>Opening Google Gateway...</span>
+                <span className="w-3 h-3 border-2 border-[#FF6A00] border-t-transparent rounded-full animate-spin" />
+                <span className="text-[#FF7A00]">Opening Google Gateway...</span>
               </>
             ) : (
               <>
@@ -220,24 +228,58 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({
             )}
           </button>
 
+          {/* Instant Campus Preview Access */}
+          <div className="pt-2.5 border-t border-white/8 space-y-1.5">
+            <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-wider text-[#A1A1A1]">
+              <span>Instant Test Access</span>
+              <span className="text-[#FF7A00]">1-Tap Demo</span>
+            </div>
+            <div className="grid grid-cols-3 gap-1.5">
+              <button
+                type="button"
+                onClick={() => handleDemoSignIn('admin')}
+                disabled={isSigningIn}
+                className="py-2 px-1 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 text-[11px] font-black text-purple-300 text-center cursor-pointer transition-colors disabled:opacity-50"
+              >
+                Admin (Manoj)
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDemoSignIn('staff')}
+                disabled={isSigningIn}
+                className="py-2 px-1 rounded-xl bg-[#FF6A00]/10 hover:bg-[#FF6A00]/20 border border-[#FF6A00]/30 text-[11px] font-black text-[#FF7A00] text-center cursor-pointer transition-colors disabled:opacity-50"
+              >
+                Kitchen Staff
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDemoSignIn('student')}
+                disabled={isSigningIn}
+                className="py-2 px-1 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-[11px] font-black text-stone-200 text-center cursor-pointer transition-colors disabled:opacity-50"
+              >
+                Student
+              </button>
+            </div>
+          </div>
+
           {/* Privacy & Trust Highlights */}
-          <div className="grid grid-cols-2 gap-2 pt-2 border-t border-stone-100 text-[11px] text-stone-600">
+          <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/8 text-[11px] text-[#A1A1A1]">
             <div className="flex items-center gap-1.5">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-              <span>Firebase Verified</span>
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+              <span>Firebase Auth</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5 text-orange-600 shrink-0" />
-              <span>Live Token Queue</span>
+              <Clock className="w-3.5 h-3.5 text-[#FF6A00] shrink-0" />
+              <span>Realtime Tokens</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* Footer Info */}
-      <div className="text-center pt-2 border-t border-stone-200/60">
-        <p className="text-[11px] text-stone-400">
-          QBite for Sri Venkateswara College of Engineering (SVCE) · Bengaluru
+      <div className="text-center pt-2 border-t border-white/8 relative z-10">
+        <p className="text-[11px] text-[#737373]">
+          qBite for Sri Venkateswara College of Engineering · Bengaluru
         </p>
       </div>
     </div>

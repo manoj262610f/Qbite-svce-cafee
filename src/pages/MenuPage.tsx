@@ -1,45 +1,73 @@
 import React, { useState } from 'react';
-import { Search, SlidersHorizontal, Check } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import {
+  Search,
+  Filter,
+  Check,
+  X,
+  Clock,
+  Star,
+  Plus,
+  Minus,
+  Sparkles,
+  ShoppingBag,
+  SlidersHorizontal
+} from 'lucide-react';
 import { useCanteen } from '../context/CanteenContext';
 import { FoodCard } from '../components/FoodCard';
+import { FoodItem } from '../types';
 
 export const MenuPage: React.FC = () => {
-  const { foods, categories } = useCanteen();
+  const { foods, categories, addToCart, cart, updateCartQuantity } = useCanteen();
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [onlyVeg, setOnlyVeg] = useState<boolean>(false);
+  const [onlyAvailable, setOnlyAvailable] = useState<boolean>(false);
+  const [selectedFood, setSelectedFood] = useState<FoodItem | null>(null);
 
   const filteredFoods = foods.filter((food) => {
     const matchesCategory = selectedCategory === 'All' || food.category === selectedCategory;
     const matchesVeg = !onlyVeg || food.isVeg;
+    const matchesAvailable = !onlyAvailable || food.isAvailable;
     const matchesSearch =
       food.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       food.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
       food.category.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesVeg && matchesSearch;
+    return matchesCategory && matchesVeg && matchesAvailable && matchesSearch;
   });
+
+  const cartItemForDetail = selectedFood ? cart.find((i) => i.foodId === selectedFood.id) : null;
 
   return (
     <div className="pb-24 pt-3 px-4 max-w-md mx-auto space-y-4">
+      {/* Header */}
       <div>
-        <h2 className="text-xl font-extrabold text-stone-900 tracking-tight">
-          SVCE Cafe Menu
+        <h2 className="text-xl font-black text-white tracking-tight">
+          Today's Menu
         </h2>
-        <p className="text-xs text-stone-500 mt-0.5">
-          Browse all {foods.length} items freshly cooked at the college canteen
+        <p className="text-xs text-[#A1A1A1] mt-0.5">
+          Fresh. Fast. Ready when you are. ({foods.length} items)
         </p>
       </div>
 
-      {/* Search Input */}
+      {/* Search Input Bar */}
       <div className="relative">
-        <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+        <Search className="w-4 h-4 text-stone-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
         <input
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search dosas, snacks, meals, drinks..."
-          className="w-full pl-10 pr-4 py-3 bg-white border border-stone-200 rounded-2xl text-xs font-medium text-stone-900 placeholder:text-stone-400 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 shadow-xs"
+          className="w-full pl-10 pr-4 py-3 bg-[#141414] border border-white/8 rounded-2xl text-xs font-medium text-white placeholder:text-stone-500 focus:outline-none focus:border-[#FF6A00]/60 focus:ring-1 focus:ring-[#FF6A00]/30 shadow-inner"
         />
+        {searchQuery && (
+          <button
+            onClick={() => setSearchQuery('')}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-stone-400 hover:text-white cursor-pointer"
+          >
+            Clear
+          </button>
+        )}
       </div>
 
       {/* Categories Horizontal Scroll */}
@@ -50,10 +78,10 @@ export const MenuPage: React.FC = () => {
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
-              className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap cursor-pointer transition-all active:scale-95 ${
+              className={`px-3.5 py-2 rounded-xl text-xs font-black whitespace-nowrap cursor-pointer transition-all active:scale-95 ${
                 isSelected
-                  ? 'bg-stone-900 text-white shadow-xs'
-                  : 'bg-white text-stone-600 border border-stone-200 hover:bg-stone-100'
+                  ? 'bg-[#FF6A00] text-black shadow-md glow-orange-sm'
+                  : 'bg-[#141414] text-[#A1A1A1] hover:text-white border border-white/8 hover:bg-[#1C1C1C]'
               }`}
             >
               {cat}
@@ -62,28 +90,186 @@ export const MenuPage: React.FC = () => {
         })}
       </div>
 
-      {/* Count & Veg toggle */}
-      <div className="flex items-center justify-between text-xs text-stone-500 pt-1">
-        <span>Showing <strong>{filteredFoods.length}</strong> items</span>
-        <button
-          onClick={() => setOnlyVeg(!onlyVeg)}
-          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-bold cursor-pointer transition-colors ${
-            onlyVeg ? 'bg-emerald-50 border-emerald-300 text-emerald-700' : 'bg-white border-stone-200 text-stone-600'
-          }`}
-        >
-          <span className="w-2.5 h-2.5 rounded-full border border-emerald-600 flex items-center justify-center">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
-          </span>
-          <span>Pure Veg</span>
-        </button>
+      {/* Filter Chips Bar */}
+      <div className="flex items-center justify-between text-xs text-[#A1A1A1] pt-0.5 flex-wrap gap-2">
+        <span className="font-mono-token text-[11px]">
+          Showing <strong>{filteredFoods.length}</strong> items
+        </span>
+
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={() => setOnlyVeg(!onlyVeg)}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-[11px] font-bold cursor-pointer transition-colors ${
+              onlyVeg
+                ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300'
+                : 'bg-[#141414] border-white/8 text-[#A1A1A1] hover:text-white'
+            }`}
+          >
+            <span className="w-2 h-2 rounded-full bg-emerald-400" />
+            <span>Pure Veg</span>
+          </button>
+
+          <button
+            onClick={() => setOnlyAvailable(!onlyAvailable)}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-[11px] font-bold cursor-pointer transition-colors ${
+              onlyAvailable
+                ? 'bg-[#FF6A00]/20 border-[#FF6A00]/50 text-[#FF7A00]'
+                : 'bg-[#141414] border-white/8 text-[#A1A1A1] hover:text-white'
+            }`}
+          >
+            <span>In Stock</span>
+          </button>
+        </div>
       </div>
 
       {/* Food Items Grid */}
       <div className="grid grid-cols-2 gap-3 pt-1">
         {filteredFoods.map((food) => (
-          <FoodCard key={food.id} food={food} />
+          <FoodCard
+            key={food.id}
+            food={food}
+            onSelect={(item) => setSelectedFood(item)}
+          />
         ))}
       </div>
+
+      {/* Food Detail Modal / Bottom Sheet */}
+      <AnimatePresence>
+        {selectedFood && (
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/80 backdrop-blur-md">
+            <motion.div
+              initial={{ y: '100%', opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: '100%', opacity: 0 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 280 }}
+              className="bg-[#141414] border-t sm:border border-white/10 rounded-t-3xl sm:rounded-3xl max-w-sm w-full overflow-hidden shadow-2xl relative"
+            >
+              {/* Close Button */}
+              <button
+                onClick={() => setSelectedFood(null)}
+                className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-white flex items-center justify-center cursor-pointer hover:bg-black/90 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+
+              {/* Large Image */}
+              <div className="relative w-full h-48 bg-[#1A1A1A]">
+                <img
+                  src={selectedFood.imageUrl}
+                  alt={selectedFood.name}
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#141414] via-transparent to-transparent" />
+                
+                {/* Veg / Non-veg Tag */}
+                <div className="absolute bottom-3 left-4 flex items-center gap-2">
+                  <span
+                    className={`w-4 h-4 border-2 rounded-xs flex items-center justify-center bg-black/80 ${
+                      selectedFood.isVeg ? 'border-emerald-500' : 'border-rose-500'
+                    }`}
+                  >
+                    <span
+                      className={`w-2 h-2 rounded-full ${
+                        selectedFood.isVeg ? 'bg-emerald-500' : 'bg-rose-500'
+                      }`}
+                    />
+                  </span>
+                  <span className="text-[11px] font-bold text-white uppercase tracking-wider bg-black/60 px-2 py-0.5 rounded-md backdrop-blur-xs">
+                    {selectedFood.category}
+                  </span>
+                </div>
+              </div>
+
+              {/* Details Content */}
+              <div className="p-5 space-y-4">
+                <div>
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 className="text-xl font-black text-white leading-tight">
+                      {selectedFood.name}
+                    </h3>
+                    <span className="text-xl font-black font-mono-token text-[#FF6A00]">
+                      ₹{selectedFood.price}
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#A1A1A1] mt-1.5 leading-relaxed">
+                    {selectedFood.description || 'Prepared fresh with high quality campus ingredients.'}
+                  </p>
+                </div>
+
+                {/* Metrics */}
+                <div className="grid grid-cols-2 gap-2 text-center text-xs">
+                  <div className="bg-[#1C1C1C] rounded-xl p-2.5 border border-white/5">
+                    <span className="text-[10px] text-[#A1A1A1] uppercase font-bold block mb-0.5">
+                      Prep Time
+                    </span>
+                    <span className="font-mono-token font-bold text-white flex items-center justify-center gap-1">
+                      <Clock className="w-3.5 h-3.5 text-[#FF7A00]" />
+                      ~{selectedFood.prepTimeMinutes} mins
+                    </span>
+                  </div>
+
+                  <div className="bg-[#1C1C1C] rounded-xl p-2.5 border border-white/5">
+                    <span className="text-[10px] text-[#A1A1A1] uppercase font-bold block mb-0.5">
+                      Availability
+                    </span>
+                    <span className={`font-bold ${selectedFood.isAvailable ? 'text-emerald-400' : 'text-rose-400'}`}>
+                      {selectedFood.isAvailable ? '● Fresh in Stock' : '○ Sold Out'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Add to Cart Actions */}
+                <div className="pt-2 border-t border-white/8">
+                  {selectedFood.isAvailable ? (
+                    cartItemForDetail ? (
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2 bg-[#1C1C1C] border border-white/10 rounded-2xl p-1.5">
+                          <button
+                            onClick={() => updateCartQuantity(selectedFood.id, cartItemForDetail.quantity - 1)}
+                            className="w-8 h-8 rounded-xl bg-[#262626] text-white flex items-center justify-center cursor-pointer active:scale-95"
+                          >
+                            <Minus className="w-4 h-4" />
+                          </button>
+                          <span className="text-base font-mono-token font-black text-white px-3">
+                            {cartItemForDetail.quantity}
+                          </span>
+                          <button
+                            onClick={() => updateCartQuantity(selectedFood.id, cartItemForDetail.quantity + 1)}
+                            className="w-8 h-8 rounded-xl bg-[#FF6A00] text-black font-black flex items-center justify-center cursor-pointer active:scale-95 glow-orange-sm"
+                          >
+                            <Plus className="w-4 h-4 stroke-[2.5]" />
+                          </button>
+                        </div>
+
+                        <button
+                          onClick={() => setSelectedFood(null)}
+                          className="flex-1 py-3 px-4 bg-[#FF6A00] text-black font-black text-xs rounded-2xl cursor-pointer glow-orange-sm shadow-md"
+                        >
+                          View in Cart (₹{selectedFood.price * cartItemForDetail.quantity})
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          addToCart(selectedFood);
+                        }}
+                        className="w-full py-3.5 px-4 bg-[#FF6A00] hover:bg-[#FF7A00] text-black font-black text-sm rounded-2xl shadow-lg glow-orange-sm flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95"
+                      >
+                        <Plus className="w-4 h-4 stroke-[3]" />
+                        <span>ADD TO CART · ₹{selectedFood.price}</span>
+                      </button>
+                    )
+                  ) : (
+                    <div className="py-3 px-4 bg-white/5 border border-white/5 rounded-2xl text-center text-xs font-bold text-stone-400">
+                      Currently Sold Out in Canteen
+                    </div>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

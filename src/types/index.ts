@@ -37,7 +37,7 @@ export type OrderStatus =
   | 'CANCELLED'
   | 'REJECTED';
 
-export type PaymentMethod = 'COUNTER';
+export type PaymentMethod = 'COUNTER' | 'UPI' | 'ONLINE';
 export type PaymentStatus = 'PENDING' | 'PAID';
 
 export interface OrderItem {

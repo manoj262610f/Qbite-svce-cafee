@@ -1,5 +1,17 @@
 import React, { useState } from 'react';
-import { Search, Flame, ChevronRight, AlertTriangle, AlertCircle, Clock, Volume2 } from 'lucide-react';
+import { motion } from 'motion/react';
+import {
+  Search,
+  Flame,
+  ChevronRight,
+  AlertTriangle,
+  AlertCircle,
+  Clock,
+  Volume2,
+  ArrowRight,
+  UtensilsCrossed,
+  Sparkles
+} from 'lucide-react';
 import { useCanteen } from '../context/CanteenContext';
 import { useAuth } from '../context/AuthContext';
 import { LiveQueueCard } from '../components/LiveQueueCard';
@@ -30,81 +42,100 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
 
   return (
     <div className="pb-24 pt-2 px-4 max-w-md mx-auto space-y-4">
-      {/* Canteen Status Alerts */}
+      {/* Canteen Operational Alerts */}
       {settings.status === 'CLOSED' && (
-        <div className="bg-rose-50 border border-rose-200 rounded-2xl p-3.5 text-xs text-rose-800 flex items-start gap-2.5 shadow-2xs">
-          <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+        <div className="bg-[#1C1111] border border-rose-500/30 rounded-2xl p-3.5 text-xs text-rose-300 flex items-start gap-2.5 shadow-md">
+          <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
           <div>
-            <strong className="block font-bold">Canteen is Currently Closed</strong>
-            <p className="mt-0.5 leading-relaxed">
-              The kitchen is closed right now ({settings.operatingHours || '7:30 AM – 5:30 PM'}). You can browse the menu for later.
+            <strong className="block font-bold text-white">Canteen is Currently Closed</strong>
+            <p className="mt-0.5 text-stone-400 leading-relaxed">
+              Kitchen is closed right now ({settings.operatingHours || '7:30 AM – 5:30 PM'}). You can browse the menu for later.
             </p>
           </div>
         </div>
       )}
 
       {settings.status === 'PAUSED' && (
-        <div className="bg-amber-50 border border-amber-300 rounded-2xl p-3.5 text-xs text-amber-900 flex items-start gap-2.5 shadow-2xs">
-          <Clock className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+        <div className="bg-[#1C170E] border border-amber-500/30 rounded-2xl p-3.5 text-xs text-amber-300 flex items-start gap-2.5 shadow-md">
+          <Clock className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
           <div>
-            <strong className="block font-bold">Ordering Temporarily Paused</strong>
-            <p className="mt-0.5 leading-relaxed">
-              Kitchen is currently fulfilling existing peak orders. New orders will reopen shortly!
+            <strong className="block font-bold text-white">Ordering Temporarily Paused</strong>
+            <p className="mt-0.5 text-stone-400 leading-relaxed">
+              Kitchen is currently fulfilling peak orders. New orders will reopen shortly!
             </p>
           </div>
         </div>
       )}
 
-      {settings.status === 'BUSY' && (
-        <div className="bg-orange-50 border border-orange-200 rounded-2xl p-3 text-xs text-orange-900 flex items-center gap-2 shadow-2xs">
-          <span className="w-2 h-2 rounded-full bg-orange-500 animate-ping shrink-0" />
-          <span>Kitchen is experiencing high rush — preparation may take a few extra minutes.</span>
-        </div>
-      )}
-
       {/* Campus Announcement Banner */}
       {settings.announcement && (
-        <div className="bg-white rounded-2xl p-3 border border-stone-200 text-xs text-stone-700 flex items-center gap-2.5 shadow-2xs">
-          <Volume2 className="w-4 h-4 text-orange-600 shrink-0" />
-          <p className="line-clamp-2 leading-relaxed">
-            <span className="font-bold text-stone-900 mr-1">Notice:</span>
+        <div className="bg-[#141414] rounded-2xl p-3 border border-white/8 text-xs text-stone-300 flex items-center gap-2.5 shadow-sm">
+          <Volume2 className="w-4 h-4 text-[#FF6A00] shrink-0" />
+          <p className="line-clamp-2 leading-relaxed text-[#A1A1A1]">
+            <span className="font-black text-white mr-1">Notice:</span>
             {settings.announcement}
           </p>
         </div>
       )}
 
-      {/* Greeting & Headline */}
-      <div className="flex items-center justify-between pt-1">
-        <div>
-          <p className="text-xs font-semibold text-orange-600 uppercase tracking-wider">
-            {userProfile?.name ? `Hello, ${userProfile.name.split(' ')[0]}` : 'Welcome to SVCE Cafe'}
-          </p>
-          <h2 className="text-xl font-extrabold text-stone-900 tracking-tight mt-0.5">
-            Order Smart. Skip the Queue.
-          </h2>
-          <p className="text-xs text-stone-500 mt-0.5">
-            Official SVCE Cafe remote ordering & live token tracking
-          </p>
-        </div>
-      </div>
+      {/* Hero Card: Hungry? Skip the queue */}
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="relative rounded-3xl p-5 bg-gradient-to-br from-[#1C1C1C] via-[#141414] to-[#0A0A0A] border border-white/10 shadow-2xl overflow-hidden"
+      >
+        <div className="absolute -right-6 -bottom-6 w-36 h-36 rounded-full bg-[#FF6A00]/15 blur-2xl pointer-events-none" />
+        
+        <div className="relative z-10 space-y-3">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#FF6A00]/15 border border-[#FF6A00]/30 text-[#FF7A00] text-[10px] font-black uppercase tracking-wider">
+            <Sparkles className="w-3 h-3 text-[#FF6A00]" />
+            <span>Fast Campus Dining</span>
+          </div>
 
-      {/* Live Queue Card - High priority */}
+          <div>
+            <h1 className="text-2xl font-black text-white tracking-tight leading-tight">
+              Hungry? <span className="text-[#FF7A00]">Skip the queue.</span>
+            </h1>
+            <p className="text-xs text-[#A1A1A1] mt-1 leading-relaxed">
+              Order from campus. Pick up when ready.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 pt-1">
+            <button
+              onClick={() => onNavigate('/menu')}
+              className="py-2.5 px-4 bg-[#FF6A00] hover:bg-[#FF7A00] text-black font-black text-xs rounded-xl shadow-md glow-orange-sm flex items-center gap-1.5 cursor-pointer transition-all active:scale-95"
+            >
+              <span>Order Now</span>
+              <ArrowRight className="w-3.5 h-3.5 stroke-[2.5]" />
+            </button>
+            <button
+              onClick={() => onNavigate('/menu')}
+              className="py-2.5 px-4 bg-[#1F1F1F] hover:bg-[#282828] text-white font-bold text-xs rounded-xl border border-white/8 cursor-pointer transition-colors"
+            >
+              View Menu
+            </button>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Live Queue & Active Order Card */}
       <LiveQueueCard onTrackQueue={() => onNavigate('/queue')} />
 
       {/* Search Input Bar */}
       <div className="relative">
-        <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+        <Search className="w-4 h-4 text-stone-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
         <input
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search food, snacks and drinks..."
-          className="w-full pl-10 pr-4 py-3 bg-white border border-stone-200 rounded-2xl text-xs font-medium text-stone-900 placeholder:text-stone-400 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 shadow-xs"
+          className="w-full pl-10 pr-4 py-3 bg-[#141414] border border-white/8 rounded-2xl text-xs font-medium text-white placeholder:text-stone-500 focus:outline-none focus:border-[#FF6A00]/60 focus:ring-1 focus:ring-[#FF6A00]/30 shadow-inner"
         />
         {searchQuery && (
           <button
             onClick={() => setSearchQuery('')}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-stone-400 hover:text-stone-600 cursor-pointer"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-stone-400 hover:text-white cursor-pointer"
           >
             Clear
           </button>
@@ -114,12 +145,12 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
       {/* Horizontal Food Categories Bar */}
       <div>
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-xs font-bold text-stone-400 uppercase tracking-wider">
+          <h3 className="text-[11px] font-black uppercase tracking-wider text-[#A1A1A1]">
             Categories
           </h3>
           <button
             onClick={() => onNavigate('/menu')}
-            className="text-xs font-bold text-orange-600 hover:text-orange-700 flex items-center gap-0.5 cursor-pointer"
+            className="text-xs font-black text-[#FF6A00] hover:text-[#FF7A00] flex items-center gap-0.5 cursor-pointer"
           >
             <span>Full Menu</span>
             <ChevronRight className="w-3.5 h-3.5" />
@@ -133,10 +164,10 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap cursor-pointer transition-all active:scale-95 ${
+                className={`px-3.5 py-2 rounded-xl text-xs font-black whitespace-nowrap cursor-pointer transition-all active:scale-95 ${
                   isSelected
-                    ? 'bg-stone-900 text-white shadow-xs'
-                    : 'bg-white text-stone-600 border border-stone-200 hover:bg-stone-100'
+                    ? 'bg-[#FF6A00] text-black shadow-md glow-orange-sm'
+                    : 'bg-[#141414] text-[#A1A1A1] hover:text-white border border-white/8 hover:bg-[#1A1A1A]'
                 }`}
               >
                 {cat}
@@ -146,12 +177,12 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
         </div>
       </div>
 
-      {/* Popular Today Section */}
+      {/* Campus Favorites Section */}
       {selectedCategory === 'All' && !searchQuery && popularFoods.length > 0 && (
-        <div>
-          <div className="flex items-center gap-1.5 mb-2.5">
-            <Flame className="w-4 h-4 text-orange-500 fill-orange-500" />
-            <h3 className="text-sm font-extrabold text-stone-900">
+        <div className="space-y-2.5">
+          <div className="flex items-center gap-1.5">
+            <Flame className="w-4 h-4 text-[#FF6A00] fill-[#FF6A00]" />
+            <h3 className="text-sm font-black text-white tracking-tight">
               Campus Favorites
             </h3>
           </div>
@@ -164,11 +195,11 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
       )}
 
       {/* Filtered Food Grid */}
-      <div>
-        <div className="flex items-center justify-between mb-2.5">
-          <h3 className="text-sm font-extrabold text-stone-900">
+      <div className="space-y-2.5">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-black text-white tracking-tight">
             {selectedCategory === 'All' ? 'All Dishes & Beverages' : selectedCategory}
-            <span className="ml-1.5 text-xs font-semibold text-stone-400">
+            <span className="ml-1.5 text-xs font-mono-token font-normal text-[#A1A1A1]">
               ({filteredFoods.length})
             </span>
           </h3>
@@ -181,10 +212,10 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
             ))}
           </div>
         ) : filteredFoods.length === 0 ? (
-          <div className="bg-white rounded-2xl p-6 text-center border border-stone-200">
-            <AlertCircle className="w-8 h-8 text-stone-300 mx-auto mb-2" />
-            <p className="text-xs font-bold text-stone-700">No food items found</p>
-            <p className="text-[11px] text-stone-400 mt-0.5">Try searching for something else</p>
+          <div className="bg-[#141414] rounded-2xl p-6 text-center border border-white/8 shadow-md">
+            <AlertCircle className="w-8 h-8 text-stone-500 mx-auto mb-2" />
+            <p className="text-xs font-bold text-white">No food items found</p>
+            <p className="text-[11px] text-[#A1A1A1] mt-0.5">Try searching for something else or reset filters</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-3">

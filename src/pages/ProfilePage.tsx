@@ -11,10 +11,9 @@ import {
   Shield,
   LogOut,
   ChevronRight,
-  Sparkles,
   ExternalLink,
   ShieldCheck,
-  KeyRound
+  ChefHat
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCanteen } from '../context/CanteenContext';
@@ -25,17 +24,21 @@ interface ProfilePageProps {
 }
 
 export const ProfilePage: React.FC<ProfilePageProps> = ({ onNavigate, onLogout }) => {
-  const { userProfile, role } = useAuth();
+  const { userProfile, role, switchActiveRole } = useAuth();
   const { myOrders, favorites } = useCanteen();
   const [modalContent, setModalContent] = useState<{ title: string; body: string } | null>(null);
   const [imageError, setImageError] = useState(false);
+
+  const isAdminUser = ['manojreddy8022@gmail.com', 'the.team.alpha.ece2026@gmail.com'].includes(
+    (userProfile?.email || '').toLowerCase().trim()
+  );
 
   // Dynamic menu sections based on verified user role
   const campusItems = [];
   if (role === 'admin' || role === 'staff') {
     campusItems.push({
-      label: 'Kitchen Staff Interface',
-      icon: User,
+      label: 'Kitchen Staff Terminal',
+      icon: ChefHat,
       onClick: () => onNavigate('/staff')
     });
   }
@@ -92,12 +95,12 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onNavigate, onLogout }
             })
         },
         {
-          label: 'About QBite – SVCE Cafe',
+          label: 'About qBite – SVCE Cafe',
           icon: Info,
           onClick: () =>
             setModalContent({
-              title: 'About QBite',
-              body: 'QBite is a smart college canteen remote ordering and queue-management application designed for Sri Venkateswara College of Engineering. Our motto: "Be Smart. Leave the Queue." Order ahead from anywhere on campus, track your live token, and pick up hot food without standing in line.'
+              title: 'About qBite',
+              body: 'qBite is a smart college canteen remote ordering and queue-management application designed for Sri Venkateswara College of Engineering. Our motto: "Order Smart. Skip the Queue." Order ahead from anywhere on campus, track your live token, and pick up hot food without standing in line.'
             })
         },
         {
@@ -106,7 +109,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onNavigate, onLogout }
           onClick: () =>
             setModalContent({
               title: 'Privacy Policy',
-              body: 'QBite values student privacy. Authentication uses official Google Sign-In with Firebase Authentication. We never collect or store mobile phone numbers, passwords, USNs, or unnecessary personal data. Food order history is securely stored on Google Cloud Firestore.'
+              body: 'qBite values student privacy. Authentication uses official Google Sign-In with Firebase Authentication. We never collect or store mobile phone numbers, passwords, USNs, or banking credentials. Food order history is securely stored on Google Cloud Firestore.'
             })
         },
         {
@@ -125,14 +128,14 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onNavigate, onLogout }
   return (
     <div className="pb-24 pt-3 px-4 max-w-md mx-auto space-y-4">
       <div>
-        <h2 className="text-xl font-extrabold text-stone-900 tracking-tight">
+        <h2 className="text-xl font-black text-white tracking-tight">
           User Profile
         </h2>
-        <p className="text-xs text-stone-500">Authenticated Google account and canteen settings</p>
+        <p className="text-xs text-[#A1A1A1]">Authenticated Google account and settings</p>
       </div>
 
       {/* User Card: Authenticated Google Profile */}
-      <div className="bg-white rounded-3xl p-5 border border-stone-200/80 shadow-xs flex items-center gap-4">
+      <div className="bg-[#141414] rounded-3xl p-5 border border-white/8 shadow-xl flex items-center gap-4">
         {/* Profile Avatar: Google Photo or Fallback Initial */}
         <div className="relative shrink-0">
           {userProfile?.photoURL && !imageError ? (
@@ -140,16 +143,16 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onNavigate, onLogout }
               src={userProfile.photoURL}
               alt={userProfile.name || 'User'}
               onError={() => setImageError(true)}
-              className="w-14 h-14 rounded-2xl object-cover border-2 border-orange-500 shadow-md shadow-orange-500/10"
+              className="w-14 h-14 rounded-2xl object-cover border-2 border-[#FF6A00] shadow-md glow-orange-sm"
               referrerPolicy="no-referrer"
             />
           ) : (
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-orange-600 to-amber-500 flex items-center justify-center text-white font-extrabold text-xl shadow-md shadow-orange-500/20">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#FF6A00] to-[#FF9D2E] flex items-center justify-center text-black font-black text-xl shadow-lg glow-orange-sm">
               {userProfile?.name?.charAt(0).toUpperCase() || 'U'}
             </div>
           )}
-          {/* Small Google Indicator Dot */}
-          <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-white border border-stone-200 shadow-2xs flex items-center justify-center">
+          {/* Google Indicator Dot */}
+          <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-[#1F1F1F] border border-white/10 shadow-sm flex items-center justify-center">
             <svg className="w-3 h-3" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z" />
               <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z" />
@@ -161,24 +164,24 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onNavigate, onLogout }
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5">
-            <h3 className="font-extrabold text-base text-stone-900 truncate">
+            <h3 className="font-black text-base text-white truncate">
               {userProfile?.name || 'SVCE Student'}
             </h3>
-            <span title="Google Authenticated" className="shrink-0 text-emerald-600">
+            <span title="Google Authenticated" className="shrink-0 text-emerald-400">
               <ShieldCheck className="w-4 h-4" />
             </span>
           </div>
-          <p className="text-xs text-stone-500 truncate flex items-center gap-1.5 mt-0.5">
-            <Mail className="w-3.5 h-3.5 text-stone-400 shrink-0" />
+          <p className="text-xs text-[#A1A1A1] truncate flex items-center gap-1.5 mt-0.5">
+            <Mail className="w-3.5 h-3.5 text-stone-500 shrink-0" />
             <span>{userProfile?.email || 'student@svce.ac.in'}</span>
           </p>
           <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-orange-700 bg-orange-50 border border-orange-200 px-2 py-0.5 rounded-full">
+            <span className="text-[10px] font-black uppercase tracking-wider text-[#FF7A00] bg-[#FF6A00]/15 border border-[#FF6A00]/30 px-2 py-0.5 rounded-full">
               {role}
             </span>
-            <span className="text-[10px] text-stone-400">· SVCE Campus</span>
+            <span className="text-[10px] text-stone-500">· SVCE Campus</span>
             {userProfile?.id && (
-              <span className="text-[9px] font-mono text-stone-400 bg-stone-100 px-1.5 py-0.5 rounded">
+              <span className="text-[9px] font-mono text-stone-400 bg-white/5 px-1.5 py-0.5 rounded">
                 UID: {userProfile.id.slice(0, 8)}...
               </span>
             )}
@@ -186,24 +189,69 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onNavigate, onLogout }
         </div>
       </div>
 
+      {/* Admin / Dev Role Switcher */}
+      {isAdminUser && (
+        <div className="bg-[#141414] rounded-2xl p-3 border border-purple-500/30 space-y-2">
+          <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-wider text-purple-300">
+            <span className="flex items-center gap-1.5">
+              <Shield className="w-3.5 h-3.5 text-purple-400" />
+              <span>Admin Role Switcher</span>
+            </span>
+            <span className="text-[10px] text-stone-400">Active: {role}</span>
+          </div>
+          <div className="grid grid-cols-3 gap-1.5">
+            <button
+              onClick={() => switchActiveRole('admin')}
+              className={`py-1.5 px-2 rounded-xl text-xs font-black cursor-pointer transition-all ${
+                role === 'admin'
+                  ? 'bg-purple-600 text-white shadow-md'
+                  : 'bg-white/5 hover:bg-white/10 text-stone-300'
+              }`}
+            >
+              Admin Hub
+            </button>
+            <button
+              onClick={() => switchActiveRole('staff')}
+              className={`py-1.5 px-2 rounded-xl text-xs font-black cursor-pointer transition-all ${
+                role === 'staff'
+                  ? 'bg-[#FF6A00] text-black shadow-md glow-orange-sm'
+                  : 'bg-white/5 hover:bg-white/10 text-stone-300'
+              }`}
+            >
+              Kitchen Staff
+            </button>
+            <button
+              onClick={() => switchActiveRole('student')}
+              className={`py-1.5 px-2 rounded-xl text-xs font-black cursor-pointer transition-all ${
+                role === 'student'
+                  ? 'bg-emerald-600 text-white shadow-md'
+                  : 'bg-white/5 hover:bg-white/10 text-stone-300'
+              }`}
+            >
+              Student View
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Menu Links */}
       <div className="space-y-4">
         {menuSections.map((section, idx) => (
           <div key={idx} className="space-y-1">
-            <h4 className="text-[11px] font-bold uppercase tracking-wider text-stone-400 px-1 mb-1">
+            <h4 className="text-[11px] font-black uppercase tracking-wider text-[#A1A1A1] px-1 mb-1">
               {section.label}
             </h4>
-            <div className="bg-white rounded-2xl border border-stone-100 shadow-xs divide-y divide-stone-50 overflow-hidden">
+            <div className="bg-[#141414] rounded-2xl border border-white/8 shadow-sm divide-y divide-white/5 overflow-hidden">
               {section.items.map((item, itemIdx) => {
                 const Icon = item.icon;
                 return (
                   <button
                     key={itemIdx}
                     onClick={item.onClick}
-                    className="w-full px-4 py-3.5 flex items-center justify-between text-xs font-semibold text-stone-800 hover:bg-stone-50 cursor-pointer transition-colors"
+                    className="w-full px-4 py-3.5 flex items-center justify-between text-xs font-bold text-stone-200 hover:bg-[#1A1A1A] cursor-pointer transition-colors"
                   >
                     <div className="flex items-center gap-3">
-                      <Icon className="w-4 h-4 text-stone-500" />
+                      <Icon className="w-4 h-4 text-[#FF6A00]" />
                       <span>{item.label}</span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -212,7 +260,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onNavigate, onLogout }
                           {item.badge}
                         </span>
                       )}
-                      <ChevronRight className="w-4 h-4 text-stone-300" />
+                      <ChevronRight className="w-4 h-4 text-stone-600" />
                     </div>
                   </button>
                 );
@@ -226,7 +274,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onNavigate, onLogout }
       <div className="pt-2">
         <button
           onClick={onLogout}
-          className="w-full py-3 px-4 rounded-2xl border border-rose-200 bg-rose-50/60 hover:bg-rose-100 text-rose-700 font-bold text-xs flex items-center justify-center gap-2 cursor-pointer transition-colors shadow-2xs active:scale-[0.99]"
+          className="w-full py-3 px-4 rounded-2xl border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 font-black text-xs flex items-center justify-center gap-2 cursor-pointer transition-colors shadow-md active:scale-[0.99]"
         >
           <LogOut className="w-4 h-4" />
           <span>LOGOUT FROM QBITE</span>
@@ -235,17 +283,17 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onNavigate, onLogout }
 
       {/* Modal for About, Help, Privacy, Terms */}
       {modalContent && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/60 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-stone-200 space-y-4">
-            <h3 className="font-extrabold text-base text-stone-900">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="bg-[#141414] rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-white/10 space-y-4">
+            <h3 className="font-black text-base text-white">
               {modalContent.title}
             </h3>
-            <p className="text-xs text-stone-600 leading-relaxed">
+            <p className="text-xs text-stone-300 leading-relaxed">
               {modalContent.body}
             </p>
             <button
               onClick={() => setModalContent(null)}
-              className="w-full py-2.5 bg-stone-900 text-white font-bold text-xs rounded-xl cursor-pointer hover:bg-stone-800"
+              className="w-full py-2.5 bg-[#FF6A00] text-black font-black text-xs rounded-xl cursor-pointer hover:bg-[#FF7A00] transition-colors glow-orange-sm"
             >
               Close
             </button>

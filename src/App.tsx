@@ -64,7 +64,7 @@ function MainAppContent() {
 
   // Register service worker if available (PWA Requirement)
   useEffect(() => {
-    if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
+    if ('serviceWorker' in navigator && import.meta.env.PROD) {
       navigator.serviceWorker.register('/sw.js').catch(() => {});
     }
   }, []);
@@ -90,12 +90,12 @@ function MainAppContent() {
   // 2. Auth Loading state while checking persistent session
   if (authLoading && !currentUser) {
     return (
-      <div className="min-h-screen bg-stone-50 flex flex-col items-center justify-center p-6 text-center">
-        <div className="w-12 h-12 rounded-2xl bg-orange-600 flex items-center justify-center text-white shadow-md shadow-orange-600/20 mb-3 animate-pulse">
-          <UtensilsCrossed className="w-6 h-6" />
+      <div className="min-h-screen bg-[#080808] flex flex-col items-center justify-center p-6 text-center text-white">
+        <div className="w-12 h-12 rounded-2xl bg-[#FF6A00] flex items-center justify-center text-black shadow-lg glow-orange-sm mb-3 animate-pulse">
+          <UtensilsCrossed className="w-6 h-6 stroke-[2.5]" />
         </div>
-        <p className="font-extrabold text-sm text-stone-900 tracking-tight">QBite · SVCE Cafe</p>
-        <p className="text-[11px] text-stone-400 mt-1">Checking session...</p>
+        <p className="font-black text-sm text-white tracking-tight">qBite · SVCE Cafe</p>
+        <p className="text-[11px] text-[#A1A1A1] mt-1">Connecting to campus session...</p>
       </div>
     );
   }
@@ -119,17 +119,17 @@ function MainAppContent() {
   if (currentRoute === '/staff') {
     if (role !== 'staff' && role !== 'admin') {
       return (
-        <div className="min-h-screen bg-stone-50 flex flex-col items-center justify-center p-6 text-center">
-          <div className="w-12 h-12 rounded-2xl bg-orange-100 text-orange-700 flex items-center justify-center mb-3 shadow-xs">
-            <ChefHat className="w-6 h-6" />
+        <div className="min-h-screen bg-[#080808] flex flex-col items-center justify-center p-6 text-center text-white">
+          <div className="w-12 h-12 rounded-2xl bg-[#FF6A00]/20 text-[#FF7A00] border border-[#FF6A00]/30 flex items-center justify-center mb-3 shadow-md glow-orange-sm">
+            <ChefHat className="w-6 h-6 stroke-[2.5]" />
           </div>
-          <h2 className="text-lg font-black text-stone-900 tracking-tight">Staff Portal Restricted</h2>
-          <p className="text-xs text-stone-500 max-w-xs mt-1 mb-4">
+          <h2 className="text-lg font-black text-white tracking-tight">Staff Portal Restricted</h2>
+          <p className="text-xs text-[#A1A1A1] max-w-xs mt-1 mb-4">
             This kitchen fulfillment terminal is restricted to authorized SVCE canteen staff.
           </p>
           <button
             onClick={() => navigate('/home')}
-            className="px-4 py-2 bg-stone-900 text-white rounded-xl text-xs font-bold hover:bg-stone-800 cursor-pointer"
+            className="px-4 py-2 bg-[#FF6A00] hover:bg-[#FF7A00] text-black rounded-xl text-xs font-black cursor-pointer shadow-md glow-orange-sm transition-all"
           >
             Return to Student App
           </button>
@@ -143,17 +143,17 @@ function MainAppContent() {
   if (currentRoute === '/admin') {
     if (role !== 'admin') {
       return (
-        <div className="min-h-screen bg-stone-50 flex flex-col items-center justify-center p-6 text-center">
-          <div className="w-12 h-12 rounded-2xl bg-purple-100 text-purple-700 flex items-center justify-center mb-3 shadow-xs">
-            <Shield className="w-6 h-6" />
+        <div className="min-h-screen bg-[#080808] flex flex-col items-center justify-center p-6 text-center text-white">
+          <div className="w-12 h-12 rounded-2xl bg-purple-500/20 text-purple-300 border border-purple-500/30 flex items-center justify-center mb-3 shadow-md">
+            <Shield className="w-6 h-6 stroke-[2.5]" />
           </div>
-          <h2 className="text-lg font-black text-stone-900 tracking-tight">Admin Access Required</h2>
-          <p className="text-xs text-stone-500 max-w-xs mt-1 mb-4">
+          <h2 className="text-lg font-black text-white tracking-tight">Admin Access Required</h2>
+          <p className="text-xs text-[#A1A1A1] max-w-xs mt-1 mb-4">
             Only designated canteen administrators can access policy control, pricing, and staff permissions.
           </p>
           <button
             onClick={() => navigate('/home')}
-            className="px-4 py-2 bg-stone-900 text-white rounded-xl text-xs font-bold hover:bg-stone-800 cursor-pointer"
+            className="px-4 py-2 bg-stone-800 hover:bg-stone-700 text-white rounded-xl text-xs font-bold cursor-pointer transition-colors"
           >
             Return to Student App
           </button>
@@ -165,7 +165,7 @@ function MainAppContent() {
 
   // Standard Student App Experience with Header & Bottom Navigation
   return (
-    <div className="min-h-screen bg-stone-50 text-stone-900 flex flex-col justify-between">
+    <div className="min-h-screen bg-[#080808] text-white flex flex-col justify-between selection:bg-[#FF6A00] selection:text-black">
       {/* Top Navbar */}
       <Navbar
         onOpenNotifications={() => navigate('/notifications')}

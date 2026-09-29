@@ -10,7 +10,7 @@ import {
   FileText,
   AlertCircle,
   XCircle,
-  Banknote
+  QrCode
 } from 'lucide-react';
 import { Order, OrderStatus } from '../types';
 import { useCanteen } from '../context/CanteenContext';
@@ -88,17 +88,17 @@ export const TokenCard: React.FC<TokenCardProps> = ({ order, onViewBill }) => {
         <motion.div
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="bg-emerald-600 text-white rounded-3xl p-5 shadow-xl flex items-start gap-3.5 border-2 border-emerald-400"
+          className="bg-gradient-to-r from-emerald-600 to-teal-700 text-white rounded-3xl p-5 shadow-2xl flex items-start gap-3.5 border border-emerald-400/50 glow-emerald-sm"
         >
-          <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center shrink-0 animate-bounce">
+          <div className="w-12 h-12 rounded-2xl bg-black/20 flex items-center justify-center shrink-0 animate-bounce">
             <BellRing className="w-6 h-6 text-white" />
           </div>
           <div>
             <h3 className="font-black text-lg leading-tight">
-              YOUR ORDER IS READY! 🎉
+              HOT & READY FOR PICKUP!
             </h3>
             <p className="text-emerald-100 text-xs mt-1 leading-relaxed">
-              Please present token <strong className="text-white underline font-mono-token text-sm">{order.tokenString}</strong> at SVCE Cafe Counter 1 or 2 to collect your fresh food.
+              Show token <strong className="text-white font-mono-token text-sm underline">{order.tokenString}</strong> at Counter 1 & 2 to collect your meal.
             </p>
           </div>
         </motion.div>
@@ -106,82 +106,84 @@ export const TokenCard: React.FC<TokenCardProps> = ({ order, onViewBill }) => {
 
       {/* Rejection / Cancellation Banner */}
       {isRejected && (
-        <div className="bg-rose-50 border border-rose-300 rounded-2xl p-4 text-xs text-rose-800 flex items-start gap-3">
-          <XCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+        <div className="bg-[#1C1111] border border-rose-500/30 rounded-2xl p-4 text-xs text-rose-300 flex items-start gap-3">
+          <XCircle className="w-5 h-5 text-rose-500 shrink-0 mt-0.5" />
           <div>
-            <strong className="block font-bold text-rose-900 text-sm">Order Unable to be Prepared</strong>
-            <p className="mt-0.5">{order.rejectionReason || 'Kitchen had to reject this order due to stock availability.'}</p>
+            <strong className="block font-bold text-white text-sm">Order Unable to be Prepared</strong>
+            <p className="mt-0.5 text-stone-400">{order.rejectionReason || 'Kitchen had to reject this order due to stock availability.'}</p>
           </div>
         </div>
       )}
 
       {isCancelled && (
-        <div className="bg-stone-100 border border-stone-200 rounded-2xl p-4 text-xs text-stone-700 flex items-start gap-3">
+        <div className="bg-[#1A1A1A] border border-white/10 rounded-2xl p-4 text-xs text-stone-300 flex items-start gap-3">
           <AlertCircle className="w-5 h-5 text-stone-500 shrink-0 mt-0.5" />
           <div>
-            <strong className="block font-bold text-stone-900 text-sm">Order Cancelled</strong>
-            <p className="mt-0.5">This order was cancelled before cooking started.</p>
+            <strong className="block font-bold text-white text-sm">Order Cancelled</strong>
+            <p className="mt-0.5 text-stone-400">This order was cancelled before cooking started.</p>
           </div>
         </div>
       )}
 
       {/* Main Token Display Card */}
       <div
-        className={`rounded-3xl p-6 text-white text-center shadow-xl relative overflow-hidden ${
+        className={`rounded-3xl p-6 text-white text-center shadow-2xl relative overflow-hidden border ${
           isReady
-            ? 'bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-800'
+            ? 'bg-gradient-to-br from-[#0D261B] to-[#071710] border-emerald-500/40 glow-emerald-sm'
             : isCancelled || isRejected
-            ? 'bg-stone-800'
-            : 'bg-stone-900 border border-stone-800'
+            ? 'bg-[#141414] border-white/8 opacity-80'
+            : 'bg-gradient-to-br from-[#1C1C1C] via-[#141414] to-[#0D0D0D] border-white/10 glow-orange-sm'
         }`}
       >
-        <p className="text-[11px] uppercase font-bold tracking-[0.25em] text-stone-400 mb-1">
+        <p className="text-[10px] uppercase font-black tracking-[0.25em] text-[#A1A1A1] mb-1">
           TOKEN IDENTIFIER
         </p>
 
         {/* Large Clear Token Number */}
         <motion.div
           key={order.tokenString}
-          initial={{ scale: 0.85 }}
+          initial={{ scale: 0.9 }}
           animate={{ scale: 1 }}
-          className="text-7xl md:text-8xl font-black font-mono-token tracking-tight my-2 text-white"
+          className={`text-7xl md:text-8xl font-black font-mono-token tracking-tight my-2 ${
+            isReady ? 'text-emerald-400' : 'text-[#FF6A00]'
+          }`}
         >
           {order.tokenString}
         </motion.div>
 
-        <p className="text-xs text-stone-300 font-medium">
-          Order ID: <span className="font-mono-token text-orange-400 font-bold">{order.orderNumber}</span>
+        <p className="text-xs text-[#A1A1A1] font-medium">
+          Order ID: <span className="font-mono-token text-white font-bold">{order.orderNumber}</span>
         </p>
 
-        {/* 3 Metric Badges */}
-        <div className="grid grid-cols-3 gap-2 mt-5 pt-4 border-t border-white/10 text-center">
-          <div className="bg-white/5 rounded-2xl p-2.5">
-            <span className="text-[10px] text-stone-400 uppercase font-semibold block mb-0.5">
+        {/* 3 Metric Cards */}
+        <div className="grid grid-cols-3 gap-2 mt-5 pt-4 border-t border-white/8 text-center">
+          <div className="bg-[#0A0A0A]/60 rounded-2xl p-2.5 border border-white/5">
+            <span className="text-[10px] text-[#A1A1A1] uppercase font-bold block mb-0.5">
               Pickup Point
             </span>
-            <span className="text-xs font-bold text-amber-300 block">
+            <span className="text-xs font-black text-[#FF9D2E] block">
               Counter 1 & 2
             </span>
           </div>
 
-          <div className="bg-white/5 rounded-2xl p-2.5">
-            <span className="text-[10px] text-stone-400 uppercase font-semibold block mb-0.5">
+          <div className="bg-[#0A0A0A]/60 rounded-2xl p-2.5 border border-white/5">
+            <span className="text-[10px] text-[#A1A1A1] uppercase font-bold block mb-0.5">
               Payment
             </span>
             <span
-              className={`text-xs font-bold block ${
-                order.paymentStatus === 'PAID' ? 'text-emerald-300' : 'text-orange-300'
+              className={`text-xs font-black block ${
+                order.paymentStatus === 'PAID' ? 'text-emerald-400' : 'text-[#FF7A00]'
               }`}
             >
               {order.paymentStatus === 'PAID' ? 'PAID ✓' : 'Pay ₹' + order.total}
             </span>
           </div>
 
-          <div className="bg-white/5 rounded-2xl p-2.5">
-            <span className="text-[10px] text-stone-400 uppercase font-semibold block mb-0.5">
+          <div className="bg-[#0A0A0A]/60 rounded-2xl p-2.5 border border-white/5">
+            <span className="text-[10px] text-[#A1A1A1] uppercase font-bold block mb-0.5">
               Est. Waiting
             </span>
-            <span className="text-xs font-bold font-mono-token text-white block">
+            <span className="text-xs font-black font-mono-token text-white block">
               {isReady || isCompleted ? '0 min' : `${order.estimatedWaitMin} min`}
             </span>
           </div>
@@ -190,8 +192,8 @@ export const TokenCard: React.FC<TokenCardProps> = ({ order, onViewBill }) => {
 
       {/* Timeline Status Tracker (Visible for active/completed orders) */}
       {!isCancelled && !isRejected && (
-        <div className="bg-white rounded-3xl p-5 border border-stone-200/80 shadow-xs">
-          <h4 className="text-xs font-bold uppercase tracking-wider text-stone-400 mb-4">
+        <div className="bg-[#141414] rounded-3xl p-5 border border-white/8 shadow-xl">
+          <h4 className="text-[11px] font-black uppercase tracking-wider text-[#A1A1A1] mb-4">
             Live Order Lifecycle
           </h4>
 
@@ -214,7 +216,7 @@ export const TokenCard: React.FC<TokenCardProps> = ({ order, onViewBill }) => {
                   {idx < ORDER_STEPS.length - 1 && (
                     <div
                       className={`absolute left-4 top-8 w-0.5 h-6 -translate-x-1/2 transition-colors ${
-                        currentIndex > idx ? 'bg-orange-500' : 'bg-stone-200'
+                        currentIndex > idx ? 'bg-[#FF6A00]' : 'bg-white/10'
                       }`}
                     />
                   )}
@@ -224,12 +226,12 @@ export const TokenCard: React.FC<TokenCardProps> = ({ order, onViewBill }) => {
                     className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-all ${
                       isDone
                         ? isReady && step.status === 'READY'
-                          ? 'bg-emerald-500 text-white ring-4 ring-emerald-100'
-                          : 'bg-orange-600 text-white'
-                        : 'bg-stone-100 text-stone-400'
+                          ? 'bg-emerald-500 text-black ring-4 ring-emerald-500/30'
+                          : 'bg-[#FF6A00] text-black font-black'
+                        : 'bg-[#1F1F1F] text-stone-500 border border-white/5'
                     }`}
                   >
-                    <Icon className="w-4 h-4" />
+                    <Icon className="w-4 h-4 stroke-[2.5]" />
                   </div>
 
                   {/* Label & Details */}
@@ -238,10 +240,10 @@ export const TokenCard: React.FC<TokenCardProps> = ({ order, onViewBill }) => {
                       <p
                         className={`text-xs font-bold ${
                           isCurrent
-                            ? 'text-orange-600'
+                            ? 'text-[#FF6A00]'
                             : isDone
-                            ? 'text-stone-900'
-                            : 'text-stone-400'
+                            ? 'text-white'
+                            : 'text-stone-500'
                         }`}
                       >
                         {step.label}
@@ -253,7 +255,7 @@ export const TokenCard: React.FC<TokenCardProps> = ({ order, onViewBill }) => {
                       )}
                     </div>
                     {isDone && (
-                      <span className="text-[10px] text-emerald-600 font-bold">
+                      <span className="text-[10px] text-emerald-400 font-bold font-mono-token">
                         ✓ Done
                       </span>
                     )}
@@ -267,7 +269,7 @@ export const TokenCard: React.FC<TokenCardProps> = ({ order, onViewBill }) => {
 
       {/* Cancel Error Notification */}
       {cancelError && (
-        <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 flex items-center gap-2">
+        <div className="p-3 bg-[#1C1111] border border-rose-500/30 rounded-xl text-xs text-rose-300 flex items-center gap-2">
           <AlertCircle className="w-4 h-4 shrink-0" />
           <span>{cancelError}</span>
         </div>
@@ -278,10 +280,10 @@ export const TokenCard: React.FC<TokenCardProps> = ({ order, onViewBill }) => {
         {onViewBill && (
           <button
             onClick={onViewBill}
-            className="flex-1 py-3 px-4 rounded-2xl border border-stone-200 bg-white hover:bg-stone-50 text-stone-800 font-bold text-xs flex items-center justify-center gap-2 shadow-xs cursor-pointer"
+            className="flex-1 py-3 px-4 rounded-2xl border border-white/10 bg-[#161616] hover:bg-[#202020] text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-md cursor-pointer transition-colors"
           >
-            <FileText className="w-4 h-4 text-orange-600" />
-            <span>DIGITAL BILL</span>
+            <FileText className="w-4 h-4 text-[#FF6A00]" />
+            <span>VIEW DIGITAL BILL</span>
           </button>
         )}
 
@@ -290,7 +292,7 @@ export const TokenCard: React.FC<TokenCardProps> = ({ order, onViewBill }) => {
           <button
             onClick={handleCancel}
             disabled={cancelling}
-            className="py-3 px-4 rounded-2xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs cursor-pointer transition-colors disabled:opacity-50"
+            className="py-3 px-4 rounded-2xl border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 font-extrabold text-xs cursor-pointer transition-colors disabled:opacity-50"
           >
             {cancelling ? 'Cancelling...' : 'Cancel Order'}
           </button>

@@ -29,11 +29,18 @@ service cloud.firestore {
     }
 
     function isAdminEmail() {
-      return isSignedIn() && request.auth.token.email.lower() == 'the.team.alpha.ece2026@gmail.com';
+      return isSignedIn() && (
+        request.auth.token.email.lower() == 'the.team.alpha.ece2026@gmail.com' ||
+        request.auth.token.email.lower() == 'manojreddy8022@gmail.com'
+      );
     }
 
     function isStaffEmail() {
-      return isSignedIn() && request.auth.token.email.lower() == 'manojreddy8283@gmail.com';
+      return isSignedIn() && (
+        request.auth.token.email.lower() == 'manojreddy8283@gmail.com' ||
+        request.auth.token.email.lower() == 'manojreddy8022@gmail.com' ||
+        request.auth.token.email.lower() == 'the.team.alpha.ece2026@gmail.com'
+      );
     }
 
     function isAdmin() {
@@ -56,32 +63,37 @@ service cloud.firestore {
       ) && (
         !('accountStatus' in request.resource.data) || request.resource.data.accountStatus == 'ACTIVE'
       );
-      // Admin can update any user's role or status; user can update only safe personal profile fields or normalize to student
+      // Admin can update any user's role or status; user can update only safe personal profile fields
       allow update: if isAdmin() || (
         isOwner(userId) &&
         (
+          !('role' in request.resource.data) ||
           request.resource.data.role == resource.data.role ||
           request.resource.data.role == 'student' ||
           (request.resource.data.role == 'admin' && isAdminEmail()) ||
           (request.resource.data.role == 'staff' && (isStaffEmail() || isAdminEmail()))
         ) &&
-        request.resource.data.accountStatus == resource.data.accountStatus
+        (
+          !('accountStatus' in request.resource.data) ||
+          !('accountStatus' in resource.data) ||
+          request.resource.data.accountStatus == resource.data.accountStatus
+        )
       );
       allow delete: if isAdmin();
     }
 
-    // 2. Foods catalog (Read-only for public/students, write for admin)
+    // 2. Foods catalog (Read-only for public/students, write for admin and kitchen staff)
     match /foods/{foodId} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isStaff();
     }
 
     // 3. Orders collection
     match /orders/{orderId} {
-      // Read allowed if order owner, staff/admin, or if order is READY (for public display pickup screen)
+      // Read allowed if order owner, staff/admin, or active queue statuses (for public TV display & ticker)
       allow read: if isStaff() ||
         (isSignedIn() && resource.data.userId == request.auth.uid) ||
-        (resource.data.status == 'READY');
+        (resource.data.status in ['READY', 'PREPARING', 'ACCEPTED']);
 
       // Create: Authenticated student creating order with their own uid in PLACED and PENDING state
       allow create: if isSignedIn() && isActiveUser() &&
@@ -122,13 +134,7 @@ service cloud.firestore {
     // 7. Canteen Settings
     match /settings/{settingId} {
       allow read: if true;
-      allow write: if isAdmin();
-    }
-
-    // 8. Audit Logs
-    match /auditLogs/{logId} {
-      allow read: if isAdmin();
-      allow create: if isStaff();
+      allow write: if isStaff();
     }
   }
 }

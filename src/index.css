@@ -1,18 +1,31 @@
 @import "tailwindcss";
 
 @layer base {
+  :root {
+    --bg-dark: #080808;
+    --card-dark: #141414;
+    --card-dark-hover: #1a1a1a;
+    --border-dark: rgba(255, 255, 255, 0.08);
+    --border-orange: rgba(255, 106, 0, 0.4);
+    --orange-primary: #FF6A00;
+    --orange-bright: #FF7A00;
+    --orange-amber: #FF9D2E;
+  }
+
   body {
-    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     -webkit-tap-highlight-color: transparent;
+    background-color: #080808;
+    color: #F5F5F5;
   }
 }
 
 .font-mono-token {
-  font-family: 'JetBrains Mono', monospace;
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-feature-settings: 'zero' 1;
 }
 
-/* Custom scrollbar for horizontal categories */
+/* Custom scrollbar for horizontal categories & lists */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
@@ -21,12 +34,43 @@
   scrollbar-width: none;
 }
 
-@keyframes pulse-subtle {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.88; transform: scale(1.02); }
+/* Custom sleek dark scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #080808;
+}
+::-webkit-scrollbar-thumb {
+  background: #262626;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #404040;
 }
 
-.animate-pulse-subtle {
-  animation: pulse-subtle 2.5s infinite ease-in-out;
+/* Subtle orange glow utilities */
+.glow-orange-sm {
+  box-shadow: 0 0 16px -4px rgba(255, 106, 0, 0.35);
 }
 
+.glow-orange-md {
+  box-shadow: 0 0 24px -4px rgba(255, 106, 0, 0.45);
+}
+
+.glow-orange-lg {
+  box-shadow: 0 0 36px -6px rgba(255, 106, 0, 0.55);
+}
+
+.glow-emerald-sm {
+  box-shadow: 0 0 16px -4px rgba(34, 197, 94, 0.35);
+}
+
+/* Glass panel style */
+.glass-panel {
+  background: rgba(20, 20, 20, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}

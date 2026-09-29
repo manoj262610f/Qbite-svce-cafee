@@ -5,6 +5,7 @@ import {
   getDoc,
   setDoc,
   updateDoc,
+  deleteDoc,
   onSnapshot,
   query,
   where,
@@ -131,8 +132,7 @@ export const CanteenProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setFoods(INITIAL_FOOD_ITEMS);
       }
       setLoading(false);
-    }, (error) => {
-      console.warn('Foods onSnapshot notice:', error.message);
+    }, () => {
       setFoods(INITIAL_FOOD_ITEMS);
       setLoading(false);
     });
@@ -155,8 +155,8 @@ export const CanteenProvider: React.FC<{ children: React.ReactNode }> = ({ child
           updatedAt: new Date().toISOString()
         });
       }
-    }, (error) => {
-      console.warn('Queue onSnapshot notice:', error.message);
+    }, () => {
+      // Ignored non-fatal notice
     });
 
     return () => unsub();
@@ -164,13 +164,24 @@ export const CanteenProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   // 3. Real-time Orders Listener (Role-segregated)
   useEffect(() => {
-    if (!currentUser) {
-      setOrders([]);
-      setMyOrders([]);
-      return;
-    }
-
     const ordersColRef = collection(db, 'orders');
+
+    if (!currentUser) {
+      // Public TV display or unauthenticated view: listen to active queue orders
+      const q = query(
+        ordersColRef,
+        where('status', 'in', ['READY', 'PREPARING', 'ACCEPTED']),
+        limit(50)
+      );
+      const unsub = onSnapshot(q, (snap) => {
+        const fetched = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Order));
+        setOrders(fetched);
+        setMyOrders([]);
+      }, () => {
+        // Ignored non-fatal notice
+      });
+      return () => unsub();
+    }
 
     if (role === 'staff' || role === 'admin') {
       // Staff / Admin: Listen to today's active & recent orders
@@ -179,12 +190,12 @@ export const CanteenProvider: React.FC<{ children: React.ReactNode }> = ({ child
         const fetched = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Order));
         setOrders(fetched);
         setMyOrders(fetched.filter((o) => o.userId === currentUser.uid));
-      }, (error) => {
-        console.warn('Staff orders onSnapshot error:', error.message);
+      }, () => {
+        // Ignored non-fatal notice
       });
       return () => unsub();
     } else {
-      // Student: Listen to own orders only
+      // Student: Listen to own orders
       const q = query(
         ordersColRef,
         where('userId', '==', currentUser.uid)
@@ -194,8 +205,8 @@ export const CanteenProvider: React.FC<{ children: React.ReactNode }> = ({ child
         fetched.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
         setMyOrders(fetched);
         setOrders(fetched);
-      }, (error) => {
-        console.warn('Student orders onSnapshot error:', error.message);
+      }, () => {
+        // Ignored non-fatal notice
       });
       return () => unsub();
     }
@@ -218,8 +229,8 @@ export const CanteenProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const items = snap.docs.map((d) => ({ id: d.id, ...d.data() } as NotificationItem));
       items.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       setNotifications(items);
-    }, (error) => {
-      console.warn('Notifications onSnapshot notice:', error.message);
+    }, () => {
+      // Ignored non-fatal notice
     });
 
     return () => unsub();
@@ -238,8 +249,8 @@ export const CanteenProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const unsub = onSnapshot(q, (snap) => {
       const ids = snap.docs.map((d) => (d.data() as { foodId: string }).foodId);
       setFavorites(ids);
-    }, (error) => {
-      console.warn('Favorites onSnapshot notice:', error.message);
+    }, () => {
+      // Ignored non-fatal notice
     });
 
     return () => unsub();
@@ -756,7 +767,7 @@ export const CanteenProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (favorites.includes(foodId)) {
       setFavorites((prev) => prev.filter((id) => id !== foodId));
       try {
-        await updateDoc(favRef, { isDeleted: true });
+        await deleteDoc(favRef);
       } catch {
         // Ignored
       }

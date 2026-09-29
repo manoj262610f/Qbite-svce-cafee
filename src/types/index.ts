@@ -1,10 +1,12 @@
 export type UserRole = 'student' | 'staff' | 'admin';
+export type AccountStatus = 'ACTIVE' | 'SUSPENDED';
 
 export interface UserProfile {
-  id: string;
+  id: string; // Firebase UID
   name: string;
   email: string;
   role: UserRole;
+  accountStatus: AccountStatus;
   createdAt: string;
   photoURL?: string | null;
   lastLoginAt?: string;
@@ -22,14 +24,26 @@ export interface FoodItem {
   isVeg: boolean;
   rating?: number;
   isPopular?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-export type OrderStatus = 'PLACED' | 'ACCEPTED' | 'PREPARING' | 'READY' | 'COMPLETED' | 'CANCELLED';
+export type OrderStatus =
+  | 'PLACED'
+  | 'ACCEPTED'
+  | 'PREPARING'
+  | 'READY'
+  | 'COMPLETED'
+  | 'CANCELLED'
+  | 'REJECTED';
+
+export type PaymentMethod = 'COUNTER';
+export type PaymentStatus = 'PENDING' | 'PAID';
 
 export interface OrderItem {
   foodId: string;
   name: string;
-  price: number;
+  price: number; // Snapshot of unit price at order time
   quantity: number;
   imageUrl?: string;
   isVeg?: boolean;
@@ -40,32 +54,33 @@ export interface Order {
   orderNumber: string; // e.g. QB-2026-0047
   tokenNumber: number; // e.g. 47
   tokenString: string; // e.g. #047
-  dateKey: string;     // e.g. 2026-09-27
-  userId: string;
+  dateKey: string;     // e.g. 2026-09-28 (Asia/Kolkata)
+  userId: string;      // Firebase UID
   userName: string;
   userEmail: string;
   items: OrderItem[];
   status: OrderStatus;
-  paymentMethod: 'COUNTER' | 'UPI' | 'ONLINE';
-  paymentStatus: 'PENDING' | 'PAID';
+  paymentMethod: PaymentMethod;
+  paymentStatus: PaymentStatus;
   subtotal: number;
   discount: number;
   total: number;
-  couponCode?: string;
   createdAt: string;
-  acceptedAt?: string;
-  preparingAt?: string;
-  readyAt?: string;
-  completedAt?: string;
+  acceptedAt?: string | null;
+  preparingAt?: string | null;
+  readyAt?: string | null;
+  completedAt?: string | null;
+  lastStatusChangedAt?: string | null;
+  lastStatusChangedBy?: string | null;
   estimatedWaitMin: number;
   notes?: string;
+  rejectionReason?: string;
 }
 
 export interface QueueState {
   id: string;
   dateKey: string;
   lastToken: number;
-  currentServingToken: number;
   updatedAt: string;
 }
 
@@ -88,20 +103,23 @@ export interface FavoriteItem {
   createdAt: string;
 }
 
-export interface CouponItem {
-  id: string;
-  code: string;
-  discountPercentage?: number;
-  discountAmount?: number;
-  minOrderValue: number;
-  isActive: boolean;
-  description: string;
-}
+export type CanteenStatus = 'OPEN' | 'BUSY' | 'PAUSED' | 'CLOSED';
 
 export interface CanteenSettings {
-  isOpen: boolean;
+  status: CanteenStatus;
   announcement: string;
-  prepDelayOffset: number; // in minutes
-  closingNotice: string;
   operatingHours: string;
+  updatedAt?: string;
+  updatedBy?: string;
+}
+
+export interface AuditLog {
+  id: string;
+  action: string;
+  actorUid: string;
+  actorRole: string;
+  targetType: string;
+  targetId: string;
+  createdAt: string;
+  metadata?: Record<string, any>;
 }

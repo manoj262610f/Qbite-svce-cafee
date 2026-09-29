@@ -23,21 +23,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   onNavigate,
   currentRoute
 }) => {
-  const { userProfile, role, switchRole } = useAuth();
+  const { userProfile, role } = useAuth();
   const { settings, unreadNotificationCount } = useCanteen();
-  const [showRoleMenu, setShowRoleMenu] = useState(false);
-
-  const handleRoleChange = async (newRole: UserRole) => {
-    await switchRole(newRole);
-    setShowRoleMenu(false);
-    if (newRole === 'staff') {
-      onNavigate('/staff');
-    } else if (newRole === 'admin') {
-      onNavigate('/admin');
-    } else {
-      onNavigate('/home');
-    }
-  };
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-stone-100 transition-all">
@@ -62,17 +49,25 @@ export const Navbar: React.FC<NavbarProps> = ({
             <div className="flex items-center gap-1.5 mt-0.5">
               <span
                 className={`w-1.5 h-1.5 rounded-full ${
-                  settings.isOpen ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'
+                  settings.status === 'OPEN'
+                    ? 'bg-emerald-500 animate-pulse'
+                    : settings.status === 'PAUSED'
+                    ? 'bg-amber-500 animate-pulse'
+                    : 'bg-rose-500'
                 }`}
               />
               <span className="text-[10px] font-bold text-stone-500">
-                {settings.isOpen ? 'CANTEEN OPEN' : 'CANTEEN CLOSED'}
+                {settings.status === 'OPEN'
+                  ? 'CANTEEN OPEN'
+                  : settings.status === 'PAUSED'
+                  ? 'CANTEEN PAUSED'
+                  : 'CANTEEN CLOSED'}
               </span>
             </div>
           </div>
         </div>
 
-        {/* Right: TV Display Link, Role Switcher & Notifications */}
+        {/* Right: TV Display Link, Role Hubs & Notifications */}
         <div className="flex items-center gap-2">
           {/* Public TV Screen Link */}
           <button
@@ -83,53 +78,29 @@ export const Navbar: React.FC<NavbarProps> = ({
             <Monitor className="w-4 h-4" />
           </button>
 
-          {/* Role Mode Quick Dropdown */}
-          <div className="relative">
+          {/* Admin Direct Quick Access */}
+          {role === 'admin' && (
             <button
-              onClick={() => setShowRoleMenu(!showRoleMenu)}
-              className="px-2 py-1 rounded-lg bg-stone-100 hover:bg-stone-200 text-[11px] font-bold text-stone-700 flex items-center gap-1 cursor-pointer transition-colors"
+              onClick={() => onNavigate(currentRoute === '/admin' ? '/home' : '/admin')}
+              className="px-2 py-1 rounded-lg bg-purple-50 hover:bg-purple-100 border border-purple-200 text-[11px] font-extrabold text-purple-700 flex items-center gap-1 cursor-pointer transition-colors"
+              title="Admin Operations"
             >
-              {role === 'admin' && <Shield className="w-3 h-3 text-purple-600" />}
-              {role === 'staff' && <ChefHat className="w-3 h-3 text-orange-600" />}
-              <span className="capitalize">{role}</span>
-              <ChevronDown className="w-3 h-3 text-stone-400" />
+              <Shield className="w-3 h-3 text-purple-600" />
+              <span>Admin</span>
             </button>
+          )}
 
-            {showRoleMenu && (
-              <div className="absolute right-0 mt-1 w-36 bg-white rounded-xl shadow-lg border border-stone-100 py-1 z-50 text-xs">
-                <div className="px-3 py-1 text-[10px] font-bold text-stone-400 uppercase">
-                  Switch Interface
-                </div>
-                <button
-                  onClick={() => handleRoleChange('student')}
-                  className={`w-full text-left px-3 py-1.5 hover:bg-stone-50 flex items-center justify-between cursor-pointer ${
-                    role === 'student' ? 'font-bold text-orange-600' : 'text-stone-700'
-                  }`}
-                >
-                  <span>Student View</span>
-                  {role === 'student' && <span>✓</span>}
-                </button>
-                <button
-                  onClick={() => handleRoleChange('staff')}
-                  className={`w-full text-left px-3 py-1.5 hover:bg-stone-50 flex items-center justify-between cursor-pointer ${
-                    role === 'staff' ? 'font-bold text-orange-600' : 'text-stone-700'
-                  }`}
-                >
-                  <span>Kitchen Staff</span>
-                  {role === 'staff' && <span>✓</span>}
-                </button>
-                <button
-                  onClick={() => handleRoleChange('admin')}
-                  className={`w-full text-left px-3 py-1.5 hover:bg-stone-50 flex items-center justify-between cursor-pointer ${
-                    role === 'admin' ? 'font-bold text-orange-600' : 'text-stone-700'
-                  }`}
-                >
-                  <span>Canteen Admin</span>
-                  {role === 'admin' && <span>✓</span>}
-                </button>
-              </div>
-            )}
-          </div>
+          {/* Staff Direct Quick Access */}
+          {(role === 'staff' || role === 'admin') && currentRoute !== '/staff' && (
+            <button
+              onClick={() => onNavigate('/staff')}
+              className="px-2 py-1 rounded-lg bg-orange-50 hover:bg-orange-100 border border-orange-200 text-[11px] font-extrabold text-orange-700 flex items-center gap-1 cursor-pointer transition-colors"
+              title="Kitchen Orders"
+            >
+              <ChefHat className="w-3 h-3 text-orange-600" />
+              <span>Kitchen</span>
+            </button>
+          )}
 
           {/* Notifications Button */}
           <button

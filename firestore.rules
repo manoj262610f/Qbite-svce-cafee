@@ -2,49 +2,133 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Food menu items
-    match /foods/{foodId} {
-      allow read, write: if true;
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
     }
 
-    // Categories
-    match /categories/{categoryId} {
-      allow read, write: if true;
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
     }
 
-    // Users collection
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function getUserRole() {
+      return (isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)))
+        ? getUserData().role
+        : 'student';
+    }
+
+    function isActiveUser() {
+      return isSignedIn() && (
+        !exists(/databases/$(database)/documents/users/$(request.auth.uid)) ||
+        getUserData().accountStatus != 'SUSPENDED'
+      );
+    }
+
+    function isAdminEmail() {
+      return isSignedIn() && request.auth.token.email.lower() == 'the.team.alpha.ece2026@gmail.com';
+    }
+
+    function isStaffEmail() {
+      return isSignedIn() && request.auth.token.email.lower() == 'manojreddy8283@gmail.com';
+    }
+
+    function isAdmin() {
+      return isSignedIn() && isActiveUser() && (getUserRole() == 'admin' || isAdminEmail());
+    }
+
+    function isStaff() {
+      return isSignedIn() && isActiveUser() && (getUserRole() == 'staff' || getUserRole() == 'admin' || isStaffEmail() || isAdminEmail());
+    }
+
+    // 1. Users collection
     match /users/{userId} {
-      allow read, write: if true;
+      allow read: if isOwner(userId) || isStaff();
+      // On creation, normal users can register as student with ACTIVE status; designated admin/staff allowed their respective initial roles
+      allow create: if isOwner(userId) && (
+        !('role' in request.resource.data) ||
+        request.resource.data.role == 'student' ||
+        (request.resource.data.role == 'admin' && isAdminEmail()) ||
+        (request.resource.data.role == 'staff' && (isStaffEmail() || isAdminEmail()))
+      ) && (
+        !('accountStatus' in request.resource.data) || request.resource.data.accountStatus == 'ACTIVE'
+      );
+      // Admin can update any user's role or status; user can update only safe personal profile fields or normalize to student
+      allow update: if isAdmin() || (
+        isOwner(userId) &&
+        (
+          request.resource.data.role == resource.data.role ||
+          request.resource.data.role == 'student' ||
+          (request.resource.data.role == 'admin' && isAdminEmail()) ||
+          (request.resource.data.role == 'staff' && (isStaffEmail() || isAdminEmail()))
+        ) &&
+        request.resource.data.accountStatus == resource.data.accountStatus
+      );
+      allow delete: if isAdmin();
     }
 
-    // Orders
+    // 2. Foods catalog (Read-only for public/students, write for admin)
+    match /foods/{foodId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // 3. Orders collection
     match /orders/{orderId} {
-      allow read, write: if true;
+      // Read allowed if order owner, staff/admin, or if order is READY (for public display pickup screen)
+      allow read: if isStaff() ||
+        (isSignedIn() && resource.data.userId == request.auth.uid) ||
+        (resource.data.status == 'READY');
+
+      // Create: Authenticated student creating order with their own uid in PLACED and PENDING state
+      allow create: if isSignedIn() && isActiveUser() &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.status == 'PLACED' &&
+        request.resource.data.paymentStatus == 'PENDING';
+
+      // Update: Staff can process transitions; Student can only cancel their own PLACED order
+      allow update: if isStaff() || (
+        isSignedIn() &&
+        resource.data.userId == request.auth.uid &&
+        resource.data.status == 'PLACED' &&
+        request.resource.data.status == 'CANCELLED'
+      );
+
+      allow delete: if isAdmin();
     }
 
-    // Daily Queue State (counter & live token tracking)
+    // 4. Daily Queue collection
     match /queue/{dateKey} {
-      allow read, write: if true;
+      allow read: if true;
+      allow write: if isSignedIn() && isActiveUser();
     }
 
-    // Real-time notifications
+    // 5. In-app notifications
     match /notifications/{notificationId} {
-      allow read, write: if true;
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
 
-    // User favorites
+    // 6. Favorites
     match /favorites/{favoriteId} {
-      allow read, write: if true;
+      allow read, write: if isSignedIn() && favoriteId.matches(request.auth.uid + '.*');
     }
 
-    // Coupons
-    match /coupons/{couponId} {
-      allow read, write: if true;
-    }
-
-    // Canteen Settings (open/closed, announcement, etc.)
+    // 7. Canteen Settings
     match /settings/{settingId} {
-      allow read, write: if true;
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // 8. Audit Logs
+    match /auditLogs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isStaff();
     }
   }
 }

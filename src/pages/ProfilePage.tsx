@@ -25,10 +25,32 @@ interface ProfilePageProps {
 }
 
 export const ProfilePage: React.FC<ProfilePageProps> = ({ onNavigate, onLogout }) => {
-  const { userProfile, role, switchRole } = useAuth();
+  const { userProfile, role } = useAuth();
   const { myOrders, favorites } = useCanteen();
   const [modalContent, setModalContent] = useState<{ title: string; body: string } | null>(null);
   const [imageError, setImageError] = useState(false);
+
+  // Dynamic menu sections based on verified user role
+  const campusItems = [];
+  if (role === 'admin' || role === 'staff') {
+    campusItems.push({
+      label: 'Kitchen Staff Interface',
+      icon: User,
+      onClick: () => onNavigate('/staff')
+    });
+  }
+  if (role === 'admin') {
+    campusItems.push({
+      label: 'Canteen Admin Hub',
+      icon: Shield,
+      onClick: () => onNavigate('/admin')
+    });
+  }
+  campusItems.push({
+    label: 'Canteen TV Display Screen',
+    icon: ExternalLink,
+    onClick: () => onNavigate('/display')
+  });
 
   const menuSections = [
     {
@@ -55,29 +77,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onNavigate, onLogout }
     },
     {
       label: 'Campus Staff & Display',
-      items: [
-        {
-          label: 'Kitchen Staff Interface',
-          icon: User,
-          onClick: async () => {
-            await switchRole('staff');
-            onNavigate('/staff');
-          }
-        },
-        {
-          label: 'Canteen Admin Hub',
-          icon: Shield,
-          onClick: async () => {
-            await switchRole('admin');
-            onNavigate('/admin');
-          }
-        },
-        {
-          label: 'Canteen TV Display Screen',
-          icon: ExternalLink,
-          onClick: () => onNavigate('/display')
-        }
-      ]
+      items: campusItems
     },
     {
       label: 'About & Information',

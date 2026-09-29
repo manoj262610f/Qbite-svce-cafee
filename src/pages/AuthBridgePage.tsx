@@ -37,14 +37,24 @@ export const AuthBridgePage: React.FC = () => {
       console.warn('Bridge Firestore lookup notice:', e);
     }
 
-    const isAdminEmail = email.toLowerCase() === 'manojreddy8022@gmail.com';
-    const role: UserRole = isAdminEmail ? 'admin' : (existingRole || 'student');
+    const normalizedEmail = email.toLowerCase().trim();
+    let role: UserRole = 'student';
+    if (normalizedEmail === 'the.team.alpha.ece2026@gmail.com') {
+      role = 'admin';
+    } else if (normalizedEmail === 'manojreddy8283@gmail.com') {
+      role = existingRole === 'admin' ? 'admin' : 'staff';
+    } else if (normalizedEmail === 'manojreddy8022@gmail.com') {
+      role = 'student';
+    } else {
+      role = existingRole || 'student';
+    }
 
     const profile: UserProfile = {
       id: uid,
       name,
       email,
       role,
+      accountStatus: 'ACTIVE',
       photoURL,
       createdAt: existingCreatedAt || new Date().toISOString(),
       lastLoginAt: new Date().toISOString()

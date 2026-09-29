@@ -10,7 +10,7 @@ import {
 } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase/config';
-import { UserProfile, UserRole } from '../types';
+import { UserProfile, UserRole, AccountStatus } from '../types';
 import { safeLocalStorage } from '../services/safeStorage';
 
 export interface AuthUser {
@@ -34,14 +34,14 @@ interface AuthContextType {
   currentUser: AuthUser | null;
   userProfile: UserProfile | null;
   loading: boolean;
+  isSuspended: boolean;
   authError: string | null;
   authErrorDetails: AuthErrorInfo | null;
   role: UserRole;
   loginWithGoogle: (useRedirect?: boolean) => Promise<UserProfile | void>;
-  loginWithCampusGuest: (guestName?: string) => Promise<UserProfile>;
   logout: () => Promise<void>;
-  switchRole: (role: UserRole) => Promise<void>;
   clearAuthError: () => void;
+  refreshUserProfile: () => Promise<void>;
 }
 
 const KNOWN_AUTHORIZED_DOMAINS = [
@@ -59,14 +59,43 @@ const KNOWN_AUTHORIZED_DOMAINS = [
 
 const AUTHORIZED_BRIDGE_BASE = 'https://ais-pre-iqrxqckovfpyhkq2qvz44r-316718521676.asia-southeast1.run.app';
 
+export const DESIGNATED_ADMIN_EMAIL = 'the.team.alpha.ece2026@gmail.com';
+export const DESIGNATED_STAFF_EMAIL = 'manojreddy8283@gmail.com';
+
+export const getDesignatedRoleForEmail = (rawEmail: string | null | undefined): UserRole => {
+  const email = (rawEmail || '').toLowerCase().trim();
+  if (email === DESIGNATED_ADMIN_EMAIL) {
+    return 'admin';
+  }
+  if (email === DESIGNATED_STAFF_EMAIL) {
+    return 'staff';
+  }
+  return 'student';
+};
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Try restoring initial cached session for instant perceived load
   const [userProfile, setUserProfile] = useState<UserProfile | null>(() => {
     try {
       const saved = safeLocalStorage.getItem('qbite_user_session');
-      return saved ? JSON.parse(saved) : null;
+      if (saved) {
+        const p: UserProfile = JSON.parse(saved);
+        const email = (p.email || '').toLowerCase().trim();
+        // Ensure role consistency for designated emails and student default for manojreddy8022
+        if (email === DESIGNATED_ADMIN_EMAIL && p.role !== 'admin') {
+          p.role = 'admin';
+          safeLocalStorage.setItem('qbite_user_session', JSON.stringify(p));
+        } else if (email === DESIGNATED_STAFF_EMAIL && p.role !== 'staff' && p.role !== 'admin') {
+          p.role = 'staff';
+          safeLocalStorage.setItem('qbite_user_session', JSON.stringify(p));
+        } else if (email === 'manojreddy8022@gmail.com' && p.role !== 'student') {
+          p.role = 'student';
+          safeLocalStorage.setItem('qbite_user_session', JSON.stringify(p));
+        }
+        return p;
+      }
+      return null;
     } catch {
       return null;
     }
@@ -99,7 +128,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setAuthErrorDetails(null);
   };
 
-  // Sync state & local storage
+  const isSuspended = userProfile?.accountStatus === 'SUSPENDED';
+
   const saveSession = (profile: UserProfile | null) => {
     setUserProfile(profile);
     if (profile) {
@@ -117,59 +147,120 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Sync profile to Firestore
-  const syncProfileToFirestore = async (profile: UserProfile) => {
-    try {
-      const userDocRef = doc(db, 'users', profile.id);
-      await setDoc(userDocRef, profile, { merge: true });
-    } catch (err) {
-      console.warn('Firestore user profile sync warning:', err);
-    }
-  };
-
-  // Process a Firebase User into a local UserProfile
+  /**
+   * Loads or creates user profile from Firestore.
+   * Role is strictly governed by authorized email and Firestore state.
+   */
   const handleFirebaseUser = async (fbUser: FirebaseUser): Promise<UserProfile> => {
     const uid = fbUser.uid;
-    const email = fbUser.email || '';
+    const email = (fbUser.email || '').toLowerCase().trim();
     const name = fbUser.displayName || (email ? email.split('@')[0] : 'SVCE Student');
     const photoURL = fbUser.photoURL || null;
 
-    let existingRole: UserRole | undefined;
-    let existingCreatedAt: string | undefined;
+    const designatedRole = getDesignatedRoleForEmail(email);
+    let finalRole: UserRole = designatedRole;
+    let existingStatus: AccountStatus = 'ACTIVE';
+    let existingCreatedAt = new Date().toISOString();
 
     try {
       const userDocRef = doc(db, 'users', uid);
       const userSnap = await getDoc(userDocRef);
+
       if (userSnap.exists()) {
-        const data = userSnap.data() as UserProfile;
-        existingRole = data.role;
-        existingCreatedAt = data.createdAt;
+        const data = userSnap.data();
+        existingStatus = (data.accountStatus as AccountStatus) || 'ACTIVE';
+        existingCreatedAt = data.createdAt || existingCreatedAt;
+
+        // Apply strict role assignment:
+        if (email === DESIGNATED_ADMIN_EMAIL) {
+          finalRole = 'admin';
+        } else if (email === DESIGNATED_STAFF_EMAIL) {
+          finalRole = data.role === 'admin' ? 'admin' : 'staff';
+        } else if (email === 'manojreddy8022@gmail.com') {
+          // Explicitly ensure test account is student (clearing any old testing admin role)
+          finalRole = 'student';
+        } else {
+          finalRole = (data.role as UserRole) || designatedRole;
+        }
+
+        // Update login timestamp & sync role
+        await setDoc(userDocRef, {
+          name,
+          email,
+          role: finalRole,
+          photoURL,
+          lastLoginAt: new Date().toISOString()
+        }, { merge: true });
+      } else {
+        // Create initial record
+        const initialDoc = {
+          id: uid,
+          name,
+          email,
+          role: designatedRole,
+          accountStatus: 'ACTIVE',
+          photoURL,
+          createdAt: existingCreatedAt,
+          lastLoginAt: new Date().toISOString()
+        };
+        await setDoc(userDocRef, initialDoc);
+        finalRole = designatedRole;
+        existingStatus = 'ACTIVE';
       }
     } catch (err) {
-      console.warn('handleFirebaseUser: could not fetch existing profile:', err);
+      console.warn('handleFirebaseUser profile sync notice:', err);
     }
-
-    const isAdminEmail = email.toLowerCase() === 'manojreddy8022@gmail.com';
-    const assignedRole: UserRole = isAdminEmail
-      ? 'admin'
-      : (existingRole || userProfile?.role || 'student');
 
     const profile: UserProfile = {
       id: uid,
       name,
       email,
-      role: assignedRole,
+      role: finalRole,
+      accountStatus: existingStatus,
       photoURL,
-      createdAt: existingCreatedAt || userProfile?.createdAt || new Date().toISOString(),
+      createdAt: existingCreatedAt,
       lastLoginAt: new Date().toISOString()
     };
 
     saveSession(profile);
-    await syncProfileToFirestore(profile);
     return profile;
   };
 
-  // Parse errors into friendly messages and details
+  const refreshUserProfile = async () => {
+    if (!currentUser) return;
+    try {
+      const userDocRef = doc(db, 'users', currentUser.uid);
+      const snap = await getDoc(userDocRef);
+      if (snap.exists()) {
+        const data = snap.data();
+        const email = (data.email || currentUser.email || '').toLowerCase().trim();
+        let enforcedRole: UserRole = (data.role as UserRole) || 'student';
+
+        if (email === DESIGNATED_ADMIN_EMAIL) {
+          enforcedRole = 'admin';
+        } else if (email === DESIGNATED_STAFF_EMAIL) {
+          enforcedRole = data.role === 'admin' ? 'admin' : 'staff';
+        } else if (email === 'manojreddy8022@gmail.com') {
+          enforcedRole = 'student';
+        }
+
+        const updated: UserProfile = {
+          id: currentUser.uid,
+          name: data.name || currentUser.displayName || 'SVCE Student',
+          email: data.email || currentUser.email || '',
+          role: enforcedRole,
+          accountStatus: (data.accountStatus as AccountStatus) || 'ACTIVE',
+          photoURL: data.photoURL || currentUser.photoURL || null,
+          createdAt: data.createdAt || new Date().toISOString(),
+          lastLoginAt: data.lastLoginAt || new Date().toISOString()
+        };
+        saveSession(updated);
+      }
+    } catch (e) {
+      console.warn('Error refreshing profile:', e);
+    }
+  };
+
   const parseAuthError = (error: any): { friendlyMessage: string; details: AuthErrorInfo } => {
     const code = error?.code || '';
     const rawMessage = error?.message || '';
@@ -201,7 +292,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } else if (code === 'auth/cancelled-popup-request') {
       friendlyMessage = 'Sign-in was interrupted. Please click Continue with Google again.';
     } else if (isPopupBlocked) {
-      friendlyMessage = 'Pop-up window was blocked by your browser. Please allow pop-ups or use Redirect Sign-In.';
+      friendlyMessage = 'Pop-up window was blocked by your browser. Tap the mobile redirect button below.';
     } else if (code === 'auth/network-request-failed') {
       friendlyMessage = 'Network error. Please check your internet connection and try again.';
     } else if (rawMessage) {
@@ -225,12 +316,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { friendlyMessage, details };
   };
 
-  // Handle Redirect Result, PostMessage, Hash Payloads, and onAuthStateChanged on mount
   useEffect(() => {
     setLoading(true);
     let isMounted = true;
 
-    // 1. Check for auth payload from redirect bridge in URL hash
+    // 1. Check for authenticated payload from bridge in URL hash
     if (typeof window !== 'undefined' && window.location.hash.includes('auth_payload=')) {
       try {
         const hash = window.location.hash.substring(1);
@@ -238,12 +328,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const payload = params.get('auth_payload');
         if (payload) {
           const profile = JSON.parse(decodeURIComponent(payload)) as UserProfile;
-          if (isMounted) {
+          if (isMounted && profile?.id) {
             saveSession(profile);
             setLoading(false);
           }
           window.history.replaceState(null, '', window.location.pathname + window.location.search);
-          return;
         }
       } catch (err) {
         console.warn('Failed to parse auth payload from hash:', err);
@@ -251,8 +340,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     // 2. Listen for postMessage from popup auth bridge
-    const handlePostMessage = (event: MessageEvent) => {
-      if (event.data?.type === 'QBITE_AUTH_SUCCESS' && event.data?.profile) {
+    const handlePostMessage = async (event: MessageEvent) => {
+      if (event.data?.type === 'QBITE_AUTH_SUCCESS' && event.data?.profile?.id) {
         if (isMounted) {
           saveSession(event.data.profile);
           setLoading(false);
@@ -261,7 +350,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
     window.addEventListener('message', handlePostMessage);
 
-    // 3. Check if returning from a standard Firebase signInWithRedirect
+    // 3. Check for standard redirect result
     getRedirectResult(auth)
       .then(async (result) => {
         if (!isMounted) return;
@@ -274,7 +363,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       })
       .catch((err) => {
-        // Only log notice; never set authError on initial mount so visitors never see an error banner on opening
         console.warn('getRedirectResult notice:', err);
       });
 
@@ -295,8 +383,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (isMounted) setLoading(false);
           }
         } else {
-          // If we already have a cached session (e.g. from bridge or local storage), don't wipe it unless explicit logout
+          // If no active Firebase Auth session, clear session
           if (isMounted) {
+            saveSession(null);
             setLoading(false);
           }
         }
@@ -313,7 +402,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  // Google Sign-In with Firebase Authentication
   const loginWithGoogle = async (useRedirect = false): Promise<UserProfile | void> => {
     setLoading(true);
     setAuthError(null);
@@ -321,7 +409,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const isCurrentHostAuthorized = KNOWN_AUTHORIZED_DOMAINS.includes(window.location.hostname);
 
-    // If current domain is NOT in Firebase's authorized domains (e.g. *.workers.dev):
+    // If host is not in Firebase authorized list (e.g. *.workers.dev):
     // Use the official Authorized Bridge to prevent auth/unauthorized-domain error!
     if (!isCurrentHostAuthorized) {
       const bridgeUrl = `${AUTHORIZED_BRIDGE_BASE}/auth-bridge?origin=${encodeURIComponent(
@@ -331,12 +419,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const isMobileDevice = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
       if (useRedirect || isMobileDevice) {
-        // On mobile or when redirect requested, navigate directly to bridge
         window.location.href = bridgeUrl;
         return;
       }
 
-      // On desktop, open popup bridge
       const popup = window.open(
         bridgeUrl,
         'qbite_google_auth',
@@ -344,17 +430,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       );
 
       if (!popup || popup.closed) {
-        // Popups blocked by browser -> fallback to redirect
         window.location.href = bridgeUrl;
         return;
       }
 
-      // Wait for postMessage or popup close
       return new Promise<UserProfile>((resolve, reject) => {
         let resolved = false;
 
         const messageHandler = (event: MessageEvent) => {
-          if (event.data?.type === 'QBITE_AUTH_SUCCESS' && event.data?.profile) {
+          if (event.data?.type === 'QBITE_AUTH_SUCCESS' && event.data?.profile?.id) {
             resolved = true;
             window.removeEventListener('message', messageHandler);
             saveSession(event.data.profile);
@@ -381,7 +465,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
     }
 
-    // Direct Firebase Google Auth on authorized domains:
+    // Direct Firebase Google Auth on authorized domains
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({
       prompt: 'select_account'
@@ -390,7 +474,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (useRedirect) {
       try {
         await signInWithRedirect(auth, provider);
-        // Page will redirect to Google
         return;
       } catch (error: any) {
         setLoading(false);
@@ -415,32 +498,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Instant Campus Student Access (ensures no student is ever locked out of ordering food)
-  const loginWithCampusGuest = async (guestName = 'SVCE Student'): Promise<UserProfile> => {
-    setLoading(true);
-    setAuthError(null);
-    setAuthErrorDetails(null);
-
-    const guestId = `svce_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 7)}`;
-    const guestEmail = `student_${guestId.slice(-4)}@svce.ac.in`;
-
-    const profile: UserProfile = {
-      id: guestId,
-      name: guestName,
-      email: guestEmail,
-      role: 'student',
-      photoURL: null,
-      createdAt: new Date().toISOString(),
-      lastLoginAt: new Date().toISOString()
-    };
-
-    saveSession(profile);
-    await syncProfileToFirestore(profile);
-    setLoading(false);
-    return profile;
-  };
-
-  // Sign out
   const logout = async (): Promise<void> => {
     setLoading(true);
     try {
@@ -453,22 +510,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Switch role (for testing or authorized roles)
-  const switchRole = async (targetRole: UserRole): Promise<void> => {
-    if (!userProfile) return;
-    const updated: UserProfile = {
-      ...userProfile,
-      role: targetRole
-    };
-    saveSession(updated);
-    try {
-      const userDocRef = doc(db, 'users', userProfile.id);
-      await setDoc(userDocRef, { role: targetRole }, { merge: true });
-    } catch (err) {
-      console.warn('switchRole Firestore sync notice:', err);
-    }
-  };
-
   const role: UserRole = userProfile?.role || 'student';
 
   return (
@@ -477,14 +518,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         currentUser,
         userProfile,
         loading,
+        isSuspended,
         authError,
         authErrorDetails,
         role,
         loginWithGoogle,
-        loginWithCampusGuest,
         logout,
-        switchRole,
-        clearAuthError
+        clearAuthError,
+        refreshUserProfile
       }}
     >
       {children}

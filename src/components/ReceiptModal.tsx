@@ -125,7 +125,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ order, isOpen, onClo
               </div>
               {order.discount > 0 && (
                 <div className="flex justify-between text-emerald-600 font-medium">
-                  <span>Coupon Discount ({order.couponCode || 'PROMO'})</span>
+                  <span>Coupon Discount</span>
                   <span className="font-mono-token">-₹{order.discount}</span>
                 </div>
               )}

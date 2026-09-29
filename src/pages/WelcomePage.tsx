@@ -9,8 +9,7 @@ import {
   Clock,
   Monitor,
   X,
-  Smartphone,
-  GraduationCap
+  Smartphone
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -23,10 +22,9 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({
   onLoginSuccess,
   onNavigateToDisplay
 }) => {
-  const { loginWithGoogle, loginWithCampusGuest, authError, clearAuthError } = useAuth();
+  const { loginWithGoogle, authError, clearAuthError } = useAuth();
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
-  const [isGuestSigningIn, setIsGuestSigningIn] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
 
   const handleGoogleSignIn = async (useRedirect = false) => {
@@ -49,22 +47,6 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({
     } finally {
       setIsSigningIn(false);
       setIsRedirecting(false);
-    }
-  };
-
-  const handleCampusGuestSignIn = async () => {
-    setIsGuestSigningIn(true);
-    setLocalError(null);
-    clearAuthError();
-
-    try {
-      await loginWithCampusGuest('SVCE Student');
-      onLoginSuccess();
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Campus login failed. Please try again.';
-      setLocalError(msg);
-    } finally {
-      setIsGuestSigningIn(false);
     }
   };
 
@@ -115,11 +97,11 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({
             <div className="absolute bottom-3 left-3 right-3 bg-stone-900/90 backdrop-blur-md rounded-xl p-2.5 text-white flex items-center justify-between shadow-lg">
               <div className="flex items-center gap-2 text-left">
                 <div className="w-7 h-7 rounded-lg bg-orange-600 flex items-center justify-center font-mono-token font-bold text-xs shadow-xs">
-                  #47
+                  #047
                 </div>
                 <div>
-                  <p className="text-[10px] text-stone-400 leading-tight">Queue Time Saved</p>
-                  <p className="text-xs font-bold text-amber-300 leading-tight">18 minutes</p>
+                  <p className="text-[10px] text-stone-400 leading-tight">Order Smart</p>
+                  <p className="text-xs font-bold text-amber-300 leading-tight">Skip the Queue</p>
                 </div>
               </div>
               <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
@@ -131,10 +113,10 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({
         <div className="text-center space-y-1 mb-5">
           <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-orange-50 border border-orange-200/80 text-orange-700 text-[11px] font-bold uppercase tracking-wider mb-1">
             <Zap className="w-3 h-3 text-orange-600" />
-            <span>Official SVCE Food Portal</span>
+            <span>Official SVCE Campus Canteen</span>
           </div>
           <h1 className="text-2xl font-extrabold text-stone-950 tracking-tight leading-tight">
-            Be Smart. Leave the Queue.
+            Order Smart. Skip the Queue.
           </h1>
           <p className="text-xs text-stone-500 max-w-xs mx-auto leading-relaxed pt-1">
             Order your food before reaching the canteen. Track your token live and pick up with zero waiting.
@@ -176,14 +158,14 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({
               Sign In to SVCE Cafe
             </h2>
             <p className="text-[11px] text-stone-500">
-              One-click authentication for SVCE students, faculty & staff
+              Authenticate with your Google account to place and track orders
             </p>
           </div>
 
           {/* Primary Call to Action: Continue with Google */}
           <button
             onClick={() => handleGoogleSignIn(false)}
-            disabled={isSigningIn || isRedirecting || isGuestSigningIn}
+            disabled={isSigningIn || isRedirecting}
             className="w-full py-3.5 px-4 rounded-2xl bg-white hover:bg-stone-50 text-stone-800 font-extrabold text-sm border-2 border-stone-200 hover:border-orange-500 shadow-xs flex items-center justify-center gap-3 cursor-pointer transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed group"
           >
             {isSigningIn ? (
@@ -219,29 +201,10 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({
             )}
           </button>
 
-          {/* Quick Campus Student Instant Access */}
-          <button
-            onClick={handleCampusGuestSignIn}
-            disabled={isSigningIn || isRedirecting || isGuestSigningIn}
-            className="w-full py-2.5 px-3 rounded-2xl bg-orange-50 hover:bg-orange-100/90 text-orange-900 border border-orange-200 text-xs font-bold flex items-center justify-center gap-2 cursor-pointer transition-colors disabled:opacity-60"
-          >
-            {isGuestSigningIn ? (
-              <>
-                <span className="w-3.5 h-3.5 border-2 border-orange-600 border-t-transparent rounded-full animate-spin" />
-                <span>Logging into SVCE Cafe...</span>
-              </>
-            ) : (
-              <>
-                <GraduationCap className="w-4 h-4 text-orange-600 shrink-0" />
-                <span>Quick Student Entry (1-Tap)</span>
-              </>
-            )}
-          </button>
-
           {/* Secondary Mobile Friendly Redirect Button */}
           <button
             onClick={() => handleGoogleSignIn(true)}
-            disabled={isSigningIn || isRedirecting || isGuestSigningIn}
+            disabled={isSigningIn || isRedirecting}
             className="w-full py-1.5 px-3 rounded-xl text-stone-400 hover:text-stone-700 text-[11px] font-medium flex items-center justify-center gap-1.5 cursor-pointer transition-colors disabled:opacity-50"
           >
             {isRedirecting ? (
@@ -280,4 +243,3 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({
     </div>
   );
 };
-

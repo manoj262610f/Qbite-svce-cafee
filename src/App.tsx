@@ -21,7 +21,7 @@ import { ProfilePage } from './pages/ProfilePage';
 import { AuthBridgePage } from './pages/AuthBridgePage';
 import { testFirestoreConnection } from './firebase/connectionTest';
 import { safeSessionStorage } from './services/safeStorage';
-import { UtensilsCrossed } from 'lucide-react';
+import { UtensilsCrossed, ChefHat, Shield } from 'lucide-react';
 
 function MainAppContent() {
   // If navigating directly to auth bridge gateway, render immediately
@@ -29,7 +29,7 @@ function MainAppContent() {
     return <AuthBridgePage />;
   }
 
-  const { currentUser, loading: authLoading, logout } = useAuth();
+  const { currentUser, role, loading: authLoading, logout } = useAuth();
   const { activeOrder } = useCanteen();
 
   const [hasShownSplash, setHasShownSplash] = useState<boolean>(() => {
@@ -117,11 +117,49 @@ function MainAppContent() {
 
   // 4. Kitchen Staff Interface (/staff)
   if (currentRoute === '/staff') {
+    if (role !== 'staff' && role !== 'admin') {
+      return (
+        <div className="min-h-screen bg-stone-50 flex flex-col items-center justify-center p-6 text-center">
+          <div className="w-12 h-12 rounded-2xl bg-orange-100 text-orange-700 flex items-center justify-center mb-3 shadow-xs">
+            <ChefHat className="w-6 h-6" />
+          </div>
+          <h2 className="text-lg font-black text-stone-900 tracking-tight">Staff Portal Restricted</h2>
+          <p className="text-xs text-stone-500 max-w-xs mt-1 mb-4">
+            This kitchen fulfillment terminal is restricted to authorized SVCE canteen staff.
+          </p>
+          <button
+            onClick={() => navigate('/home')}
+            className="px-4 py-2 bg-stone-900 text-white rounded-xl text-xs font-bold hover:bg-stone-800 cursor-pointer"
+          >
+            Return to Student App
+          </button>
+        </div>
+      );
+    }
     return <StaffPage onBackToHome={() => navigate('/home')} />;
   }
 
   // 5. Admin Interface (/admin)
   if (currentRoute === '/admin') {
+    if (role !== 'admin') {
+      return (
+        <div className="min-h-screen bg-stone-50 flex flex-col items-center justify-center p-6 text-center">
+          <div className="w-12 h-12 rounded-2xl bg-purple-100 text-purple-700 flex items-center justify-center mb-3 shadow-xs">
+            <Shield className="w-6 h-6" />
+          </div>
+          <h2 className="text-lg font-black text-stone-900 tracking-tight">Admin Access Required</h2>
+          <p className="text-xs text-stone-500 max-w-xs mt-1 mb-4">
+            Only designated canteen administrators can access policy control, pricing, and staff permissions.
+          </p>
+          <button
+            onClick={() => navigate('/home')}
+            className="px-4 py-2 bg-stone-900 text-white rounded-xl text-xs font-bold hover:bg-stone-800 cursor-pointer"
+          >
+            Return to Student App
+          </button>
+        </div>
+      );
+    }
     return <AdminPage onBackToHome={() => navigate('/home')} />;
   }
 

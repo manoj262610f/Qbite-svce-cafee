@@ -1,15 +1,13 @@
-import React, { useState } from 'react';
-import { motion } from 'motion/react';
+import React from 'react';
 import {
   ShoppingBag,
   Plus,
   Minus,
   Trash2,
-  Tag,
   ArrowRight,
   UtensilsCrossed,
-  Sparkles,
-  AlertCircle
+  MapPin,
+  Clock
 } from 'lucide-react';
 import { useCanteen } from '../context/CanteenContext';
 
@@ -28,26 +26,12 @@ export const CartPage: React.FC<CartPageProps> = ({
     removeFromCart,
     clearCart,
     cartSubtotal,
-    appliedCoupon,
-    discountAmount,
     cartTotal,
-    applyCoupon,
-    removeCoupon,
-    coupons
+    settings
   } = useCanteen();
 
-  const [couponInput, setCouponInput] = useState('');
-  const [couponFeedback, setCouponFeedback] = useState<{ success?: boolean; message?: string } | null>(null);
-
-  const handleApplyCoupon = (codeToApply?: string) => {
-    const code = codeToApply || couponInput;
-    if (!code.trim()) return;
-    const res = applyCoupon(code);
-    setCouponFeedback(res);
-    if (res.success) {
-      setCouponInput('');
-    }
-  };
+  const isCanteenClosed = settings.status === 'CLOSED';
+  const isCanteenPaused = settings.status === 'PAUSED';
 
   if (cart.length === 0) {
     return (
@@ -56,10 +40,10 @@ export const CartPage: React.FC<CartPageProps> = ({
           <ShoppingBag className="w-10 h-10" />
         </div>
         <h2 className="text-xl font-extrabold text-stone-900">
-          Your cart is empty
+          Your tray is empty
         </h2>
         <p className="text-xs text-stone-500 mt-1 max-w-xs mx-auto leading-relaxed">
-          Looks like you haven't added any snacks or meals yet. Check out today's hot specials!
+          Looks like you haven't added any snacks or meals yet. Check out today's fresh campus specials!
         </p>
         <button
           onClick={onBrowseMenu}
@@ -78,10 +62,10 @@ export const CartPage: React.FC<CartPageProps> = ({
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-extrabold text-stone-900 tracking-tight">
-            Review Order
+            Order Tray
           </h2>
           <p className="text-xs text-stone-500">
-            {cart.length} unique {cart.length === 1 ? 'item' : 'items'} in your tray
+            {cart.length} {cart.length === 1 ? 'item' : 'items'} ready for counter pickup
           </p>
         </div>
         <button
@@ -89,9 +73,21 @@ export const CartPage: React.FC<CartPageProps> = ({
           className="text-xs font-bold text-stone-400 hover:text-rose-600 cursor-pointer flex items-center gap-1"
         >
           <Trash2 className="w-3.5 h-3.5" />
-          <span>Clear Tray</span>
+          <span>Clear</span>
         </button>
       </div>
+
+      {/* Canteen Status Warning */}
+      {(isCanteenClosed || isCanteenPaused) && (
+        <div className="bg-amber-50 border border-amber-300 rounded-2xl p-3 text-xs text-amber-900 flex items-center gap-2">
+          <Clock className="w-4 h-4 text-amber-600 shrink-0" />
+          <span>
+            {isCanteenClosed
+              ? 'Canteen is currently closed. Orders cannot be submitted.'
+              : 'Ordering is temporarily paused while kitchen clears backlog.'}
+          </span>
+        </div>
+      )}
 
       {/* Cart Items List */}
       <div className="bg-white rounded-2xl p-4 border border-stone-100 shadow-sm divide-y divide-stone-100">
@@ -131,108 +127,53 @@ export const CartPage: React.FC<CartPageProps> = ({
         ))}
       </div>
 
-      {/* Coupon Box */}
-      <div className="bg-white rounded-2xl p-4 border border-stone-100 shadow-sm space-y-3">
-        <div className="flex items-center gap-1.5 text-xs font-bold text-stone-700">
-          <Tag className="w-3.5 h-3.5 text-orange-600" />
-          <span>Have a Student Coupon?</span>
+      {/* Pickup Location Info */}
+      <div className="bg-white rounded-2xl p-4 border border-stone-100 shadow-sm space-y-1.5">
+        <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-stone-400">
+          <MapPin className="w-3.5 h-3.5 text-orange-600" />
+          <span>Pickup Location</span>
         </div>
-
-        {appliedCoupon ? (
-          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 flex items-center justify-between text-xs">
-            <div>
-              <span className="font-bold text-emerald-800 font-mono-token">{appliedCoupon.code} Applied</span>
-              <p className="text-emerald-700 text-[11px]">Saved ₹{discountAmount} on this order</p>
-            </div>
-            <button
-              onClick={removeCoupon}
-              className="font-bold text-rose-600 hover:text-rose-700 cursor-pointer"
-            >
-              Remove
-            </button>
-          </div>
-        ) : (
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={couponInput}
-              onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
-              placeholder="e.g. SVCE10"
-              className="flex-1 px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs font-bold uppercase placeholder:normal-case placeholder:font-normal focus:outline-none focus:border-orange-500"
-            />
-            <button
-              onClick={() => handleApplyCoupon()}
-              className="px-4 py-2 bg-stone-900 text-white text-xs font-bold rounded-xl cursor-pointer hover:bg-stone-800"
-            >
-              Apply
-            </button>
-          </div>
-        )}
-
-        {couponFeedback && (
-          <p className={`text-xs ${couponFeedback.success ? 'text-emerald-600 font-semibold' : 'text-rose-600'}`}>
-            {couponFeedback.message}
-          </p>
-        )}
-
-        {/* Quick Coupon Chips */}
-        {!appliedCoupon && coupons.length > 0 && (
-          <div className="flex gap-2 overflow-x-auto no-scrollbar pt-1">
-            {coupons.map((c) => (
-              <button
-                key={c.code}
-                onClick={() => handleApplyCoupon(c.code)}
-                className="text-[11px] font-mono-token font-bold text-orange-700 bg-orange-50 hover:bg-orange-100 border border-orange-200 px-2 py-1 rounded-lg cursor-pointer whitespace-nowrap"
-              >
-                {c.code}
-              </button>
-            ))}
-          </div>
-        )}
+        <p className="text-xs font-bold text-stone-800">
+          SVCE Central Canteen · Ground Floor Counters 1 & 2
+        </p>
+        <p className="text-[11px] text-stone-500">
+          Show your live token on your phone when order status turns READY.
+        </p>
       </div>
 
-      {/* Bill Summary */}
+      {/* Bill Breakdown */}
       <div className="bg-white rounded-2xl p-4 border border-stone-100 shadow-sm space-y-2 text-xs">
-        <h4 className="font-bold uppercase tracking-wider text-stone-400 mb-2">
-          Bill Details
-        </h4>
-        <div className="flex justify-between text-stone-600">
-          <span>Item Total</span>
-          <span className="font-mono-token font-semibold text-stone-900">₹{cartSubtotal}</span>
+        <div className="flex justify-between text-stone-500">
+          <span>Items Total</span>
+          <span className="font-mono-token font-bold text-stone-900">₹{cartSubtotal}</span>
         </div>
-        {discountAmount > 0 && (
-          <div className="flex justify-between text-emerald-600 font-medium">
-            <span>Coupon Discount</span>
-            <span className="font-mono-token">-₹{discountAmount}</span>
-          </div>
-        )}
-        <div className="flex justify-between text-stone-600">
-          <span>Convenience / Queue Skip Fee</span>
-          <span className="font-bold text-emerald-600">FREE</span>
+        <div className="flex justify-between text-stone-500">
+          <span>Payment Mode</span>
+          <span className="font-bold text-orange-700">Pay at Counter on Pickup</span>
         </div>
-        <div className="flex justify-between text-base font-extrabold text-stone-900 pt-2 border-t border-stone-100">
+        <div className="pt-2 border-t border-stone-100 flex justify-between text-base font-extrabold text-stone-900">
           <span>To Pay</span>
           <span className="font-mono-token text-orange-600">₹{cartTotal}</span>
         </div>
       </div>
 
-      {/* Sticky Bottom Action Bar */}
-      <div className="fixed bottom-16 left-0 right-0 z-30 bg-white/95 backdrop-blur-md border-t border-stone-200 p-4 shadow-lg">
-        <div className="max-w-md mx-auto flex items-center justify-between gap-4">
-          <div>
-            <p className="text-[10px] text-stone-400 uppercase font-semibold">Total Payable</p>
-            <p className="text-xl font-extrabold font-mono-token text-stone-900">
-              ₹{cartTotal}
-            </p>
+      {/* Bottom Sticky Checkout Button */}
+      <div className="fixed bottom-16 left-0 right-0 p-4 bg-white/95 backdrop-blur-md border-t border-stone-200/80 max-w-md mx-auto z-30">
+        <button
+          onClick={onProceedToCheckout}
+          disabled={isCanteenClosed || isCanteenPaused}
+          className="w-full py-3.5 px-5 bg-orange-600 hover:bg-orange-700 text-white font-extrabold text-sm rounded-2xl shadow-lg shadow-orange-600/25 flex items-center justify-between cursor-pointer transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <div className="text-left leading-tight">
+            <span className="text-[10px] uppercase font-bold text-orange-200 block">Total</span>
+            <span className="font-mono-token text-base font-black">₹{cartTotal}</span>
           </div>
-          <button
-            onClick={onProceedToCheckout}
-            className="flex-1 py-3.5 px-6 rounded-2xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-sm shadow-md shadow-orange-600/25 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.98]"
-          >
-            <span>PROCEED TO CHECKOUT</span>
+
+          <div className="flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider">
+            <span>Proceed to Checkout</span>
             <ArrowRight className="w-4 h-4" />
-          </button>
-        </div>
+          </div>
+        </button>
       </div>
     </div>
   );

@@ -1,17 +1,16 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import {
   collection,
   doc,
-  getDocs,
   getDoc,
   setDoc,
   updateDoc,
-  deleteDoc,
   onSnapshot,
   query,
   where,
   orderBy,
-  limit
+  limit,
+  runTransaction
 } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useAuth } from './AuthContext';
@@ -22,13 +21,18 @@ import {
   OrderStatus,
   QueueState,
   NotificationItem,
-  FavoriteItem,
-  CouponItem,
-  CanteenSettings
+  CanteenSettings,
+  CanteenStatus,
+  PaymentStatus
 } from '../types';
-import { INITIAL_FOOD_ITEMS, CATEGORIES, INITIAL_COUPONS } from '../data/menuData';
-import { getNextDailyToken, getTodayDateKey, calculateQueueStats, formatTokenNumber } from '../services/queueService';
-import { handleFirestoreError, OperationType } from '../firebase/errorHandler';
+import { INITIAL_FOOD_ITEMS, CATEGORIES } from '../data/menuData';
+import {
+  getNextDailyToken,
+  getTodayDateKey,
+  formatTokenNumber,
+  formatOrderNumber,
+  calculateEstimatedWaitRange
+} from '../services/queueService';
 import { safeLocalStorage } from '../services/safeStorage';
 
 interface CartItem extends OrderItem {}
@@ -42,34 +46,37 @@ interface CanteenContextType {
   queueState: QueueState;
   notifications: NotificationItem[];
   unreadNotificationCount: number;
-  favorites: string[]; // foodIds
-  coupons: CouponItem[];
+  favorites: string[];
   settings: CanteenSettings;
   cart: CartItem[];
   cartCount: number;
   cartSubtotal: number;
-  appliedCoupon: CouponItem | null;
-  discountAmount: number;
   cartTotal: number;
   loading: boolean;
-  // Actions
+  // Cart Actions
   addToCart: (food: FoodItem, quantity?: number) => void;
   updateCartQuantity: (foodId: string, quantity: number) => void;
   removeFromCart: (foodId: string) => void;
   clearCart: () => void;
-  applyCoupon: (code: string) => { success: boolean; message: string };
-  removeCoupon: () => void;
-  placeOrder: (paymentMethod: 'COUNTER' | 'UPI' | 'ONLINE', notes?: string) => Promise<Order>;
+  // Order Lifecycle Actions
+  placeOrder: (notes?: string) => Promise<Order>;
   cancelOrder: (orderId: string) => Promise<void>;
-  updateOrderStatus: (orderId: string, status: OrderStatus) => Promise<void>;
-  callNextToken: () => Promise<number>;
-  setCurrentServingToken: (token: number) => Promise<void>;
+  // Staff Kitchen Actions
+  acceptOrder: (orderId: string) => Promise<void>;
+  startPreparingOrder: (orderId: string) => Promise<void>;
+  markOrderReady: (orderId: string) => Promise<void>;
+  markPaymentPaid: (orderId: string) => Promise<void>;
+  completePickup: (orderId: string) => Promise<void>;
+  rejectOrder: (orderId: string, reason: string) => Promise<void>;
+  // Admin Operations
+  updateFoodAvailability: (foodId: string, isAvailable: boolean) => Promise<void>;
+  saveFoodItem: (food: FoodItem) => Promise<void>;
+  updateCanteenStatus: (status: CanteenStatus, announcement?: string, operatingHours?: string) => Promise<void>;
+  seedMenuCatalog: () => Promise<void>;
+  // User Actions
   toggleFavorite: (foodId: string) => Promise<void>;
   markNotificationAsRead: (notificationId: string) => Promise<void>;
   clearAllNotifications: () => Promise<void>;
-  toggleCanteenStatus: () => Promise<void>;
-  updateFoodAvailability: (foodId: string, isAvailable: boolean) => Promise<void>;
-  saveFoodItem: (food: FoodItem) => Promise<void>;
 }
 
 const CanteenContext = createContext<CanteenContextType | undefined>(undefined);
@@ -77,29 +84,24 @@ const CanteenContext = createContext<CanteenContextType | undefined>(undefined);
 export const CanteenProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { currentUser, userProfile, role } = useAuth();
 
-  const [foods, setFoods] = useState<FoodItem[]>(INITIAL_FOOD_ITEMS);
+  const [foods, setFoods] = useState<FoodItem[]>([]);
   const [categories] = useState<string[]>(CATEGORIES);
   const [orders, setOrders] = useState<Order[]>([]);
   const [myOrders, setMyOrders] = useState<Order[]>([]);
   const [queueState, setQueueState] = useState<QueueState>({
     id: getTodayDateKey(),
     dateKey: getTodayDateKey(),
-    lastToken: 47,
-    currentServingToken: 42,
+    lastToken: 0,
     updatedAt: new Date().toISOString()
   });
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [favorites, setFavorites] = useState<string[]>([]);
-  const [coupons, setCoupons] = useState<CouponItem[]>(INITIAL_COUPONS);
   const [settings, setSettings] = useState<CanteenSettings>({
-    isOpen: true,
-    announcement: 'Fresh breakfast & hot dosas ready at Counter 1 & 2',
-    prepDelayOffset: 0,
-    closingNotice: 'Kitchen closes at 5:30 PM',
+    status: 'OPEN',
+    announcement: 'Fresh breakfast & hot meals available at Counters 1 & 2',
     operatingHours: '7:30 AM – 5:30 PM'
   });
 
-  // Cart State (stored in safeLocalStorage)
   const [cart, setCart] = useState<CartItem[]>(() => {
     try {
       const saved = safeLocalStorage.getItem('qbite_cart');
@@ -109,15 +111,15 @@ export const CanteenProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   });
 
-  const [appliedCoupon, setAppliedCoupon] = useState<CouponItem | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const isPlacingOrderRef = useRef<boolean>(false);
 
   // Sync cart to safeLocalStorage
   useEffect(() => {
     safeLocalStorage.setItem('qbite_cart', JSON.stringify(cart));
   }, [cart]);
 
-  // 1. Initial Seeding and sync of Foods
+  // 1. Real-time Foods Listener
   useEffect(() => {
     const foodsColRef = collection(db, 'foods');
     const unsub = onSnapshot(foodsColRef, (snapshot) => {
@@ -125,19 +127,12 @@ export const CanteenProvider: React.FC<{ children: React.ReactNode }> = ({ child
         const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as FoodItem));
         setFoods(items);
       } else {
-        // Seed initial items to firestore in background so other clients can view
-        INITIAL_FOOD_ITEMS.forEach(async (item) => {
-          try {
-            await setDoc(doc(db, 'foods', item.id), item);
-          } catch {
-            // Ignored if permissions not yet open
-          }
-        });
+        // If foods collection in Firestore is empty, provide fallback catalog in memory until admin seeds
         setFoods(INITIAL_FOOD_ITEMS);
       }
       setLoading(false);
     }, (error) => {
-      console.warn('Foods onSnapshot notice (using initial catalog):', error.message);
+      console.warn('Foods onSnapshot notice:', error.message);
       setFoods(INITIAL_FOOD_ITEMS);
       setLoading(false);
     });
@@ -153,16 +148,12 @@ export const CanteenProvider: React.FC<{ children: React.ReactNode }> = ({ child
       if (snap.exists()) {
         setQueueState(snap.data() as QueueState);
       } else {
-        // Initialize today's queue
-        const initialQueue: QueueState = {
+        setQueueState({
           id: todayKey,
           dateKey: todayKey,
-          lastToken: 47,
-          currentServingToken: 42,
+          lastToken: 0,
           updatedAt: new Date().toISOString()
-        };
-        setQueueState(initialQueue);
-        setDoc(queueDocRef, initialQueue).catch(() => {});
+        });
       }
     }, (error) => {
       console.warn('Queue onSnapshot notice:', error.message);
@@ -171,7 +162,7 @@ export const CanteenProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return () => unsub();
   }, []);
 
-  // 3. Real-time Orders Listener
+  // 3. Real-time Orders Listener (Role-segregated)
   useEffect(() => {
     if (!currentUser) {
       setOrders([]);
@@ -181,19 +172,19 @@ export const CanteenProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     const ordersColRef = collection(db, 'orders');
 
-    // If staff or admin, listen to all today's active orders
     if (role === 'staff' || role === 'admin') {
-      const q = query(ordersColRef, orderBy('createdAt', 'desc'), limit(100));
+      // Staff / Admin: Listen to today's active & recent orders
+      const q = query(ordersColRef, orderBy('createdAt', 'desc'), limit(150));
       const unsub = onSnapshot(q, (snap) => {
         const fetched = snap.docs.map((d) => ({ id: d.id, ...d.data() } as Order));
         setOrders(fetched);
         setMyOrders(fetched.filter((o) => o.userId === currentUser.uid));
       }, (error) => {
-        console.warn('Orders onSnapshot error:', error.message);
+        console.warn('Staff orders onSnapshot error:', error.message);
       });
       return () => unsub();
     } else {
-      // Student listens to their own orders
+      // Student: Listen to own orders only
       const q = query(
         ordersColRef,
         where('userId', '==', currentUser.uid)
@@ -210,7 +201,7 @@ export const CanteenProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, [currentUser, role]);
 
-  // 4. Real-time Notifications Listener
+  // 4. Real-time Notifications Listener (Own notifications only)
   useEffect(() => {
     if (!currentUser) {
       setNotifications([]);
@@ -245,7 +236,7 @@ export const CanteenProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const q = query(favsRef, where('userId', '==', currentUser.uid));
 
     const unsub = onSnapshot(q, (snap) => {
-      const ids = snap.docs.map((d) => (d.data() as FavoriteItem).foodId);
+      const ids = snap.docs.map((d) => (d.data() as { foodId: string }).foodId);
       setFavorites(ids);
     }, (error) => {
       console.warn('Favorites onSnapshot notice:', error.message);
@@ -254,36 +245,37 @@ export const CanteenProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return () => unsub();
   }, [currentUser]);
 
-  // 6. Settings Listener
+  // 6. Real-time Canteen Settings Listener
   useEffect(() => {
     const settingsDocRef = doc(db, 'settings', 'main');
     const unsub = onSnapshot(settingsDocRef, (snap) => {
       if (snap.exists()) {
-        setSettings(snap.data() as CanteenSettings);
+        const data = snap.data();
+        setSettings({
+          status: (data.status as CanteenStatus) || 'OPEN',
+          announcement: data.announcement || 'Fresh breakfast & hot meals available at Counters 1 & 2',
+          operatingHours: data.operatingHours || '7:30 AM – 5:30 PM',
+          updatedAt: data.updatedAt,
+          updatedBy: data.updatedBy
+        });
       }
     }, () => {});
     return () => unsub();
   }, []);
 
-  // Cart Calculations
+  // Cart Totals
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
   const cartSubtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const cartTotal = cartSubtotal; // Stage 1: No coupon manipulation, pure subtotal
 
-  let discountAmount = 0;
-  if (appliedCoupon && cartSubtotal >= appliedCoupon.minOrderValue) {
-    if (appliedCoupon.discountPercentage) {
-      discountAmount = Math.round((cartSubtotal * appliedCoupon.discountPercentage) / 100);
-    } else if (appliedCoupon.discountAmount) {
-      discountAmount = appliedCoupon.discountAmount;
-    }
-  }
-  const cartTotal = Math.max(0, cartSubtotal - discountAmount);
-
-  // Active Order: Most recent order that is not completed or cancelled
+  // Active Order: Most recent order in non-terminal state
   const activeOrder = myOrders.find((o) => ['PLACED', 'ACCEPTED', 'PREPARING', 'READY'].includes(o.status)) || null;
 
-  // Cart Actions
+  const unreadNotificationCount = notifications.filter((n) => !n.read).length;
+
+  // Cart Operations
   const addToCart = (food: FoodItem, quantity = 1) => {
+    if (!food.isAvailable) return;
     setCart((prev) => {
       const existing = prev.find((item) => item.foodId === food.id);
       if (existing) {
@@ -321,286 +313,486 @@ export const CanteenProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const clearCart = () => {
     setCart([]);
-    setAppliedCoupon(null);
   };
 
-  const applyCoupon = (code: string) => {
-    const trimmed = code.trim().toUpperCase();
-    const found = coupons.find((c) => c.code.toUpperCase() === trimmed && c.isActive);
-    if (!found) {
-      return { success: false, message: 'Invalid or expired coupon code' };
+  /**
+   * ATOMIC ORDER CREATION (Requirement 15 & 16)
+   * Validates:
+   * 1. Canteen status not CLOSED or PAUSED
+   * 2. Every food document in Firestore (availability & authoritative unit price)
+   * 3. Allocates sequential daily token atomically
+   * 4. Writes order document to Firestore
+   * 5. No fake local order on error
+   */
+  const placeOrder = async (notes?: string): Promise<Order> => {
+    if (!currentUser) {
+      throw new Error('Please sign in with your Google account to place an order.');
     }
-    if (cartSubtotal < found.minOrderValue) {
-      return { success: false, message: `Minimum order value ₹${found.minOrderValue} required` };
+    if (cart.length === 0) {
+      throw new Error('Your cart is empty.');
     }
-    setAppliedCoupon(found);
-    return { success: true, message: `Coupon ${found.code} applied successfully!` };
-  };
-
-  const removeCoupon = () => {
-    setAppliedCoupon(null);
-  };
-
-  // Place Order
-  const placeOrder = async (
-    paymentMethod: 'COUNTER' | 'UPI' | 'ONLINE',
-    notes?: string
-  ): Promise<Order> => {
-    if (!currentUser) throw new Error('Please login to place an order.');
-    if (cart.length === 0) throw new Error('Your cart is empty.');
-
-    const { tokenNumber, tokenString, orderNumber, dateKey } = await getNextDailyToken();
-
-    // Calculate estimated wait time based on max prep time of items
-    const maxItemPrepTime = Math.max(...cart.map((item) => {
-      const food = foods.find((f) => f.id === item.foodId);
-      return food?.prepTimeMinutes || 8;
-    }));
-    const stats = calculateQueueStats(tokenNumber, queueState.currentServingToken, orders);
-    const estimatedWaitMin = Math.max(stats.estimatedWaitMin, maxItemPrepTime + settings.prepDelayOffset);
-
-    const orderId = `ord_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
-    const newOrder: Order = {
-      id: orderId,
-      orderNumber,
-      tokenNumber,
-      tokenString,
-      dateKey,
-      userId: currentUser.uid,
-      userName: userProfile?.name || currentUser.displayName || 'SVCE Student',
-      userEmail: currentUser.email || `${currentUser.uid}@svce.ac.in`,
-      items: [...cart],
-      status: 'PLACED',
-      paymentMethod,
-      paymentStatus: paymentMethod === 'COUNTER' ? 'PENDING' : 'PAID',
-      subtotal: cartSubtotal,
-      discount: discountAmount,
-      total: cartTotal,
-      couponCode: appliedCoupon?.code,
-      createdAt: new Date().toISOString(),
-      estimatedWaitMin,
-      notes: notes || ''
-    };
-
-    // Save order in Firestore
-    try {
-      await setDoc(doc(db, 'orders', orderId), newOrder);
-    } catch (err) {
-      console.warn('Order write to firestore notice (fallback applied):', err);
+    if (isPlacingOrderRef.current) {
+      throw new Error('An order submission is already in progress.');
     }
 
-    // Add local state immediately for instant response
-    setMyOrders((prev) => [newOrder, ...prev]);
-    setOrders((prev) => [newOrder, ...prev]);
-
-    // Create confirmation notification
-    const notifId = `notif_${Date.now()}`;
-    const notificationData: NotificationItem = {
-      id: notifId,
-      userId: currentUser.uid,
-      orderId: newOrder.id,
-      tokenString: newOrder.tokenString,
-      title: 'Order Confirmed',
-      message: `Your token ${newOrder.tokenString} has been placed. You don't need to stand in the queue!`,
-      type: 'STATUS_UPDATE',
-      read: false,
-      createdAt: new Date().toISOString()
-    };
+    isPlacingOrderRef.current = true;
 
     try {
-      await setDoc(doc(db, 'notifications', notifId), notificationData);
-    } catch {
-      setNotifications((prev) => [notificationData, ...prev]);
-    }
+      const dateKey = getTodayDateKey();
 
-    clearCart();
-    return newOrder;
-  };
-
-  // Cancel order (allowed when PLACED)
-  const cancelOrder = async (orderId: string) => {
-    setMyOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: 'CANCELLED' } : o)));
-    setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: 'CANCELLED' } : o)));
-    try {
-      const orderRef = doc(db, 'orders', orderId);
-      await updateDoc(orderRef, { status: 'CANCELLED' });
-    } catch (err) {
-      console.warn('cancelOrder firestore sync notice:', err);
-    }
-  };
-
-  // Update order status (Staff / Kitchen)
-  const updateOrderStatus = async (orderId: string, status: OrderStatus) => {
-    const order = orders.find((o) => o.id === orderId) || myOrders.find((o) => o.id === orderId);
-    const updates: Partial<Order> = { status };
-    const nowIso = new Date().toISOString();
-
-    if (status === 'ACCEPTED') updates.acceptedAt = nowIso;
-    if (status === 'PREPARING') updates.preparingAt = nowIso;
-    if (status === 'READY') updates.readyAt = nowIso;
-    if (status === 'COMPLETED') updates.completedAt = nowIso;
-
-    try {
-      await updateDoc(doc(db, 'orders', orderId), updates);
-    } catch {
-      // Offline fallback
-    }
-
-    // Update local state
-    setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, ...updates } : o)));
-    setMyOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, ...updates } : o)));
-
-    // Send targeted notification to the student
-    if (order) {
-      let notifTitle = '';
-      let notifMsg = '';
-      let notifType: NotificationItem['type'] = 'STATUS_UPDATE';
-
-      if (status === 'ACCEPTED') {
-        notifTitle = `Order Accepted (${order.tokenString})`;
-        notifMsg = `The kitchen has accepted your order ${order.tokenString}.`;
-      } else if (status === 'PREPARING') {
-        notifTitle = `Order Being Prepared (${order.tokenString})`;
-        notifMsg = `Chefs are now preparing your order ${order.tokenString}. Estimated time: ${order.estimatedWaitMin} min.`;
-      } else if (status === 'READY') {
-        notifTitle = `YOUR ORDER IS READY! 🎉`;
-        notifMsg = `Please collect token ${order.tokenString} from the QBite pickup counter.`;
-        notifType = 'READY_ALERT';
-      } else if (status === 'COMPLETED') {
-        notifTitle = `Order Completed`;
-        notifMsg = `Thank you! Hope you enjoyed your food at SVCE Cafe.`;
-      }
-
-      if (notifTitle) {
-        const notifId = `notif_${Date.now()}`;
-        const notifObj: NotificationItem = {
-          id: notifId,
-          userId: order.userId,
-          orderId: order.id,
-          tokenString: order.tokenString,
-          title: notifTitle,
-          message: notifMsg,
-          type: notifType,
-          read: false,
-          createdAt: nowIso
-        };
-        try {
-          await setDoc(doc(db, 'notifications', notifId), notifObj);
-        } catch {
-          // Local fallback
-          if (currentUser?.uid === order.userId) {
-            setNotifications((prev) => [notifObj, ...prev]);
-          }
+      // 1. Verify Canteen Settings
+      const settingsSnap = await getDoc(doc(db, 'settings', 'main'));
+      if (settingsSnap.exists()) {
+        const currentCanteenStatus = (settingsSnap.data().status as CanteenStatus) || 'OPEN';
+        if (currentCanteenStatus === 'CLOSED') {
+          throw new Error('The canteen is currently closed. Orders cannot be placed at this time.');
+        }
+        if (currentCanteenStatus === 'PAUSED') {
+          throw new Error('Ordering is temporarily paused while the kitchen fulfills active orders. Please try again shortly.');
         }
       }
-    }
-  };
 
-  // Staff calls next token
-  const callNextToken = async (): Promise<number> => {
-    const todayKey = getTodayDateKey();
-    const queueDocRef = doc(db, 'queue', todayKey);
-    const nextServing = queueState.currentServingToken + 1;
+      // 2. Authoritative Re-validation of Cart Items in Firestore
+      const verifiedItems: OrderItem[] = [];
+      let authoritativeSubtotal = 0;
+      let maxItemPrepTime = 8;
 
-    try {
-      await updateDoc(queueDocRef, {
-        currentServingToken: nextServing,
-        updatedAt: new Date().toISOString()
+      for (const item of cart) {
+        const foodDocRef = doc(db, 'foods', item.foodId);
+        const foodSnap = await getDoc(foodDocRef);
+
+        if (!foodSnap.exists()) {
+          // If foods collection wasn't seeded yet, fallback to static item check
+          const fallbackItem = INITIAL_FOOD_ITEMS.find((f) => f.id === item.foodId);
+          if (!fallbackItem || !fallbackItem.isAvailable) {
+            throw new Error(`"${item.name}" is no longer available. Please remove it from your cart.`);
+          }
+          verifiedItems.push({
+            foodId: fallbackItem.id,
+            name: fallbackItem.name,
+            price: fallbackItem.price,
+            quantity: item.quantity,
+            imageUrl: fallbackItem.imageUrl,
+            isVeg: fallbackItem.isVeg
+          });
+          authoritativeSubtotal += fallbackItem.price * item.quantity;
+          maxItemPrepTime = Math.max(maxItemPrepTime, fallbackItem.prepTimeMinutes || 8);
+        } else {
+          const foodData = foodSnap.data() as FoodItem;
+          if (!foodData.isAvailable) {
+            throw new Error(`"${foodData.name}" was just marked sold out! Please remove it from your cart.`);
+          }
+          verifiedItems.push({
+            foodId: foodData.id,
+            name: foodData.name,
+            price: foodData.price, // Authoritative price snapshot
+            quantity: item.quantity,
+            imageUrl: foodData.imageUrl,
+            isVeg: foodData.isVeg
+          });
+          authoritativeSubtotal += foodData.price * item.quantity;
+          maxItemPrepTime = Math.max(maxItemPrepTime, foodData.prepTimeMinutes || 8);
+        }
+      }
+
+      // 3. Deterministic wait estimate based on active kitchen load
+      const waitRange = calculateEstimatedWaitRange(orders, maxItemPrepTime);
+      const estimatedWaitMin = waitRange.minMin;
+
+      // 4. Atomic Firestore Transaction for Token Allocation & Order Creation
+      const queueDocRef = doc(db, 'queue', dateKey);
+      const orderId = `ord_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+      const orderDocRef = doc(db, 'orders', orderId);
+
+      const confirmedOrder = await runTransaction(db, async (transaction) => {
+        const queueDoc = await transaction.get(queueDocRef);
+        let nextToken = 1;
+
+        if (queueDoc.exists()) {
+          const qData = queueDoc.data() as QueueState;
+          nextToken = (qData.lastToken || 0) + 1;
+          transaction.update(queueDocRef, {
+            lastToken: nextToken,
+            updatedAt: new Date().toISOString()
+          });
+        } else {
+          transaction.set(queueDocRef, {
+            id: dateKey,
+            dateKey,
+            lastToken: 1,
+            updatedAt: new Date().toISOString()
+          });
+          nextToken = 1;
+        }
+
+        const tokenString = formatTokenNumber(nextToken);
+        const orderNumber = formatOrderNumber(nextToken);
+
+        const newOrder: Order = {
+          id: orderId,
+          orderNumber,
+          tokenNumber: nextToken,
+          tokenString,
+          dateKey,
+          userId: currentUser.uid,
+          userName: userProfile?.name || currentUser.displayName || 'SVCE Student',
+          userEmail: currentUser.email || `${currentUser.uid}@svce.ac.in`,
+          items: verifiedItems,
+          status: 'PLACED',
+          paymentMethod: 'COUNTER',
+          paymentStatus: 'PENDING',
+          subtotal: authoritativeSubtotal,
+          discount: 0,
+          total: authoritativeSubtotal,
+          createdAt: new Date().toISOString(),
+          acceptedAt: null,
+          preparingAt: null,
+          readyAt: null,
+          completedAt: null,
+          lastStatusChangedAt: new Date().toISOString(),
+          lastStatusChangedBy: currentUser.uid,
+          estimatedWaitMin,
+          notes: notes ? notes.trim() : ''
+        };
+
+        transaction.set(orderDocRef, newOrder);
+        return newOrder;
       });
-      setQueueState((prev) => ({ ...prev, currentServingToken: nextServing }));
-    } catch {
-      setQueueState((prev) => ({ ...prev, currentServingToken: nextServing }));
-    }
 
-    return nextServing;
+      // 5. In-App Notification for Student
+      const notifId = `notif_${Date.now()}_${Math.random().toString(36).substring(2, 5)}`;
+      const notif: NotificationItem = {
+        id: notifId,
+        userId: currentUser.uid,
+        orderId: confirmedOrder.id,
+        tokenString: confirmedOrder.tokenString,
+        title: 'Order Confirmed',
+        message: `Your token ${confirmedOrder.tokenString} (${confirmedOrder.orderNumber}) has been placed. Pay ₹${confirmedOrder.total} at counter on pickup.`,
+        type: 'STATUS_UPDATE',
+        read: false,
+        createdAt: new Date().toISOString()
+      };
+      setDoc(doc(db, 'notifications', notifId), notif).catch(() => {});
+
+      // Clear local cart ONLY upon confirmed creation
+      clearCart();
+      return confirmedOrder;
+    } catch (err: any) {
+      console.error('Order creation failed:', err);
+      const friendlyMessage = err?.message || 'Order could not be confirmed. Please check your connection and try again.';
+      throw new Error(friendlyMessage);
+    } finally {
+      isPlacingOrderRef.current = false;
+    }
   };
 
-  const setCurrentServingToken = async (token: number) => {
-    const todayKey = getTodayDateKey();
-    const queueDocRef = doc(db, 'queue', todayKey);
-    try {
-      await updateDoc(queueDocRef, {
-        currentServingToken: token,
-        updatedAt: new Date().toISOString()
-      });
-      setQueueState((prev) => ({ ...prev, currentServingToken: token }));
-    } catch {
-      setQueueState((prev) => ({ ...prev, currentServingToken: token }));
+  /**
+   * CANCEL ORDER (Allowed ONLY when status is PLACED)
+   */
+  const cancelOrder = async (orderId: string) => {
+    if (!currentUser) throw new Error('Not authenticated');
+
+    const orderRef = doc(db, 'orders', orderId);
+    const snap = await getDoc(orderRef);
+    if (!snap.exists()) throw new Error('Order not found');
+
+    const orderData = snap.data() as Order;
+    if (orderData.userId !== currentUser.uid && role !== 'admin') {
+      throw new Error('You do not have permission to cancel this order.');
     }
+
+    if (orderData.status !== 'PLACED') {
+      throw new Error('This order cannot be cancelled as kitchen preparation has already started.');
+    }
+
+    const nowIso = new Date().toISOString();
+    await updateDoc(orderRef, {
+      status: 'CANCELLED',
+      lastStatusChangedAt: nowIso,
+      lastStatusChangedBy: currentUser.uid
+    });
+
+    // Send cancellation notification
+    const notifId = `notif_${Date.now()}`;
+    await setDoc(doc(db, 'notifications', notifId), {
+      id: notifId,
+      userId: orderData.userId,
+      orderId,
+      tokenString: orderData.tokenString,
+      title: 'Order Cancelled',
+      message: `Your order ${orderData.tokenString} has been cancelled.`,
+      type: 'STATUS_UPDATE',
+      read: false,
+      createdAt: nowIso
+    });
   };
 
-  // Favorites
+  /**
+   * STAFF WORKFLOW TRANSITIONS
+   * Validates allowed transitions and sends in-app notifications
+   */
+  const acceptOrder = async (orderId: string) => {
+    const orderRef = doc(db, 'orders', orderId);
+    const snap = await getDoc(orderRef);
+    if (!snap.exists()) throw new Error('Order not found');
+    const order = snap.data() as Order;
+
+    if (order.status !== 'PLACED') {
+      throw new Error(`Cannot accept order with status "${order.status}".`);
+    }
+
+    const nowIso = new Date().toISOString();
+    await updateDoc(orderRef, {
+      status: 'ACCEPTED',
+      acceptedAt: nowIso,
+      lastStatusChangedAt: nowIso,
+      lastStatusChangedBy: currentUser?.uid || 'staff'
+    });
+
+    // Notify student
+    const notifId = `notif_${Date.now()}`;
+    await setDoc(doc(db, 'notifications', notifId), {
+      id: notifId,
+      userId: order.userId,
+      orderId: order.id,
+      tokenString: order.tokenString,
+      title: `Order Accepted (${order.tokenString})`,
+      message: `The kitchen has accepted your order ${order.tokenString}.`,
+      type: 'STATUS_UPDATE',
+      read: false,
+      createdAt: nowIso
+    });
+  };
+
+  const startPreparingOrder = async (orderId: string) => {
+    const orderRef = doc(db, 'orders', orderId);
+    const snap = await getDoc(orderRef);
+    if (!snap.exists()) throw new Error('Order not found');
+    const order = snap.data() as Order;
+
+    if (order.status !== 'ACCEPTED' && order.status !== 'PLACED') {
+      throw new Error(`Cannot start preparing order with status "${order.status}".`);
+    }
+
+    const nowIso = new Date().toISOString();
+    await updateDoc(orderRef, {
+      status: 'PREPARING',
+      preparingAt: nowIso,
+      lastStatusChangedAt: nowIso,
+      lastStatusChangedBy: currentUser?.uid || 'staff'
+    });
+
+    const notifId = `notif_${Date.now()}`;
+    await setDoc(doc(db, 'notifications', notifId), {
+      id: notifId,
+      userId: order.userId,
+      orderId: order.id,
+      tokenString: order.tokenString,
+      title: `Preparing Your Food (${order.tokenString})`,
+      message: `Chefs are now preparing your fresh food for token ${order.tokenString}.`,
+      type: 'STATUS_UPDATE',
+      read: false,
+      createdAt: nowIso
+    });
+  };
+
+  const markOrderReady = async (orderId: string) => {
+    const orderRef = doc(db, 'orders', orderId);
+    const snap = await getDoc(orderRef);
+    if (!snap.exists()) throw new Error('Order not found');
+    const order = snap.data() as Order;
+
+    if (order.status !== 'PREPARING' && order.status !== 'ACCEPTED') {
+      throw new Error(`Cannot mark ready an order with status "${order.status}".`);
+    }
+
+    const nowIso = new Date().toISOString();
+    await updateDoc(orderRef, {
+      status: 'READY',
+      readyAt: nowIso,
+      lastStatusChangedAt: nowIso,
+      lastStatusChangedBy: currentUser?.uid || 'staff'
+    });
+
+    // High priority READY alert notification
+    const notifId = `notif_${Date.now()}`;
+    await setDoc(doc(db, 'notifications', notifId), {
+      id: notifId,
+      userId: order.userId,
+      orderId: order.id,
+      tokenString: order.tokenString,
+      title: 'YOUR ORDER IS READY! 🎉',
+      message: `Please collect token ${order.tokenString} from SVCE Cafe Counter 1 or 2.`,
+      type: 'READY_ALERT',
+      read: false,
+      createdAt: nowIso
+    });
+  };
+
+  const markPaymentPaid = async (orderId: string) => {
+    const orderRef = doc(db, 'orders', orderId);
+    const nowIso = new Date().toISOString();
+    await updateDoc(orderRef, {
+      paymentStatus: 'PAID',
+      lastStatusChangedAt: nowIso,
+      lastStatusChangedBy: currentUser?.uid || 'staff'
+    });
+  };
+
+  const completePickup = async (orderId: string) => {
+    const orderRef = doc(db, 'orders', orderId);
+    const snap = await getDoc(orderRef);
+    if (!snap.exists()) throw new Error('Order not found');
+    const order = snap.data() as Order;
+
+    if (order.status !== 'READY') {
+      throw new Error(`Cannot complete order with status "${order.status}". Only READY orders can be completed.`);
+    }
+
+    const nowIso = new Date().toISOString();
+    await updateDoc(orderRef, {
+      status: 'COMPLETED',
+      paymentStatus: 'PAID', // Complete pickup ensures payment was collected
+      completedAt: nowIso,
+      lastStatusChangedAt: nowIso,
+      lastStatusChangedBy: currentUser?.uid || 'staff'
+    });
+
+    const notifId = `notif_${Date.now()}`;
+    await setDoc(doc(db, 'notifications', notifId), {
+      id: notifId,
+      userId: order.userId,
+      orderId: order.id,
+      tokenString: order.tokenString,
+      title: 'Order Picked Up',
+      message: `Your order ${order.tokenString} has been completed. Enjoy your meal at SVCE!`,
+      type: 'STATUS_UPDATE',
+      read: false,
+      createdAt: nowIso
+    });
+  };
+
+  const rejectOrder = async (orderId: string, reason: string) => {
+    const orderRef = doc(db, 'orders', orderId);
+    const snap = await getDoc(orderRef);
+    if (!snap.exists()) throw new Error('Order not found');
+    const order = snap.data() as Order;
+
+    if (order.status !== 'PLACED') {
+      throw new Error('Only newly placed orders can be rejected.');
+    }
+
+    const nowIso = new Date().toISOString();
+    await updateDoc(orderRef, {
+      status: 'REJECTED',
+      rejectionReason: reason || 'Item unavailable or kitchen capacity reached',
+      lastStatusChangedAt: nowIso,
+      lastStatusChangedBy: currentUser?.uid || 'staff'
+    });
+
+    const notifId = `notif_${Date.now()}`;
+    await setDoc(doc(db, 'notifications', notifId), {
+      id: notifId,
+      userId: order.userId,
+      orderId: order.id,
+      tokenString: order.tokenString,
+      title: 'Order Unable to be Prepared',
+      message: `Order ${order.tokenString} was rejected by kitchen: ${reason}. Please order an alternate item.`,
+      type: 'STATUS_UPDATE',
+      read: false,
+      createdAt: nowIso
+    });
+  };
+
+  // ADMIN OPERATIONS
+  const updateFoodAvailability = async (foodId: string, isAvailable: boolean) => {
+    const foodRef = doc(db, 'foods', foodId);
+    const nowIso = new Date().toISOString();
+    await setDoc(foodRef, { isAvailable, updatedAt: nowIso }, { merge: true });
+  };
+
+  const saveFoodItem = async (food: FoodItem) => {
+    const foodRef = doc(db, 'foods', food.id);
+    const nowIso = new Date().toISOString();
+    await setDoc(foodRef, { ...food, updatedAt: nowIso }, { merge: true });
+  };
+
+  const updateCanteenStatus = async (
+    status: CanteenStatus,
+    announcement?: string,
+    operatingHours?: string
+  ) => {
+    const settingsRef = doc(db, 'settings', 'main');
+    const nowIso = new Date().toISOString();
+    const payload: Partial<CanteenSettings> = {
+      status,
+      updatedAt: nowIso,
+      updatedBy: currentUser?.uid || 'admin'
+    };
+    if (announcement !== undefined) payload.announcement = announcement;
+    if (operatingHours !== undefined) payload.operatingHours = operatingHours;
+
+    await setDoc(settingsRef, payload, { merge: true });
+  };
+
+  const seedMenuCatalog = async () => {
+    for (const item of INITIAL_FOOD_ITEMS) {
+      await setDoc(doc(db, 'foods', item.id), item);
+    }
+    await setDoc(doc(db, 'settings', 'main'), {
+      status: 'OPEN',
+      announcement: 'Fresh breakfast & hot meals available at Counters 1 & 2',
+      operatingHours: '7:30 AM – 5:30 PM',
+      updatedAt: new Date().toISOString()
+    }, { merge: true });
+  };
+
+  // User Actions
   const toggleFavorite = async (foodId: string) => {
     if (!currentUser) return;
-    const isFav = favorites.includes(foodId);
-    const favDocId = `${currentUser.uid}_${foodId}`;
-    const favRef = doc(db, 'favorites', favDocId);
+    const favId = `${currentUser.uid}_${foodId}`;
+    const favRef = doc(db, 'favorites', favId);
 
-    if (isFav) {
+    if (favorites.includes(foodId)) {
       setFavorites((prev) => prev.filter((id) => id !== foodId));
       try {
-        await deleteDoc(favRef);
-      } catch {}
+        await updateDoc(favRef, { isDeleted: true });
+      } catch {
+        // Ignored
+      }
     } else {
       setFavorites((prev) => [...prev, foodId]);
       try {
         await setDoc(favRef, {
-          id: favDocId,
+          id: favId,
           userId: currentUser.uid,
           foodId,
           createdAt: new Date().toISOString()
         });
-      } catch {}
+      } catch {
+        // Ignored
+      }
     }
   };
 
-  const markNotificationAsRead = async (notifId: string) => {
+  const markNotificationAsRead = async (notificationId: string) => {
     setNotifications((prev) =>
-      prev.map((n) => (n.id === notifId ? { ...n, read: true } : n))
+      prev.map((n) => (n.id === notificationId ? { ...n, read: true } : n))
     );
     try {
-      await updateDoc(doc(db, 'notifications', notifId), { read: true });
-    } catch {}
+      await updateDoc(doc(db, 'notifications', notificationId), { read: true });
+    } catch {
+      // Ignored
+    }
   };
 
   const clearAllNotifications = async () => {
-    setNotifications([]);
+    const unread = notifications.filter((n) => !n.read);
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+    for (const notif of unread) {
+      updateDoc(doc(db, 'notifications', notif.id), { read: true }).catch(() => {});
+    }
   };
-
-  const toggleCanteenStatus = async () => {
-    const nextState = !settings.isOpen;
-    const nextSettings = { ...settings, isOpen: nextState };
-    setSettings(nextSettings);
-    try {
-      await setDoc(doc(db, 'settings', 'main'), nextSettings, { merge: true });
-    } catch {}
-  };
-
-  const updateFoodAvailability = async (foodId: string, isAvailable: boolean) => {
-    setFoods((prev) =>
-      prev.map((f) => (f.id === foodId ? { ...f, isAvailable } : f))
-    );
-    try {
-      await updateDoc(doc(db, 'foods', foodId), { isAvailable });
-    } catch {}
-  };
-
-  const saveFoodItem = async (food: FoodItem) => {
-    setFoods((prev) => {
-      const idx = prev.findIndex((f) => f.id === food.id);
-      if (idx >= 0) {
-        const copy = [...prev];
-        copy[idx] = food;
-        return copy;
-      }
-      return [...prev, food];
-    });
-    try {
-      await setDoc(doc(db, 'foods', food.id), food, { merge: true });
-    } catch {}
-  };
-
-  const unreadNotificationCount = notifications.filter((n) => !n.read).length;
 
   return (
     <CanteenContext.Provider
@@ -614,32 +806,31 @@ export const CanteenProvider: React.FC<{ children: React.ReactNode }> = ({ child
         notifications,
         unreadNotificationCount,
         favorites,
-        coupons,
         settings,
         cart,
         cartCount,
         cartSubtotal,
-        appliedCoupon,
-        discountAmount,
         cartTotal,
         loading,
         addToCart,
         updateCartQuantity,
         removeFromCart,
         clearCart,
-        applyCoupon,
-        removeCoupon,
         placeOrder,
         cancelOrder,
-        updateOrderStatus,
-        callNextToken,
-        setCurrentServingToken,
+        acceptOrder,
+        startPreparingOrder,
+        markOrderReady,
+        markPaymentPaid,
+        completePickup,
+        rejectOrder,
+        updateFoodAvailability,
+        saveFoodItem,
+        updateCanteenStatus,
+        seedMenuCatalog,
         toggleFavorite,
         markNotificationAsRead,
-        clearAllNotifications,
-        toggleCanteenStatus,
-        updateFoodAvailability,
-        saveFoodItem
+        clearAllNotifications
       }}
     >
       {children}

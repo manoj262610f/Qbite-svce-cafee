@@ -39,8 +39,6 @@ interface AuthContextType {
   authErrorDetails: AuthErrorInfo | null;
   role: UserRole;
   loginWithGoogle: (useRedirect?: boolean) => Promise<UserProfile | void>;
-  loginWithDemoAccount: (role?: 'admin' | 'staff' | 'student') => Promise<UserProfile>;
-  switchActiveRole: (newRole: UserRole) => void;
   logout: () => Promise<void>;
   clearAuthError: () => void;
   refreshUserProfile: () => Promise<void>;
@@ -149,18 +147,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setCurrentUser(null);
       safeLocalStorage.removeItem('qbite_user_session');
     }
-  };
-
-  /**
-   * Switch active viewing role for admins and testers
-   */
-  const switchActiveRole = (newRole: UserRole) => {
-    if (!userProfile) return;
-    const updated: UserProfile = {
-      ...userProfile,
-      role: newRole
-    };
-    saveSession(updated);
   };
 
   /**
@@ -414,50 +400,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  /**
-   * One-click Instant Campus Demo Login for frictionless evaluation and testing
-   */
-  const loginWithDemoAccount = async (role: 'admin' | 'staff' | 'student' = 'student'): Promise<UserProfile> => {
-    setLoading(true);
-    clearAuthError();
-
-    let demoEmail = 'student@svce.ac.in';
-    let demoName = 'SVCE Student';
-    let demoUid = `demo_std_${Date.now()}`;
-
-    if (role === 'admin') {
-      demoEmail = 'manojreddy8022@gmail.com';
-      demoName = 'Manoj Reddy (Admin)';
-      demoUid = 'demo_admin_8022';
-    } else if (role === 'staff') {
-      demoEmail = 'manojreddy8283@gmail.com';
-      demoName = 'SVCE Kitchen Staff';
-      demoUid = 'demo_staff_8283';
-    }
-
-    const profile: UserProfile = {
-      id: demoUid,
-      name: demoName,
-      email: demoEmail,
-      role,
-      accountStatus: 'ACTIVE',
-      photoURL: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(demoName)}&backgroundColor=ff6a00`,
-      createdAt: new Date().toISOString(),
-      lastLoginAt: new Date().toISOString()
-    };
-
-    // Save to Firestore if possible
-    try {
-      await setDoc(doc(db, 'users', profile.id), profile, { merge: true });
-    } catch {
-      // Offline fallback
-    }
-
-    saveSession(profile);
-    setLoading(false);
-    return profile;
-  };
-
   const loginWithGoogle = async (useRedirect = false): Promise<UserProfile | void> => {
     setLoading(true);
     setAuthError(null);
@@ -580,8 +522,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         authErrorDetails,
         role,
         loginWithGoogle,
-        loginWithDemoAccount,
-        switchActiveRole,
         logout,
         clearAuthError,
         refreshUserProfile

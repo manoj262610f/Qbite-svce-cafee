@@ -105,3 +105,23 @@ export const calculateEstimatedWaitRange = (
     displayRange: `${minMin}–${maxMin} min`
   };
 };
+
+/**
+ * Calculates current real queue position ahead of a given order based on active Firestore queue.
+ * Zero means ready for pickup immediately.
+ */
+export const calculateQueuePosition = (order: Order, allOrders: Order[]): number => {
+  if (order.status === 'READY') return 0;
+  if (['COMPLETED', 'CANCELLED', 'REJECTED'].includes(order.status)) return 0;
+
+  const ahead = allOrders.filter(
+    (o) =>
+      o.id !== order.id &&
+      o.dateKey === order.dateKey &&
+      ['PLACED', 'ACCEPTED', 'PREPARING'].includes(o.status) &&
+      (new Date(o.createdAt).getTime() < new Date(order.createdAt).getTime() ||
+        (new Date(o.createdAt).getTime() === new Date(order.createdAt).getTime() && o.tokenNumber < order.tokenNumber))
+  );
+
+  return ahead.length + 1;
+};

@@ -22,7 +22,7 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({
   onLoginSuccess,
   onNavigateToDisplay
 }) => {
-  const { loginWithGoogle, loginWithDemoAccount, authError, clearAuthError } = useAuth();
+  const { loginWithGoogle, authError, clearAuthError } = useAuth();
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
@@ -47,22 +47,6 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({
     } finally {
       setIsSigningIn(false);
       setIsRedirecting(false);
-    }
-  };
-
-  const handleDemoSignIn = async (demoRole: 'admin' | 'staff' | 'student') => {
-    setIsSigningIn(true);
-    setLocalError(null);
-    clearAuthError();
-
-    try {
-      await loginWithDemoAccount(demoRole);
-      onLoginSuccess();
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Demo sign-in failed.';
-      setLocalError(msg);
-    } finally {
-      setIsSigningIn(false);
     }
   };
 
@@ -227,40 +211,6 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({
               </>
             )}
           </button>
-
-          {/* Instant Campus Preview Access */}
-          <div className="pt-2.5 border-t border-white/8 space-y-1.5">
-            <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-wider text-[#A1A1A1]">
-              <span>Instant Test Access</span>
-              <span className="text-[#FF7A00]">1-Tap Demo</span>
-            </div>
-            <div className="grid grid-cols-3 gap-1.5">
-              <button
-                type="button"
-                onClick={() => handleDemoSignIn('admin')}
-                disabled={isSigningIn}
-                className="py-2 px-1 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 text-[11px] font-black text-purple-300 text-center cursor-pointer transition-colors disabled:opacity-50"
-              >
-                Admin (Manoj)
-              </button>
-              <button
-                type="button"
-                onClick={() => handleDemoSignIn('staff')}
-                disabled={isSigningIn}
-                className="py-2 px-1 rounded-xl bg-[#FF6A00]/10 hover:bg-[#FF6A00]/20 border border-[#FF6A00]/30 text-[11px] font-black text-[#FF7A00] text-center cursor-pointer transition-colors disabled:opacity-50"
-              >
-                Kitchen Staff
-              </button>
-              <button
-                type="button"
-                onClick={() => handleDemoSignIn('student')}
-                disabled={isSigningIn}
-                className="py-2 px-1 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-[11px] font-black text-stone-200 text-center cursor-pointer transition-colors disabled:opacity-50"
-              >
-                Student
-              </button>
-            </div>
-          </div>
 
           {/* Privacy & Trust Highlights */}
           <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/8 text-[11px] text-[#A1A1A1]">

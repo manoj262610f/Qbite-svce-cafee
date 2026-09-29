@@ -72,6 +72,7 @@ interface CanteenContextType {
   // Admin Operations
   updateFoodAvailability: (foodId: string, isAvailable: boolean) => Promise<void>;
   saveFoodItem: (food: FoodItem) => Promise<void>;
+  deleteFoodItem: (foodId: string) => Promise<void>;
   updateCanteenStatus: (status: CanteenStatus, announcement?: string, operatingHours?: string) => Promise<void>;
   seedMenuCatalog: () => Promise<void>;
   // User Actions
@@ -128,12 +129,11 @@ export const CanteenProvider: React.FC<{ children: React.ReactNode }> = ({ child
         const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as FoodItem));
         setFoods(items);
       } else {
-        // If foods collection in Firestore is empty, provide fallback catalog in memory until admin seeds
-        setFoods(INITIAL_FOOD_ITEMS);
+        setFoods([]);
       }
       setLoading(false);
     }, () => {
-      setFoods(INITIAL_FOOD_ITEMS);
+      setFoods([]);
       setLoading(false);
     });
 
@@ -373,37 +373,24 @@ export const CanteenProvider: React.FC<{ children: React.ReactNode }> = ({ child
         const foodSnap = await getDoc(foodDocRef);
 
         if (!foodSnap.exists()) {
-          // If foods collection wasn't seeded yet, fallback to static item check
-          const fallbackItem = INITIAL_FOOD_ITEMS.find((f) => f.id === item.foodId);
-          if (!fallbackItem || !fallbackItem.isAvailable) {
-            throw new Error(`"${item.name}" is no longer available. Please remove it from your cart.`);
-          }
-          verifiedItems.push({
-            foodId: fallbackItem.id,
-            name: fallbackItem.name,
-            price: fallbackItem.price,
-            quantity: item.quantity,
-            imageUrl: fallbackItem.imageUrl,
-            isVeg: fallbackItem.isVeg
-          });
-          authoritativeSubtotal += fallbackItem.price * item.quantity;
-          maxItemPrepTime = Math.max(maxItemPrepTime, fallbackItem.prepTimeMinutes || 8);
-        } else {
-          const foodData = foodSnap.data() as FoodItem;
-          if (!foodData.isAvailable) {
-            throw new Error(`"${foodData.name}" was just marked sold out! Please remove it from your cart.`);
-          }
-          verifiedItems.push({
-            foodId: foodData.id,
-            name: foodData.name,
-            price: foodData.price, // Authoritative price snapshot
-            quantity: item.quantity,
-            imageUrl: foodData.imageUrl,
-            isVeg: foodData.isVeg
-          });
-          authoritativeSubtotal += foodData.price * item.quantity;
-          maxItemPrepTime = Math.max(maxItemPrepTime, foodData.prepTimeMinutes || 8);
+          throw new Error(`"${item.name}" is no longer available in the canteen menu. Please remove it from your cart.`);
         }
+
+        const foodData = foodSnap.data() as FoodItem;
+        if (!foodData.isAvailable) {
+          throw new Error(`"${foodData.name}" was just marked sold out! Please remove it from your cart.`);
+        }
+
+        verifiedItems.push({
+          foodId: foodData.id,
+          name: foodData.name,
+          price: foodData.price, // Authoritative price snapshot from Firestore
+          quantity: item.quantity,
+          imageUrl: foodData.imageUrl,
+          isVeg: foodData.isVeg
+        });
+        authoritativeSubtotal += foodData.price * item.quantity;
+        maxItemPrepTime = Math.max(maxItemPrepTime, foodData.prepTimeMinutes || 8);
       }
 
       // 3. Deterministic wait estimate based on active kitchen load
@@ -728,6 +715,10 @@ export const CanteenProvider: React.FC<{ children: React.ReactNode }> = ({ child
     await setDoc(foodRef, { ...food, updatedAt: nowIso }, { merge: true });
   };
 
+  const deleteFoodItem = async (foodId: string) => {
+    await deleteDoc(doc(db, 'foods', foodId));
+  };
+
   const updateCanteenStatus = async (
     status: CanteenStatus,
     announcement?: string,
@@ -837,6 +828,7 @@ export const CanteenProvider: React.FC<{ children: React.ReactNode }> = ({ child
         rejectOrder,
         updateFoodAvailability,
         saveFoodItem,
+        deleteFoodItem,
         updateCanteenStatus,
         seedMenuCatalog,
         toggleFavorite,

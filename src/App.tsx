@@ -18,18 +18,12 @@ import { AdminPage } from './pages/AdminPage';
 import { FavoritesPage } from './pages/FavoritesPage';
 import { NotificationsPage } from './pages/NotificationsPage';
 import { ProfilePage } from './pages/ProfilePage';
-import { AuthBridgePage } from './pages/AuthBridgePage';
 import { testFirestoreConnection } from './firebase/connectionTest';
 import { safeSessionStorage } from './services/safeStorage';
 import { UtensilsCrossed, ChefHat, Shield } from 'lucide-react';
 
 function MainAppContent() {
-  // If navigating directly to auth bridge gateway, render immediately
-  if (typeof window !== 'undefined' && window.location.pathname === '/auth-bridge') {
-    return <AuthBridgePage />;
-  }
-
-  const { currentUser, role, loading: authLoading, logout } = useAuth();
+  const { currentUser, role, authLoading, profileLoading, logout } = useAuth();
   const { activeOrder } = useCanteen();
 
   const [hasShownSplash, setHasShownSplash] = useState<boolean>(() => {
@@ -37,8 +31,11 @@ function MainAppContent() {
   });
 
   const getInitialRoute = () => {
-    const validRoutes = ['/home', '/menu', '/cart', '/checkout', '/orders', '/queue', '/favorites', '/notifications', '/profile', '/display', '/staff', '/admin'];
     const path = window.location.pathname;
+    if (path === '/student' || path === '/login' || path === '/' || path === '') {
+      return '/home';
+    }
+    const validRoutes = ['/home', '/menu', '/cart', '/checkout', '/orders', '/queue', '/favorites', '/notifications', '/profile', '/display', '/staff', '/admin'];
     return validRoutes.includes(path) ? path : '/home';
   };
 
@@ -62,10 +59,48 @@ function MainAppContent() {
     testFirestoreConnection();
   }, []);
 
-  // Register service worker if available (PWA Requirement)
+  // Normalize initial path if at root
   useEffect(() => {
-    if ('serviceWorker' in navigator && import.meta.env.PROD) {
-      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    if (window.location.pathname === '/' || window.location.pathname === '') {
+      window.history.replaceState(null, '', '/home');
+    }
+  }, []);
+
+  // Register service worker with auto-update detection (PWA Requirement)
+  useEffect(() => {
+    if ('serviceWorker' in navigator && (import.meta.env.PROD || window.location.protocol === 'https:')) {
+      navigator.serviceWorker
+        .register('/sw.js', { updateViaCache: 'none' })
+        .then((registration) => {
+          console.log('[SW] Registered successfully with scope:', registration.scope);
+          registration.update().catch(() => {});
+
+          registration.addEventListener('updatefound', () => {
+            const installingWorker = registration.installing;
+            if (installingWorker) {
+              installingWorker.addEventListener('statechange', () => {
+                if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  console.log('[SW] New version detected; activating immediately');
+                  installingWorker.postMessage({ type: 'SKIP_WAITING' });
+                }
+              });
+            }
+          });
+        })
+        .catch((err) => {
+          console.warn('[SW] Registration failed:', err);
+        });
+
+      // Periodically check for updates when window gains focus
+      const handleVisibilityChange = () => {
+        if (document.visibilityState === 'visible') {
+          navigator.serviceWorker.getRegistration().then((reg) => {
+            reg?.update().catch(() => {});
+          });
+        }
+      };
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+      return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
     }
   }, []);
 
@@ -87,8 +122,9 @@ function MainAppContent() {
     return <SplashScreen onComplete={handleSplashComplete} />;
   }
 
-  // 2. Auth Loading state while checking persistent session
-  if (authLoading && !currentUser) {
+  // 2. Auth Loading: MUST remain active until Firebase returns session (Requirements 2, 3, 10)
+  // NEVER assume the user is logged out before Firebase finishes checking the session!
+  if (authLoading) {
     return (
       <div className="min-h-screen bg-[#080808] flex flex-col items-center justify-center p-6 text-center text-white">
         <div className="w-12 h-12 rounded-2xl bg-[#FF6A00] flex items-center justify-center text-black shadow-lg glow-orange-sm mb-3 animate-pulse">
@@ -104,7 +140,16 @@ function MainAppContent() {
   if (!currentUser && currentRoute !== '/display') {
     return (
       <WelcomePage
-        onLoginSuccess={() => navigate('/home')}
+        onLoginSuccess={(targetRole?: string) => {
+          console.log('[AUTH] Redirecting to interface for role:', targetRole);
+          if (targetRole === 'admin') {
+            navigate('/admin');
+          } else if (targetRole === 'staff') {
+            navigate('/staff');
+          } else {
+            navigate('/home');
+          }
+        }}
         onNavigateToDisplay={() => navigate('/display')}
       />
     );
@@ -117,6 +162,17 @@ function MainAppContent() {
 
   // 4. Kitchen Staff Interface (/staff)
   if (currentRoute === '/staff') {
+    if (profileLoading) {
+      return (
+        <div className="min-h-screen bg-[#080808] flex flex-col items-center justify-center p-6 text-center text-white">
+          <div className="w-12 h-12 rounded-2xl bg-[#FF6A00]/20 text-[#FF7A00] border border-[#FF6A00]/30 flex items-center justify-center mb-3 shadow-md glow-orange-sm animate-pulse">
+            <ChefHat className="w-6 h-6 stroke-[2.5]" />
+          </div>
+          <p className="font-black text-sm text-white tracking-tight">Kitchen Portal</p>
+          <p className="text-[11px] text-[#A1A1A1] mt-1">Verifying staff credentials...</p>
+        </div>
+      );
+    }
     if (role !== 'staff' && role !== 'admin') {
       return (
         <div className="min-h-screen bg-[#080808] flex flex-col items-center justify-center p-6 text-center text-white">
@@ -141,6 +197,17 @@ function MainAppContent() {
 
   // 5. Admin Interface (/admin)
   if (currentRoute === '/admin') {
+    if (profileLoading) {
+      return (
+        <div className="min-h-screen bg-[#080808] flex flex-col items-center justify-center p-6 text-center text-white">
+          <div className="w-12 h-12 rounded-2xl bg-purple-500/20 text-purple-300 border border-purple-500/30 flex items-center justify-center mb-3 shadow-md animate-pulse">
+            <Shield className="w-6 h-6 stroke-[2.5]" />
+          </div>
+          <p className="font-black text-sm text-white tracking-tight">Admin Console</p>
+          <p className="text-[11px] text-[#A1A1A1] mt-1">Verifying administrator credentials...</p>
+        </div>
+      );
+    }
     if (role !== 'admin') {
       return (
         <div className="min-h-screen bg-[#080808] flex flex-col items-center justify-center p-6 text-center text-white">

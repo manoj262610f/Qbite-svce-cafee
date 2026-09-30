@@ -14,7 +14,7 @@ import { useAuth } from '../context/AuthContext';
 import { QbiteLogo } from '../components/QbiteLogo';
 
 interface WelcomePageProps {
-  onLoginSuccess: () => void;
+  onLoginSuccess: (targetRole?: string) => void;
   onNavigateToDisplay?: () => void;
 }
 
@@ -22,10 +22,11 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({
   onLoginSuccess,
   onNavigateToDisplay
 }) => {
-  const { loginWithGoogle, authError, clearAuthError } = useAuth();
+  const { loginWithGoogle, authError, authErrorDetails, clearAuthError } = useAuth();
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
+  const [copiedDomain, setCopiedDomain] = useState(false);
 
   const handleGoogleSignIn = async (useRedirect = false) => {
     if (useRedirect) {
@@ -39,7 +40,8 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({
     try {
       const res = await loginWithGoogle(useRedirect);
       if (res) {
-        onLoginSuccess();
+        console.log('[AUTH] Login completed successfully for role:', res.role);
+        onLoginSuccess(res.role);
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Google sign-in encountered an issue. Please try again.';
@@ -128,6 +130,26 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({
               <div className="flex-1">
                 <p className="font-bold text-[11px] text-white">Sign-In Notice</p>
                 <p className="text-[11px] leading-relaxed mt-0.5 opacity-90">{displayedError}</p>
+                {authErrorDetails?.isUnauthorizedDomain && (
+                  <div className="mt-2.5 pt-2 border-t border-rose-500/20 text-[11px]">
+                    <p className="text-[10px] text-stone-300 font-bold">Copy domain for Firebase Console:</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <code className="px-2 py-1 rounded-lg bg-black/50 text-rose-300 font-mono text-[10px] select-all flex-1 truncate">
+                        {window.location.hostname}
+                      </code>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(window.location.hostname);
+                          setCopiedDomain(true);
+                          setTimeout(() => setCopiedDomain(false), 2500);
+                        }}
+                        className="px-2.5 py-1 bg-rose-500/30 hover:bg-rose-500/40 text-rose-200 rounded-lg text-[10px] font-bold shrink-0 transition-colors cursor-pointer"
+                      >
+                        {copiedDomain ? 'Copied!' : 'Copy Domain'}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
               <button
                 onClick={() => {

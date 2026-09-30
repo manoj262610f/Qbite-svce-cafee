@@ -20,6 +20,8 @@ export interface AuthUser {
   photoURL: string | null;
 }
 
+export type AuthState = 'AUTH_LOADING' | 'AUTHENTICATED' | 'UNAUTHENTICATED';
+
 export interface AuthErrorInfo {
   code: string;
   message: string;
@@ -34,6 +36,9 @@ interface AuthContextType {
   currentUser: AuthUser | null;
   userProfile: UserProfile | null;
   loading: boolean;
+  authLoading: boolean;
+  profileLoading: boolean;
+  authState: AuthState;
   isSuspended: boolean;
   authError: string | null;
   authErrorDetails: AuthErrorInfo | null;
@@ -43,21 +48,6 @@ interface AuthContextType {
   clearAuthError: () => void;
   refreshUserProfile: () => Promise<void>;
 }
-
-const KNOWN_AUTHORIZED_DOMAINS = [
-  'localhost',
-  '127.0.0.1',
-  'hypnic-factor-nlcf1.firebaseapp.com',
-  'hypnic-factor-nlcf1.web.app',
-  'ais-dev-iqrxqckovfpyhkq2qvz44r-316718521676.asia-southeast1.run.app',
-  'ais-shared-iqrxqckovfpyhkq2qvz44r-316718521676.asia-southeast1.run.app',
-  'ais-pre-iqrxqckovfpyhkq2qvz44r-316718521676.asia-southeast1.run.app',
-  'ais-mob-iqrxqckovfpyhkq2qvz44r-316718521676.asia-southeast1.run.app',
-  'qbite-svce-cafe-89298859770.asia-southeast1.run.app',
-  'qbite-svce-cafe.ai.studio'
-];
-
-const AUTHORIZED_BRIDGE_BASE = 'https://ais-pre-iqrxqckovfpyhkq2qvz44r-316718521676.asia-southeast1.run.app';
 
 export const DESIGNATED_ADMIN_EMAILS = [
   'the.team.alpha.ece2026@gmail.com',
@@ -81,47 +71,13 @@ export const getDesignatedRoleForEmail = (rawEmail: string | null | undefined): 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(() => {
-    try {
-      const saved = safeLocalStorage.getItem('qbite_user_session');
-      if (saved) {
-        const p: UserProfile = JSON.parse(saved);
-        const email = (p.email || '').toLowerCase().trim();
-        // Ensure designated admins have admin privilege
-        if (DESIGNATED_ADMIN_EMAILS.includes(email) && p.role !== 'admin' && !p.role) {
-          p.role = 'admin';
-          safeLocalStorage.setItem('qbite_user_session', JSON.stringify(p));
-        } else if (DESIGNATED_STAFF_EMAILS.includes(email) && p.role !== 'staff' && p.role !== 'admin') {
-          p.role = 'staff';
-          safeLocalStorage.setItem('qbite_user_session', JSON.stringify(p));
-        }
-        return p;
-      }
-      return null;
-    } catch {
-      return null;
-    }
-  });
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
-  const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => {
-    try {
-      const saved = safeLocalStorage.getItem('qbite_user_session');
-      if (saved) {
-        const p: UserProfile = JSON.parse(saved);
-        return {
-          uid: p.id,
-          email: p.email,
-          displayName: p.name,
-          photoURL: p.photoURL || null
-        };
-      }
-      return null;
-    } catch {
-      return null;
-    }
-  });
+  // Core loading states: authLoading remains true until Firebase onAuthStateChanged returns
+  const [authLoading, setAuthLoading] = useState<boolean>(true);
+  const [profileLoading, setProfileLoading] = useState<boolean>(false);
 
-  const [loading, setLoading] = useState<boolean>(true);
   const [authError, setAuthError] = useState<string | null>(null);
   const [authErrorDetails, setAuthErrorDetails] = useState<AuthErrorInfo | null>(null);
 
@@ -135,29 +91,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const saveSession = (profile: UserProfile | null) => {
     setUserProfile(profile);
     if (profile) {
-      const authUser: AuthUser = {
-        uid: profile.id,
-        email: profile.email,
-        displayName: profile.name,
-        photoURL: profile.photoURL || null
-      };
-      setCurrentUser(authUser);
       safeLocalStorage.setItem('qbite_user_session', JSON.stringify(profile));
     } else {
-      setCurrentUser(null);
       safeLocalStorage.removeItem('qbite_user_session');
     }
   };
 
   /**
-   * Loads or creates user profile from Firestore.
-   * Role is strictly governed by authorized email and Firestore state.
+   * Loads or creates user profile in Firestore at users/{uid}.
+   * UID is strictly used as the document ID.
+   * Role is authoritative based on Firestore and designated administration accounts.
    */
   const handleFirebaseUser = async (fbUser: FirebaseUser): Promise<UserProfile> => {
     const uid = fbUser.uid;
     const email = (fbUser.email || '').toLowerCase().trim();
     const name = fbUser.displayName || (email ? email.split('@')[0] : 'SVCE Student');
     const photoURL = fbUser.photoURL || null;
+
+    console.log('[AUTH] Loading user profile for UID:', uid, 'Email:', email);
 
     const designatedRole = getDesignatedRoleForEmail(email);
     let finalRole: UserRole = designatedRole;
@@ -169,6 +120,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const userSnap = await getDoc(userDocRef);
 
       if (userSnap.exists()) {
+        console.log('[AUTH] Profile found in Firestore');
         const data = userSnap.data();
         existingStatus = (data.accountStatus as AccountStatus) || 'ACTIVE';
         existingCreatedAt = data.createdAt || existingCreatedAt;
@@ -183,17 +135,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
 
         // Update login timestamp & sync profile
-        await setDoc(userDocRef, {
-          name,
-          email,
-          role: finalRole,
-          photoURL,
-          lastLoginAt: new Date().toISOString()
-        }, { merge: true });
+        await setDoc(
+          userDocRef,
+          {
+            name,
+            email,
+            role: finalRole,
+            photoURL,
+            lastLoginAt: new Date().toISOString()
+          },
+          { merge: true }
+        );
       } else {
-        // Create initial record
+        console.log('[AUTH] New user! Creating Firestore profile with role:', designatedRole);
+        // Create initial record: Requirement 8
         const initialDoc = {
           id: uid,
+          uid,
           name,
           email,
           role: designatedRole,
@@ -206,8 +164,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         finalRole = designatedRole;
         existingStatus = 'ACTIVE';
       }
-    } catch {
-      // Non-fatal sync fallback
+    } catch (err) {
+      console.warn('[AUTH] Firestore user profile sync note (continuing with auth):', err);
+      // Requirement 17: Failure to read Firestore profile must not log the user out
     }
 
     const profile: UserProfile = {
@@ -221,6 +180,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       lastLoginAt: new Date().toISOString()
     };
 
+    console.log('[AUTH] Profile loaded. Role:', finalRole);
     saveSession(profile);
     return profile;
   };
@@ -253,15 +213,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
         saveSession(updated);
       }
-    } catch {
-      // Ignored
+    } catch (err) {
+      console.warn('[AUTH] refreshUserProfile note:', err);
     }
   };
 
   const parseAuthError = (error: any): { friendlyMessage: string; details: AuthErrorInfo } => {
     const code = error?.code || '';
     const rawMessage = error?.message || '';
-    const hostname = window.location.hostname || 'localhost';
+    const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
     const projectId = auth.app.options.projectId || 'hypnic-factor-nlcf1';
 
     const isUnauthorizedDomain =
@@ -289,7 +249,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } else if (code === 'auth/cancelled-popup-request') {
       friendlyMessage = 'Sign-in was interrupted. Please click Continue with Google again.';
     } else if (isPopupBlocked) {
-      friendlyMessage = 'Pop-up window was blocked by your browser. Tap the mobile redirect button below.';
+      friendlyMessage = 'Pop-up window was blocked by your browser. Please allow popups or tap the mobile redirect button below.';
     } else if (code === 'auth/network-request-failed') {
       friendlyMessage = 'Network error. Please check your internet connection and try again.';
     } else if (rawMessage) {
@@ -313,165 +273,86 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { friendlyMessage, details };
   };
 
+  // Subscribe to Firebase Auth state on mount exactly once
   useEffect(() => {
-    setLoading(true);
+    console.log('[AUTH] Loading authentication state...');
     let isMounted = true;
 
-    // 1. Check for authenticated payload from bridge in URL hash
-    if (typeof window !== 'undefined' && window.location.hash.includes('auth_payload=')) {
-      try {
-        const hash = window.location.hash.substring(1);
-        const params = new URLSearchParams(hash);
-        const payload = params.get('auth_payload');
-        if (payload) {
-          const profile = JSON.parse(decodeURIComponent(payload)) as UserProfile;
-          if (isMounted && profile?.id) {
-            saveSession(profile);
-            setLoading(false);
-          }
-          window.history.replaceState(null, '', window.location.pathname + window.location.search);
-        }
-      } catch {
-        // Ignored
-      }
-    }
-
-    // 2. Listen for postMessage from popup auth bridge
-    const handlePostMessage = async (event: MessageEvent) => {
-      if (event.data?.type === 'QBITE_AUTH_SUCCESS' && event.data?.profile?.id) {
-        if (isMounted) {
-          saveSession(event.data.profile);
-          setLoading(false);
-        }
-      }
-    };
-    window.addEventListener('message', handlePostMessage);
-
-    // 3. Check for standard redirect result
+    // Check for redirect result if signInWithRedirect was used
     getRedirectResult(auth)
       .then(async (result) => {
         if (!isMounted) return;
         if (result && result.user) {
-          const profile = await handleFirebaseUser(result.user);
-          if (isMounted) {
-            saveSession(profile);
-            setLoading(false);
-          }
+          console.log('[AUTH] Redirect sign-in result received for UID:', result.user.uid);
+          await handleFirebaseUser(result.user);
         }
       })
-      .catch(() => {
-        // Ignored non-fatal notice
+      .catch((err) => {
+        console.warn('[AUTH] getRedirectResult notice:', err);
       });
 
-    // 4. Listen to Firebase Auth state on mount and across sessions
-    try {
-      const unsubscribe = onAuthStateChanged(auth, async (fbUser: FirebaseUser | null) => {
-        if (!isMounted) return;
+    // onAuthStateChanged is the authoritative source of truth for auth
+    const unsubscribe = onAuthStateChanged(auth, async (fbUser: FirebaseUser | null) => {
+      if (!isMounted) return;
 
-        if (fbUser) {
-          try {
-            const profile = await handleFirebaseUser(fbUser);
-            if (isMounted) {
-              saveSession(profile);
-              setLoading(false);
-            }
-          } catch {
-            if (isMounted) setLoading(false);
-          }
-        } else {
-          // If no active Firebase Auth session, clear session so user authenticates with real Google account
+      if (fbUser) {
+        console.log('[AUTH] User authenticated: UID', fbUser.uid, fbUser.email);
+        const authUser: AuthUser = {
+          uid: fbUser.uid,
+          email: fbUser.email,
+          displayName: fbUser.displayName,
+          photoURL: fbUser.photoURL || null
+        };
+        setCurrentUser(authUser);
+        setAuthLoading(false);
+        setProfileLoading(true);
+
+        try {
+          const profile = await handleFirebaseUser(fbUser);
           if (isMounted) {
-            saveSession(null);
-            setLoading(false);
+            saveSession(profile);
+          }
+        } catch (err) {
+          console.warn('[AUTH] User profile loading fallback:', err);
+        } finally {
+          if (isMounted) {
+            setProfileLoading(false);
           }
         }
-      });
+      } else {
+        console.log('[AUTH] No user session found (UNAUTHENTICATED)');
+        if (isMounted) {
+          setCurrentUser(null);
+          setUserProfile(null);
+          safeLocalStorage.removeItem('qbite_user_session');
+          setAuthLoading(false);
+          setProfileLoading(false);
+        }
+      }
+    });
 
-      return () => {
-        isMounted = false;
-        unsubscribe();
-        window.removeEventListener('message', handlePostMessage);
-      };
-    } catch {
-      setLoading(false);
-    }
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
   }, []);
 
   const loginWithGoogle = async (useRedirect = false): Promise<UserProfile | void> => {
-    setLoading(true);
     setAuthError(null);
     setAuthErrorDetails(null);
 
-    const isCurrentHostAuthorized = KNOWN_AUTHORIZED_DOMAINS.includes(window.location.hostname);
-
-    // If host is not in Firebase authorized list (e.g. *.workers.dev):
-    // Use the official Authorized Bridge to prevent auth/unauthorized-domain error!
-    if (!isCurrentHostAuthorized) {
-      const bridgeUrl = `${AUTHORIZED_BRIDGE_BASE}/auth-bridge?origin=${encodeURIComponent(
-        window.location.origin
-      )}&returnTo=${encodeURIComponent(window.location.href)}`;
-
-      const isMobileDevice = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-
-      if (useRedirect || isMobileDevice) {
-        window.location.href = bridgeUrl;
-        return;
-      }
-
-      const popup = window.open(
-        bridgeUrl,
-        'qbite_google_auth',
-        'width=500,height=620,menubar=no,toolbar=no,location=no,status=no'
-      );
-
-      if (!popup || popup.closed) {
-        window.location.href = bridgeUrl;
-        return;
-      }
-
-      return new Promise<UserProfile>((resolve, reject) => {
-        let resolved = false;
-
-        const messageHandler = (event: MessageEvent) => {
-          if (event.data?.type === 'QBITE_AUTH_SUCCESS' && event.data?.profile?.id) {
-            resolved = true;
-            window.removeEventListener('message', messageHandler);
-            saveSession(event.data.profile);
-            setLoading(false);
-            resolve(event.data.profile);
-          }
-        };
-
-        window.addEventListener('message', messageHandler);
-
-        const checkClosed = setInterval(() => {
-          if (popup.closed) {
-            clearInterval(checkClosed);
-            setTimeout(() => {
-              if (!resolved) {
-                window.removeEventListener('message', messageHandler);
-                setLoading(false);
-                setAuthError('Sign-in window was closed. Please try Continue with Google again.');
-                reject(new Error('Sign-in window was closed'));
-              }
-            }, 600);
-          }
-        }, 700);
-      });
-    }
-
-    // Direct Firebase Google Auth on authorized domains
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({
       prompt: 'select_account'
     });
 
     if (useRedirect) {
+      console.log('[AUTH] Initiating signInWithRedirect...');
       try {
         await signInWithRedirect(auth, provider);
         return;
       } catch (error: any) {
-        setLoading(false);
+        console.error('[AUTH] signInWithRedirect error:', error);
         const { friendlyMessage, details } = parseAuthError(error);
         setAuthError(friendlyMessage);
         setAuthErrorDetails(details);
@@ -479,13 +360,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     }
 
+    console.log('[AUTH] Initiating signInWithPopup...');
     try {
       const result = await signInWithPopup(auth, provider);
+      console.log('[AUTH] Google sign-in successful for UID:', result.user.uid);
       const profile = await handleFirebaseUser(result.user);
-      setLoading(false);
       return profile;
     } catch (error: any) {
-      setLoading(false);
+      console.error('[AUTH] Google sign-in error:', error);
       const { friendlyMessage, details } = parseAuthError(error);
       setAuthError(friendlyMessage);
       setAuthErrorDetails(details);
@@ -494,19 +376,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async (): Promise<void> => {
-    setLoading(true);
+    console.log('[AUTH] Logging out user...');
     try {
       await signOut(auth);
-    } catch {
-      // Ignored
+    } catch (err) {
+      console.error('[AUTH] signOut error:', err);
     } finally {
-      saveSession(null);
+      setCurrentUser(null);
+      setUserProfile(null);
       safeLocalStorage.removeItem('qbite_user_session');
-      setLoading(false);
+      console.log('[AUTH] User logged out successfully');
     }
   };
 
-  const role: UserRole = userProfile?.role || 'student';
+  const loading = authLoading || profileLoading;
+  const authState: AuthState = authLoading
+    ? 'AUTH_LOADING'
+    : currentUser
+    ? 'AUTHENTICATED'
+    : 'UNAUTHENTICATED';
+
+  const role: UserRole =
+    userProfile?.role || getDesignatedRoleForEmail(currentUser?.email) || 'student';
 
   return (
     <AuthContext.Provider
@@ -514,6 +405,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         currentUser,
         userProfile,
         loading,
+        authLoading,
+        profileLoading,
+        authState,
         isSuspended,
         authError,
         authErrorDetails,

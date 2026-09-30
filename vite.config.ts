@@ -11,23 +11,16 @@ export default defineConfig(() => {
       tailwindcss(),
       {
         name: 'cloudflare-spa-fallback',
-        buildStart() {
-          const publicDir = path.resolve(import.meta.dirname ?? process.cwd(), 'public');
-          const publicRedirects = path.join(publicDir, '_redirects');
-          if (fs.existsSync(publicRedirects)) {
-            fs.unlinkSync(publicRedirects);
-          }
-        },
         closeBundle() {
           const distDir = path.resolve(import.meta.dirname ?? process.cwd(), 'dist');
           const distRedirects = path.join(distDir, '_redirects');
-          if (fs.existsSync(distRedirects)) {
-            fs.unlinkSync(distRedirects);
-          }
+          fs.writeFileSync(distRedirects, '/*    /index.html   200\n');
           const indexHtml = path.join(distDir, 'index.html');
           const fallbackHtml = path.join(distDir, '200.html');
+          const errorHtml = path.join(distDir, '404.html');
           if (fs.existsSync(indexHtml)) {
             fs.copyFileSync(indexHtml, fallbackHtml);
+            fs.copyFileSync(indexHtml, errorHtml);
           }
         },
       },

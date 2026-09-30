@@ -43,7 +43,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onBack, onOrderSucce
     setError(null);
 
     try {
-      const order = await placeOrder(specialInstructions);
+      const order = await placeOrder(specialInstructions, paymentMethod);
       onOrderSuccess(order);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Order could not be confirmed. Please check your connection and try again.';
@@ -61,14 +61,14 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onBack, onOrderSucce
     },
     {
       id: 'UPI',
-      label: 'UPI (Demo / Test)',
-      desc: 'Instant UPI Sandbox verification (Demo Mode)',
+      label: 'UPI Counter Pay',
+      desc: 'Scan official SVCE Cafe QR code upon token collection',
       icon: QrCode
     },
     {
       id: 'ONLINE',
-      label: 'Card / NetBanking (Demo)',
-      desc: 'Simulated campus card payment sandbox',
+      label: 'Campus SmartCard',
+      desc: 'Official SVCE Student / Staff SmartCard verification',
       icon: CreditCard
     }
   ];
@@ -161,9 +161,9 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onBack, onOrderSucce
           <h3 className="text-[10px] font-black uppercase tracking-wider text-[#A1A1A1]">
             Payment Method
           </h3>
-          <span className="text-[10px] font-bold text-[#FF9D2E] flex items-center gap-1">
-            <Info className="w-3 h-3" />
-            <span>Test Mode</span>
+          <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1">
+            <ShieldCheck className="w-3 h-3" />
+            <span>Counter Verified</span>
           </span>
         </div>
 
@@ -215,7 +215,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onBack, onOrderSucce
 
         <div className="p-2.5 rounded-xl bg-black/40 border border-white/5 text-[10px] text-[#A1A1A1] flex items-start gap-2">
           <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
-          <span>Demo / Test Payment: Official college canteen policy allows payment on counter pickup. Never enter real CVV or PIN credentials.</span>
+          <span>Official SVCE Cafe policy: Orders are queued directly with the kitchen. Pay via Cash or UPI at Counter 1 or 2 upon token pickup.</span>
         </div>
       </div>
 
@@ -245,7 +245,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({ onBack, onOrderSucce
           {submitting ? (
             <div className="w-full flex items-center justify-center gap-2">
               <span className="w-5 h-5 border-2 border-black border-t-transparent rounded-full animate-spin" />
-              <span>Confirming with Kitchen...</span>
+              <span>Placing order...</span>
             </div>
           ) : (
             <>

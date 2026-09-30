@@ -379,12 +379,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (isMounted) setLoading(false);
           }
         } else {
-          // If no active Firebase Auth session, preserve local active session if one exists
-          const existingSession = safeLocalStorage.getItem('qbite_user_session');
-          if (!existingSession && isMounted) {
-            saveSession(null);
-          }
+          // If no active Firebase Auth session, clear session so user authenticates with real Google account
           if (isMounted) {
+            saveSession(null);
             setLoading(false);
           }
         }

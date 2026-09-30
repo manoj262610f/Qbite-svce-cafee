@@ -17,72 +17,51 @@ service cloud.firestore {
 
     function getUserRole() {
       return (isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)))
-        ? getUserData().role
+        ? getUserData().get('role', 'student')
         : 'student';
-    }
-
-    function isActiveUser() {
-      return isSignedIn() && (
-        !exists(/databases/$(database)/documents/users/$(request.auth.uid)) ||
-        getUserData().accountStatus != 'SUSPENDED'
-      );
     }
 
     function isAdminEmail() {
       return isSignedIn() && (
-        request.auth.token.email.lower() == 'the.team.alpha.ece2026@gmail.com' ||
-        request.auth.token.email.lower() == 'manojreddy8022@gmail.com'
+        request.auth.token.email in ['the.team.alpha.ece2026@gmail.com', 'manojreddy8022@gmail.com']
       );
     }
 
     function isStaffEmail() {
       return isSignedIn() && (
-        request.auth.token.email.lower() == 'manojreddy8283@gmail.com' ||
-        request.auth.token.email.lower() == 'manojreddy8022@gmail.com' ||
-        request.auth.token.email.lower() == 'the.team.alpha.ece2026@gmail.com'
+        request.auth.token.email in ['manojreddy8283@gmail.com', 'manojreddy8022@gmail.com', 'the.team.alpha.ece2026@gmail.com']
       );
     }
 
     function isAdmin() {
-      return isSignedIn() && isActiveUser() && (getUserRole() == 'admin' || isAdminEmail());
+      return isSignedIn() && (getUserRole() == 'admin' || isAdminEmail());
     }
 
     function isStaff() {
-      return isSignedIn() && isActiveUser() && (getUserRole() == 'staff' || getUserRole() == 'admin' || isStaffEmail() || isAdminEmail());
+      return isSignedIn() && (getUserRole() == 'staff' || getUserRole() == 'admin' || isStaffEmail() || isAdminEmail());
     }
 
     // 1. Users collection
     match /users/{userId} {
       allow read: if isOwner(userId) || isStaff();
-      // On creation, normal users can register as student with ACTIVE status; designated admin/staff allowed their respective initial roles
+      // On creation, normal users can register as student; designated admin/staff allowed their respective initial roles
       allow create: if isOwner(userId) && (
         !('role' in request.resource.data) ||
         request.resource.data.role == 'student' ||
         (request.resource.data.role == 'admin' && isAdminEmail()) ||
         (request.resource.data.role == 'staff' && (isStaffEmail() || isAdminEmail()))
-      ) && (
-        !('accountStatus' in request.resource.data) || request.resource.data.accountStatus == 'ACTIVE'
       );
-      // Admin can update any user's role or status; user can update only safe personal profile fields
+      // Admin can update any user; owner can update their own profile without elevating their role
       allow update: if isAdmin() || (
-        isOwner(userId) &&
-        (
+        isOwner(userId) && (
           !('role' in request.resource.data) ||
-          request.resource.data.role == resource.data.role ||
-          request.resource.data.role == 'student' ||
-          (request.resource.data.role == 'admin' && isAdminEmail()) ||
-          (request.resource.data.role == 'staff' && (isStaffEmail() || isAdminEmail()))
-        ) &&
-        (
-          !('accountStatus' in request.resource.data) ||
-          !('accountStatus' in resource.data) ||
-          request.resource.data.accountStatus == resource.data.accountStatus
+          request.resource.data.role == resource.data.get('role', 'student')
         )
       );
       allow delete: if isAdmin();
     }
 
-    // 2. Foods catalog (Read-only for public/students, write for admin and kitchen staff)
+    // 2. Foods catalog (Read-only for all, write for staff/admin)
     match /foods/{foodId} {
       allow read: if true;
       allow write: if isStaff();
@@ -90,23 +69,25 @@ service cloud.firestore {
 
     // 3. Orders collection
     match /orders/{orderId} {
-      // Read allowed if order owner, staff/admin, or active queue statuses (for public TV display & ticker)
-      allow read: if isStaff() ||
-        (isSignedIn() && resource.data.userId == request.auth.uid) ||
-        (resource.data.status in ['READY', 'PREPARING', 'ACCEPTED']);
+      // Students can read their own orders; staff/admin can read all orders;
+      // Also allow read for active orders on the pickup display board
+      allow read: if isSignedIn() && (
+        resource.data.userId == request.auth.uid ||
+        isStaff() ||
+        resource.data.status in ['READY', 'PREPARING', 'ACCEPTED']
+      );
 
-      // Create: Authenticated student creating order with their own uid in PLACED and PENDING state
-      allow create: if isSignedIn() && isActiveUser() &&
-        request.resource.data.userId == request.auth.uid &&
-        request.resource.data.status == 'PLACED' &&
-        request.resource.data.paymentStatus == 'PENDING';
+      // Student can create orders where userId == request.auth.uid
+      allow create: if isSignedIn() &&
+        request.resource.data.userId == request.auth.uid;
 
-      // Update: Staff can process transitions; Student can only cancel their own PLACED order
-      allow update: if isStaff() || (
+      // Staff can update order status and operational fields;
+      // Student can only cancel their own order while it is still PLACED / pending
+      allow update: if (isStaff() && request.resource.data.userId == resource.data.userId) || (
         isSignedIn() &&
         resource.data.userId == request.auth.uid &&
-        resource.data.status == 'PLACED' &&
-        request.resource.data.status == 'CANCELLED'
+        (resource.data.status == 'PLACED' || resource.data.get('orderStatus', '') == 'pending') &&
+        (request.resource.data.status == 'CANCELLED' || request.resource.data.get('orderStatus', '') == 'cancelled')
       );
 
       allow delete: if isAdmin();
@@ -114,16 +95,14 @@ service cloud.firestore {
 
     // 4. Daily Queue collection
     match /queue/{dateKey} {
-      allow read: if true;
-      allow write: if isSignedIn() && isActiveUser();
+      allow read, write: if isSignedIn();
     }
 
     // 5. In-app notifications
     match /notifications/{notificationId} {
       allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
       allow create: if isSignedIn();
-      allow update: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
 
     // 6. Favorites

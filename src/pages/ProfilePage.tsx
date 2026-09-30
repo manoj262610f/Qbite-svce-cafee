@@ -24,7 +24,7 @@ interface ProfilePageProps {
 }
 
 export const ProfilePage: React.FC<ProfilePageProps> = ({ onNavigate, onLogout }) => {
-  const { userProfile, role, switchActiveRole } = useAuth();
+  const { userProfile, role } = useAuth();
   const { myOrders, favorites } = useCanteen();
   const [modalContent, setModalContent] = useState<{ title: string; body: string } | null>(null);
   const [imageError, setImageError] = useState(false);
@@ -188,51 +188,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onNavigate, onLogout }
           </div>
         </div>
       </div>
-
-      {/* Admin / Dev Role Switcher */}
-      {isAdminUser && (
-        <div className="bg-[#141414] rounded-2xl p-3 border border-purple-500/30 space-y-2">
-          <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-wider text-purple-300">
-            <span className="flex items-center gap-1.5">
-              <Shield className="w-3.5 h-3.5 text-purple-400" />
-              <span>Admin Role Switcher</span>
-            </span>
-            <span className="text-[10px] text-stone-400">Active: {role}</span>
-          </div>
-          <div className="grid grid-cols-3 gap-1.5">
-            <button
-              onClick={() => switchActiveRole('admin')}
-              className={`py-1.5 px-2 rounded-xl text-xs font-black cursor-pointer transition-all ${
-                role === 'admin'
-                  ? 'bg-purple-600 text-white shadow-md'
-                  : 'bg-white/5 hover:bg-white/10 text-stone-300'
-              }`}
-            >
-              Admin Hub
-            </button>
-            <button
-              onClick={() => switchActiveRole('staff')}
-              className={`py-1.5 px-2 rounded-xl text-xs font-black cursor-pointer transition-all ${
-                role === 'staff'
-                  ? 'bg-[#FF6A00] text-black shadow-md glow-orange-sm'
-                  : 'bg-white/5 hover:bg-white/10 text-stone-300'
-              }`}
-            >
-              Kitchen Staff
-            </button>
-            <button
-              onClick={() => switchActiveRole('student')}
-              className={`py-1.5 px-2 rounded-xl text-xs font-black cursor-pointer transition-all ${
-                role === 'student'
-                  ? 'bg-emerald-600 text-white shadow-md'
-                  : 'bg-white/5 hover:bg-white/10 text-stone-300'
-              }`}
-            >
-              Student View
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Menu Links */}
       <div className="space-y-4">

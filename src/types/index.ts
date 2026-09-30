@@ -42,6 +42,7 @@ export type PaymentStatus = 'PENDING' | 'PAID';
 
 export interface OrderItem {
   foodId: string;
+  menuItemId?: string;
   name: string;
   price: number; // Snapshot of unit price at order time
   quantity: number;
@@ -60,8 +61,10 @@ export interface Order {
   userEmail: string;
   items: OrderItem[];
   status: OrderStatus;
+  orderStatus?: string; // 'pending' | 'placed' | etc.
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
+  pickupLocation?: string;
   subtotal: number;
   discount: number;
   total: number;

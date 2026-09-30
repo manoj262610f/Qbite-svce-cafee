@@ -13,8 +13,8 @@ import {
   limit,
   runTransaction
 } from 'firebase/firestore';
-import { db } from '../firebase/config';
-import { useAuth } from './AuthContext';
+import { db, auth } from '../firebase/config';
+import { useAuth, getDesignatedRoleForEmail } from './AuthContext';
 import {
   FoodItem,
   Order,
@@ -24,7 +24,8 @@ import {
   NotificationItem,
   CanteenSettings,
   CanteenStatus,
-  PaymentStatus
+  PaymentStatus,
+  PaymentMethod
 } from '../types';
 import { INITIAL_FOOD_ITEMS, CATEGORIES } from '../data/menuData';
 import {
@@ -60,7 +61,7 @@ interface CanteenContextType {
   removeFromCart: (foodId: string) => void;
   clearCart: () => void;
   // Order Lifecycle Actions
-  placeOrder: (notes?: string) => Promise<Order>;
+  placeOrder: (notes?: string, paymentMethod?: PaymentMethod) => Promise<Order>;
   cancelOrder: (orderId: string) => Promise<void>;
   // Staff Kitchen Actions
   acceptOrder: (orderId: string) => Promise<void>;
@@ -335,15 +336,17 @@ export const CanteenProvider: React.FC<{ children: React.ReactNode }> = ({ child
    * 4. Writes order document to Firestore
    * 5. No fake local order on error
    */
-  const placeOrder = async (notes?: string): Promise<Order> => {
-    if (!currentUser) {
+  const placeOrder = async (notes?: string, paymentMethod: PaymentMethod = 'COUNTER'): Promise<Order> => {
+    // 1. Verify authenticated user directly from Firebase Auth
+    const fbUser = auth.currentUser;
+    if (!fbUser) {
       throw new Error('Please sign in with your Google account to place an order.');
     }
     if (cart.length === 0) {
       throw new Error('Your cart is empty.');
     }
     if (isPlacingOrderRef.current) {
-      throw new Error('An order submission is already in progress.');
+      throw new Error('An order submission is already in progress. Please wait.');
     }
 
     isPlacingOrderRef.current = true;
@@ -351,7 +354,34 @@ export const CanteenProvider: React.FC<{ children: React.ReactNode }> = ({ child
     try {
       const dateKey = getTodayDateKey();
 
-      // 1. Verify Canteen Settings
+      // 2. Verify or ensure user record in users/{uid}
+      const userDocRef = doc(db, 'users', fbUser.uid);
+      const userSnap = await getDoc(userDocRef);
+      let userName = fbUser.displayName || userProfile?.name || 'SVCE Student';
+      let userEmail = fbUser.email || `${fbUser.uid}@svce.ac.in`;
+
+      if (userSnap.exists()) {
+        const uData = userSnap.data();
+        if (uData.accountStatus === 'SUSPENDED') {
+          throw new Error('Your account has been suspended. Orders cannot be placed.');
+        }
+        if (uData.name) userName = uData.name;
+        if (uData.email) userEmail = uData.email;
+      } else {
+        const initialDoc = {
+          id: fbUser.uid,
+          name: userName,
+          email: userEmail,
+          role: getDesignatedRoleForEmail(userEmail),
+          accountStatus: 'ACTIVE',
+          photoURL: fbUser.photoURL || null,
+          createdAt: new Date().toISOString(),
+          lastLoginAt: new Date().toISOString()
+        };
+        await setDoc(userDocRef, initialDoc, { merge: true });
+      }
+
+      // 3. Verify Canteen Status
       const settingsSnap = await getDoc(doc(db, 'settings', 'main'));
       if (settingsSnap.exists()) {
         const currentCanteenStatus = (settingsSnap.data().status as CanteenStatus) || 'OPEN';
@@ -363,7 +393,7 @@ export const CanteenProvider: React.FC<{ children: React.ReactNode }> = ({ child
         }
       }
 
-      // 2. Authoritative Re-validation of Cart Items in Firestore
+      // 4. Authoritative Re-validation of Cart Items in Firestore
       const verifiedItems: OrderItem[] = [];
       let authoritativeSubtotal = 0;
       let maxItemPrepTime = 8;
@@ -383,6 +413,7 @@ export const CanteenProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
         verifiedItems.push({
           foodId: foodData.id,
+          menuItemId: foodData.id,
           name: foodData.name,
           price: foodData.price, // Authoritative price snapshot from Firestore
           quantity: item.quantity,
@@ -393,11 +424,11 @@ export const CanteenProvider: React.FC<{ children: React.ReactNode }> = ({ child
         maxItemPrepTime = Math.max(maxItemPrepTime, foodData.prepTimeMinutes || 8);
       }
 
-      // 3. Deterministic wait estimate based on active kitchen load
+      // 5. Deterministic wait estimate based on active kitchen load
       const waitRange = calculateEstimatedWaitRange(orders, maxItemPrepTime);
       const estimatedWaitMin = waitRange.minMin;
 
-      // 4. Atomic Firestore Transaction for Token Allocation & Order Creation
+      // 6. Atomic Firestore Transaction for Token Allocation & Order Creation
       const queueDocRef = doc(db, 'queue', dateKey);
       const orderId = `ord_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
       const orderDocRef = doc(db, 'orders', orderId);
@@ -432,23 +463,25 @@ export const CanteenProvider: React.FC<{ children: React.ReactNode }> = ({ child
           tokenNumber: nextToken,
           tokenString,
           dateKey,
-          userId: currentUser.uid,
-          userName: userProfile?.name || currentUser.displayName || 'SVCE Student',
-          userEmail: currentUser.email || `${currentUser.uid}@svce.ac.in`,
+          userId: fbUser.uid,
+          userName,
+          userEmail,
           items: verifiedItems,
           status: 'PLACED',
-          paymentMethod: 'COUNTER',
+          orderStatus: 'pending',
+          paymentMethod: paymentMethod || 'COUNTER',
           paymentStatus: 'PENDING',
           subtotal: authoritativeSubtotal,
           discount: 0,
           total: authoritativeSubtotal,
+          pickupLocation: 'SVCE Central Canteen',
           createdAt: new Date().toISOString(),
           acceptedAt: null,
           preparingAt: null,
           readyAt: null,
           completedAt: null,
           lastStatusChangedAt: new Date().toISOString(),
-          lastStatusChangedBy: currentUser.uid,
+          lastStatusChangedBy: fbUser.uid,
           estimatedWaitMin,
           notes: notes ? notes.trim() : ''
         };
@@ -457,11 +490,11 @@ export const CanteenProvider: React.FC<{ children: React.ReactNode }> = ({ child
         return newOrder;
       });
 
-      // 5. In-App Notification for Student
+      // 7. In-App Notification for Student
       const notifId = `notif_${Date.now()}_${Math.random().toString(36).substring(2, 5)}`;
       const notif: NotificationItem = {
         id: notifId,
-        userId: currentUser.uid,
+        userId: fbUser.uid,
         orderId: confirmedOrder.id,
         tokenString: confirmedOrder.tokenString,
         title: 'Order Confirmed',

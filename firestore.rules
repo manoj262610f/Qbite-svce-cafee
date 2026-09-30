@@ -41,6 +41,11 @@ service cloud.firestore {
       return isSignedIn() && (getUserRole() == 'staff' || getUserRole() == 'admin' || isStaffEmail() || isAdminEmail());
     }
 
+    // 0. Connection Test
+    match /test/{document=**} {
+      allow read: if true;
+    }
+
     // 1. Users collection
     match /users/{userId} {
       allow read: if isOwner(userId) || isStaff();
@@ -67,14 +72,27 @@ service cloud.firestore {
       allow write: if isStaff();
     }
 
-    // 3. Orders collection
+    // 3. Categories catalog
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
+
+    // 4. Coupons
+    match /coupons/{couponId} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
+
+    // 5. Orders collection
     match /orders/{orderId} {
       // Students can read their own orders; staff/admin can read all orders;
-      // Also allow read for active orders on the pickup display board
-      allow read: if isSignedIn() && (
-        resource.data.userId == request.auth.uid ||
-        isStaff() ||
-        resource.data.status in ['READY', 'PREPARING', 'ACCEPTED']
+      // Public display can read active food orders
+      allow read: if resource.data.status in ['READY', 'PREPARING', 'ACCEPTED'] || (
+        isSignedIn() && (
+          resource.data.userId == request.auth.uid ||
+          isStaff()
+        )
       );
 
       // Student can create orders where userId == request.auth.uid
@@ -93,24 +111,27 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // 4. Daily Queue collection
+    // 6. Daily Queue collection
     match /queue/{dateKey} {
-      allow read, write: if isSignedIn();
+      allow read: if true;
+      allow write: if isSignedIn();
     }
 
-    // 5. In-app notifications
+    // 7. In-app notifications
     match /notifications/{notificationId} {
       allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
       allow create: if isSignedIn();
       allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
 
-    // 6. Favorites
+    // 8. Favorites
     match /favorites/{favoriteId} {
-      allow read, write: if isSignedIn() && favoriteId.matches(request.auth.uid + '.*');
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
 
-    // 7. Canteen Settings
+    // 9. Canteen Settings
     match /settings/{settingId} {
       allow read: if true;
       allow write: if isStaff();

@@ -83,10 +83,10 @@ export const TokenDetailPage: React.FC<TokenDetailPageProps> = ({
       {/* Items in this Order */}
       <div className="bg-[#141414] rounded-3xl p-5 border border-white/8 shadow-xl space-y-3">
         <h4 className="text-[10px] font-black uppercase tracking-wider text-[#A1A1A1]">
-          Order Items ({displayOrder.items.length})
+          Order Items ({(displayOrder.items || []).length})
         </h4>
         <div className="divide-y divide-white/5">
-          {displayOrder.items.map((item, idx) => (
+          {(displayOrder.items || []).map((item, idx) => (
             <div key={idx} className="py-2.5 first:pt-0 last:pb-0 flex items-center justify-between text-xs">
               <div className="flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />

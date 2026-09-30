@@ -110,7 +110,7 @@ export const OrdersPage: React.FC<OrdersPageProps> = ({ onSelectOrder, onBrowseM
                 <div className="py-2.5 flex items-center justify-between text-xs">
                   <div className="pr-2 min-w-0">
                     <p className="font-bold text-white line-clamp-1">
-                      {order.items.map((i) => `${i.name} (${i.quantity})`).join(', ')}
+                      {(order.items || []).map((i) => `${i.name} (${i.quantity})`).join(', ') || 'Canteen Meal'}
                     </p>
                     <p className="text-[11px] text-[#A1A1A1] mt-0.5">
                       {new Date(order.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}

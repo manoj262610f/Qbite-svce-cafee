@@ -104,7 +104,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ order, isOpen, onClo
                 Items Ordered
               </p>
               <div className="space-y-2">
-                {order.items.map((item, idx) => (
+                {(order.items || []).map((item, idx) => (
                   <div key={idx} className="flex justify-between text-xs">
                     <span className="text-stone-200 font-medium">
                       {item.name} <span className="text-stone-400 font-mono-token">× {item.quantity}</span>

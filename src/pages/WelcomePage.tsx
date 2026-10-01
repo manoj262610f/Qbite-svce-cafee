@@ -78,42 +78,36 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({
 
       {/* Main Content Area */}
       <div className="my-auto py-4 relative z-10">
-        {/* Visual Hero Illustration */}
-        <div className="relative w-56 h-56 mx-auto mb-4">
-          <div className="absolute inset-0 rounded-3xl bg-gradient-to-tr from-[#FF6A00]/25 to-[#FF9D2E]/10 blur-xl" />
-          <div className="relative w-full h-full rounded-3xl overflow-hidden shadow-2xl border border-white/10 bg-[#121212]">
-            <img
-              src="https://images.unsplash.com/photo-1668236543090-82eba5ee5976?auto=format&fit=crop&w=600&q=80"
-              alt="SVCE Cafe Hot Meals"
-              className="w-full h-full object-cover"
-            />
-            {/* Floating Token Tag */}
-            <div className="absolute bottom-3 left-3 right-3 bg-[#0A0A0A]/90 backdrop-blur-md rounded-2xl p-2.5 text-white flex items-center justify-between border border-white/10 shadow-xl">
-              <div className="flex items-center gap-2.5 text-left">
-                <div className="w-7 h-7 rounded-xl bg-[#FF6A00] flex items-center justify-center font-mono-token font-black text-xs text-black shadow-md glow-orange-sm">
-                  #047
-                </div>
-                <div>
-                  <p className="text-[10px] text-[#A1A1A1] leading-tight font-bold uppercase tracking-wider">Live Token</p>
-                  <p className="text-xs font-black text-white leading-tight">Ready at Counter 1</p>
-                </div>
-              </div>
-              <Sparkles className="w-4 h-4 text-[#FF9D2E] shrink-0" />
+        {/* Official QBite Brand Revelation */}
+        <div className="text-center mb-6">
+          <div className="relative inline-block mx-auto mb-3">
+            <div className="w-28 h-28 sm:w-32 sm:h-32 md:w-36 md:h-36 rounded-full p-1 bg-[#0D0D0D] border border-white/20 shadow-2xl glow-orange-lg flex items-center justify-center mx-auto overflow-hidden">
+              <img
+                src="/icons/qbite-icon-512.png"
+                alt="QBite – SVCE Cafe"
+                className="w-full h-full object-contain rounded-full select-none"
+                referrerPolicy="no-referrer"
+                loading="eager"
+              />
+            </div>
+            {/* Live Token Status Pill */}
+            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-[#181818] border border-[#FF6A00]/40 text-[#FF7A00] text-[10px] font-black uppercase tracking-wider shadow-lg whitespace-nowrap flex items-center gap-1.5">
+              <Sparkles className="w-3 h-3 text-[#FF6A00]" />
+              <span>SVCE Campus Cafe</span>
             </div>
           </div>
-        </div>
 
-        {/* Branding Typography */}
-        <div className="text-center space-y-1 mb-5">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#181818] border border-[#FF6A00]/30 text-[#FF7A00] text-[10px] font-black uppercase tracking-wider mb-1">
-            <Zap className="w-3 h-3 text-[#FF6A00]" />
-            <span>Sri Venkateswara College of Engineering</span>
-          </div>
-          <h1 className="text-2xl font-black text-white tracking-tight leading-tight">
-            Order Smart. <span className="text-[#FF7A00]">Skip the Queue.</span>
+          <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight mt-2">
+            QBite
           </h1>
+          <p className="text-xs uppercase tracking-[0.25em] text-[#A1A1A1] font-bold mt-0.5">
+            SVCE Cafe
+          </p>
+          <p className="text-sm font-bold text-[#FF7A00] mt-2">
+            Order Smart. Skip the Queue.
+          </p>
           <p className="text-xs text-[#A1A1A1] max-w-xs mx-auto leading-relaxed pt-1">
-            Order food from campus before reaching the cafe. Track your live token and pick up fresh hot meals with zero waiting.
+            Order meals ahead from campus. Track your live token and pick up fresh hot food with zero waiting.
           </p>
         </div>
 
@@ -169,7 +163,7 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({
         <div className="bg-[#141414] rounded-3xl p-5 border border-white/8 shadow-2xl space-y-3.5">
           <div className="text-center space-y-0.5">
             <h2 className="text-base font-black text-white">
-              Sign In to qBite
+              Sign In to QBite
             </h2>
             <p className="text-[11px] text-[#A1A1A1]">
               Authenticate with your Google account to place and track orders
@@ -251,7 +245,7 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({
       {/* Footer Info */}
       <div className="text-center pt-2 border-t border-white/8 relative z-10">
         <p className="text-[11px] text-[#737373]">
-          qBite for Sri Venkateswara College of Engineering · Bengaluru
+          QBite for Sri Venkateswara College of Engineering · Bengaluru
         </p>
       </div>
     </div>

@@ -52,34 +52,20 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
       {/* Core Brand Revelation */}
       <div className="relative flex flex-col items-center text-center max-w-sm w-full my-auto">
         <motion.div
-          initial={{ scale: 0.75, opacity: 0 }}
+          initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
           className="relative mb-5"
         >
-          {/* Logo container with dark glass surface & orange glow */}
-          <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-[#1E1E1E] to-[#0A0A0A] p-0.5 border border-white/15 shadow-2xl glow-orange-lg flex items-center justify-center relative overflow-hidden">
-            {/* Subtle rotating glow ring */}
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ repeat: Infinity, duration: 3, ease: 'linear' }}
-              className="absolute inset-1 rounded-full border border-dashed border-[#FF6A00]/40"
+          {/* Official QBite Logo */}
+          <div className="w-28 h-28 rounded-full overflow-hidden p-0.5 border border-white/20 shadow-2xl glow-orange-lg flex items-center justify-center relative bg-[#0D0D0D]">
+            <img
+              src="/icons/qbite-icon-512.png"
+              alt="QBite – SVCE Cafe"
+              className="w-full h-full object-contain rounded-full"
+              referrerPolicy="no-referrer"
+              loading="eager"
             />
-
-            {/* Custom SVG mark: Geometric "q" formed with a token ring & bite cutout */}
-            <svg
-              viewBox="0 0 32 32"
-              className="w-12 h-12 relative z-10"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M16 6C10.477 6 6 10.477 6 16C6 21.523 10.477 26 16 26C18.2 26 20.22 25.29 21.87 24.1L24.5 26.5C24.8 26.8 25.3 26.6 25.3 26.2V15C25.3 10.03 21.14 6 16 6ZM16 22C12.686 22 10 19.314 10 16C10 12.686 12.686 10 16 10C19.314 10 22 12.686 22 16C22 19.314 19.314 22 16 22Z"
-                fill="#FFFFFF"
-              />
-              <circle cx="16" cy="16" r="3.2" fill="#FF6A00" />
-              <circle cx="21" cy="11" r="1.5" fill="#FF9D2E" />
-            </svg>
           </div>
         </motion.div>
 
@@ -91,7 +77,7 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
           className="space-y-1"
         >
           <h1 className="text-4xl font-black tracking-tight text-white">
-            q<span className="text-[#FF6A00]">Bite</span>
+            QBite
           </h1>
           <p className="text-[11px] uppercase tracking-[0.25em] text-[#A1A1A1] font-bold">
             SVCE Cafe

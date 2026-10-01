@@ -204,7 +204,7 @@ export const PublicDisplayPage: React.FC<PublicDisplayPageProps> = ({ onBack }) 
       {/* Bottom Ticker */}
       <footer className="pt-4 border-t border-white/8 flex items-center justify-between text-xs text-stone-500 relative z-10">
         <div>
-          <span>qBite Smart Canteen Platform · Sri Venkateswara College of Engineering</span>
+          <span>QBite Smart Canteen Platform · Sri Venkateswara College of Engineering</span>
         </div>
         <div>
           <span>Order Smart. Skip the Queue.</span>

@@ -49,7 +49,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ order, isOpen, onClo
               OFFICIAL DIGITAL BILL
             </span>
             <h2 className="text-xl font-black tracking-tight mt-0.5 text-white">
-              q<span className="text-[#FF6A00]">Bite</span> · SVCE Cafe
+              QBite · SVCE Cafe
             </h2>
             <p className="text-[11px] text-[#A1A1A1]">Sri Venkateswara College of Engineering</p>
           </div>

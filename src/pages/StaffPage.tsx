@@ -99,14 +99,19 @@ export const StaffPage: React.FC<StaffPageProps> = ({ onBackToHome }) => {
       {/* Top Staff Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="w-10 h-10 rounded-2xl bg-[#FF6A00] text-black flex items-center justify-center shadow-lg glow-orange-sm">
-            <ChefHat className="w-6 h-6 stroke-[2.5]" />
+          <div className="w-10 h-10 rounded-2xl overflow-hidden bg-[#0D0D0D] border border-white/10 flex items-center justify-center shadow-lg glow-orange-sm shrink-0">
+            <img
+              src="/icons/qbite-icon-192.png"
+              alt="QBite"
+              className="w-full h-full object-contain"
+              referrerPolicy="no-referrer"
+            />
           </div>
           <div>
             <h2 className="text-xl font-black text-white tracking-tight flex items-center gap-2">
-              <span>SVCE Kitchen Portal</span>
+              <span>QBite · Kitchen Portal</span>
             </h2>
-            <p className="text-xs text-[#A1A1A1] font-medium">Real-Time Kitchen Orders & Pickup Hub</p>
+            <p className="text-xs text-[#A1A1A1] font-medium">SVCE Cafe · Real-Time Kitchen Operations</p>
           </div>
         </div>
 

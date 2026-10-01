@@ -1,13 +1,35 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <defs>
-    <linearGradient id="qbiteGrad512" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#ea580c"/>
-      <stop offset="100%" stop-color="#c2410c"/>
-    </linearGradient>
-  </defs>
-  <rect width="512" height="512" rx="120" fill="url(#qbiteGrad512)"/>
-  <circle cx="256" cy="256" r="150" fill="none" stroke="#ffffff" stroke-width="32" stroke-dasharray="720 130" stroke-linecap="round"/>
-  <path d="M256 170 L256 256 L315 295" fill="none" stroke="#ffffff" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="350" cy="350" r="38" fill="#facc15" stroke="#ffffff" stroke-width="12"/>
-  <text x="256" y="440" font-family="system-ui, sans-serif" font-weight="900" font-size="60" fill="#ffffff" text-anchor="middle" letter-spacing="3">QBITE</text>
+  <rect width="512" height="512" fill="#0D0D0D"/>
+  
+  <!-- Outer Circular Ring -->
+  <circle cx="256" cy="256" r="196" fill="none" stroke="#FAF4EB" stroke-width="6.5"/>
+
+  <!-- 3 Rising Steam Lines (Warm Golden Amber/Orange) -->
+  <g fill="none" stroke="#FFA229" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M239 146 C233 134 233 124 240 113 C244 107 243 100 237 92" />
+    <path d="M256 142 C250 128 251 116 260 104 C265 96 264 88 258 78" />
+    <path d="M273 146 C267 134 268 124 275 113 C279 107 278 100 273 92" />
+  </g>
+
+  <!-- Coffee Cup Outline -->
+  <g fill="none" stroke="#FAF4EB" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="214" y1="156" x2="288" y2="156" stroke-width="5" />
+    <path d="M218 158 C220 200 236 216 251 216 C266 216 282 200 284 158 Z" />
+    <path d="M284 165 C302 165 308 178 308 188 C308 198 298 206 280 206" />
+  </g>
+
+  <!-- Qbite Typography -->
+  <text x="162" y="306" font-family="'Plus Jakarta Sans', 'Liberation Sans', 'FreeSans', system-ui, sans-serif" font-size="84" font-weight="bold" fill="#FAF4EB">Qb</text>
+  <rect x="267" y="260" width="12" height="46" rx="2" fill="#FAF4EB" />
+  <!-- Stylized Orange Leaf on top of 'i' -->
+  <path d="M274 252 C271 242 278 230 293 222 C302 227 304 238 297 248 C290 255 281 256 274 252 Z" fill="#FFA229" />
+  <text x="285" y="306" font-family="'Plus Jakarta Sans', 'Liberation Sans', 'FreeSans', system-ui, sans-serif" font-size="84" font-weight="bold" fill="#FAF4EB">te</text>
+
+  <!-- Tagline: TASTE • RECHARGE -->
+  <text x="256" y="352" font-family="'Plus Jakarta Sans', 'Liberation Sans', 'FreeSans', system-ui, sans-serif" font-size="14" font-weight="bold" fill="#FAF4EB" text-anchor="middle" letter-spacing="4">
+    TASTE  •  RECHARGE
+  </text>
+
+  <!-- Centered Divider Dash -->
+  <line x1="238" y1="380" x2="274" y2="380" stroke="#FAF4EB" stroke-width="4" stroke-linecap="round" />
 </svg>

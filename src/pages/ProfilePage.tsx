@@ -95,12 +95,12 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onNavigate, onLogout }
             })
         },
         {
-          label: 'About qBite – SVCE Cafe',
+          label: 'About QBite – SVCE Cafe',
           icon: Info,
           onClick: () =>
             setModalContent({
-              title: 'About qBite',
-              body: 'qBite is a smart college canteen remote ordering and queue-management application designed for Sri Venkateswara College of Engineering. Our motto: "Order Smart. Skip the Queue." Order ahead from anywhere on campus, track your live token, and pick up hot food without standing in line.'
+              title: 'About QBite',
+              body: 'QBite is a smart college canteen remote ordering and queue-management application designed for Sri Venkateswara College of Engineering. Our motto: "Order Smart. Skip the Queue." Order ahead from anywhere on campus, track your live token, and pick up hot food without standing in line.'
             })
         },
         {
@@ -109,7 +109,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onNavigate, onLogout }
           onClick: () =>
             setModalContent({
               title: 'Privacy Policy',
-              body: 'qBite values student privacy. Authentication uses official Google Sign-In with Firebase Authentication. We never collect or store mobile phone numbers, passwords, USNs, or banking credentials. Food order history is securely stored on Google Cloud Firestore.'
+              body: 'QBite values student privacy. Authentication uses official Google Sign-In with Firebase Authentication. We never collect or store mobile phone numbers, passwords, USNs, or banking credentials. Food order history is securely stored on Google Cloud Firestore.'
             })
         },
         {

@@ -1,13 +1,18 @@
-// qBite SVCE Cafe - Service Worker v3 (Production Standalone PWA Safe)
-const CACHE_NAME = 'qbite-v3-runtime';
+// QBite SVCE Cafe - Service Worker v4 (Official Brand Logo Update)
+const CACHE_NAME = 'qbite-v4-official-logo';
 
 const CORE_SHELL_ASSETS = [
   '/',
+  '/manifest.webmanifest',
   '/manifest.json',
-  '/icons/qbite-192.png',
-  '/icons/qbite-512.png',
-  '/icons/icon-192.svg',
-  '/icons/icon-512.svg'
+  '/favicon.ico',
+  '/favicon-16x16.png',
+  '/favicon-32x32.png',
+  '/icons/qbite-icon-192.png',
+  '/icons/qbite-icon-512.png',
+  '/icons/qbite-maskable-512.png',
+  '/icons/qbite-apple-touch-icon.png',
+  '/icons/qbite-logo.svg'
 ];
 
 // 1. Install Event: Precache core shell assets and activate immediately

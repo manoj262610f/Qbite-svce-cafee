@@ -127,10 +127,15 @@ function MainAppContent() {
   if (authLoading) {
     return (
       <div className="min-h-screen bg-[#080808] flex flex-col items-center justify-center p-6 text-center text-white">
-        <div className="w-12 h-12 rounded-2xl bg-[#FF6A00] flex items-center justify-center text-black shadow-lg glow-orange-sm mb-3 animate-pulse">
-          <UtensilsCrossed className="w-6 h-6 stroke-[2.5]" />
+        <div className="w-14 h-14 rounded-full overflow-hidden bg-[#0D0D0D] border border-white/10 flex items-center justify-center shadow-lg glow-orange-sm mb-3">
+          <img
+            src="/icons/qbite-icon-192.png"
+            alt="QBite"
+            className="w-full h-full object-contain"
+            referrerPolicy="no-referrer"
+          />
         </div>
-        <p className="font-black text-sm text-white tracking-tight">qBite · SVCE Cafe</p>
+        <p className="font-black text-sm text-white tracking-tight">QBite · SVCE Cafe</p>
         <p className="text-[11px] text-[#A1A1A1] mt-1">Connecting to campus session...</p>
       </div>
     );

@@ -81,13 +81,18 @@ export class ErrorBoundary extends Component<Props, State> {
 
           <div className="relative z-10 max-w-sm w-full mx-auto space-y-5">
             {/* Logo Badge */}
-            <div className="w-16 h-16 rounded-3xl bg-[#141414] border border-[#FF6A00]/30 text-[#FF6A00] flex items-center justify-center mx-auto shadow-2xl glow-orange-sm">
-              <UtensilsCrossed className="w-8 h-8 stroke-[2.5]" />
+            <div className="w-16 h-16 rounded-full overflow-hidden bg-[#0D0D0D] border border-white/10 flex items-center justify-center mx-auto shadow-2xl glow-orange-sm">
+              <img
+                src="/icons/qbite-icon-192.png"
+                alt="QBite"
+                className="w-full h-full object-contain"
+                referrerPolicy="no-referrer"
+              />
             </div>
 
             <div className="space-y-1.5">
               <h1 className="text-xl font-black text-white tracking-tight">
-                qBite couldn't load
+                QBite couldn't load
               </h1>
               <p className="text-xs text-[#A1A1A1] leading-relaxed max-w-xs mx-auto">
                 A display or connection issue prevented the app from loading properly. Your orders and account remain safe.

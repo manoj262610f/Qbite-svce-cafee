@@ -204,7 +204,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBackToHome }) => {
   };
 
   return (
-    <div className="pb-28 pt-3 px-4 max-w-3xl mx-auto space-y-4">
+    <div className="pb-28 pt-4 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-6">
       {/* Top Admin Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">

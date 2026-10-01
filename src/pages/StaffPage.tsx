@@ -95,7 +95,7 @@ export const StaffPage: React.FC<StaffPageProps> = ({ onBackToHome }) => {
   const list = getFilteredList();
 
   return (
-    <div className="pb-28 pt-3 px-4 max-w-2xl mx-auto space-y-4">
+    <div className="pb-28 pt-4 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto space-y-6">
       {/* Top Staff Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
@@ -259,7 +259,7 @@ export const StaffPage: React.FC<StaffPageProps> = ({ onBackToHome }) => {
       </div>
 
       {/* Orders List */}
-      <div className="space-y-3">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {list.length === 0 ? (
           <div className="bg-[#141414] rounded-3xl p-8 text-center border border-white/8 shadow-md">
             <Clock className="w-10 h-10 text-stone-600 mx-auto mb-2" />

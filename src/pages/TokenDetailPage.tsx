@@ -49,31 +49,31 @@ export const TokenDetailPage: React.FC<TokenDetailPageProps> = ({
   }
 
   return (
-    <div className="pb-24 pt-3 px-4 max-w-md mx-auto space-y-4">
+    <div className="pb-24 pt-4 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto space-y-6">
       {/* Top Bar */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between border-b border-white/8 pb-4">
         <div className="flex items-center gap-3">
           <button
             onClick={onBack}
-            className="w-8 h-8 rounded-xl bg-[#141414] hover:bg-[#1E1E1E] border border-white/8 flex items-center justify-center text-stone-300 hover:text-white cursor-pointer transition-colors"
+            className="w-9 h-9 rounded-xl bg-[#141414] hover:bg-[#1E1E1E] border border-white/8 flex items-center justify-center text-stone-300 hover:text-white cursor-pointer transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
           <div>
-            <h2 className="text-xl font-black text-white tracking-tight">
+            <h1 className="text-2xl font-black text-white tracking-tight">
               Live Queue Token
-            </h2>
-            <p className="text-xs text-[#A1A1A1]">Real-time sync with SVCE kitchen</p>
+            </h1>
+            <p className="text-xs sm:text-sm text-[#A1A1A1]">Real-time sync with SVCE kitchen fulfillment</p>
           </div>
         </div>
 
         <button
           onClick={() => setShowReceipt(true)}
-          className="py-1.5 px-3 rounded-xl bg-[#141414] hover:bg-[#1E1E1E] border border-white/8 text-white cursor-pointer text-xs font-black flex items-center gap-1.5 shadow-md transition-colors"
+          className="py-2 px-3.5 rounded-xl bg-[#141414] hover:bg-[#1E1E1E] border border-white/8 text-white cursor-pointer text-xs font-black flex items-center gap-2 shadow-md transition-colors"
           title="View Digital Bill"
         >
-          <FileText className="w-3.5 h-3.5 text-[#FF6A00]" />
-          <span>Bill</span>
+          <FileText className="w-4 h-4 text-[#FF6A00]" />
+          <span>Digital Bill</span>
         </button>
       </div>
 

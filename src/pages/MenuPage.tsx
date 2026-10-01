@@ -11,7 +11,8 @@ import {
   Minus,
   Sparkles,
   ShoppingBag,
-  SlidersHorizontal
+  SlidersHorizontal,
+  AlertCircle
 } from 'lucide-react';
 import { useCanteen } from '../context/CanteenContext';
 import { FoodCard } from '../components/FoodCard';
@@ -39,99 +40,122 @@ export const MenuPage: React.FC = () => {
   const cartItemForDetail = selectedFood ? cart.find((i) => i.foodId === selectedFood.id) : null;
 
   return (
-    <div className="pb-24 pt-3 px-4 max-w-md mx-auto space-y-4">
+    <div className="pb-24 pt-4 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto space-y-6">
       {/* Header */}
-      <div>
-        <h2 className="text-xl font-black text-white tracking-tight">
-          Today's Menu
-        </h2>
-        <p className="text-xs text-[#A1A1A1] mt-0.5">
-          Fresh. Fast. Ready when you are. ({foods.length} items)
-        </p>
-      </div>
-
-      {/* Search Input Bar */}
-      <div className="relative">
-        <Search className="w-4 h-4 text-stone-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search dosas, snacks, meals, drinks..."
-          className="w-full pl-10 pr-4 py-3 bg-[#141414] border border-white/8 rounded-2xl text-xs font-medium text-white placeholder:text-stone-500 focus:outline-none focus:border-[#FF6A00]/60 focus:ring-1 focus:ring-[#FF6A00]/30 shadow-inner"
-        />
-        {searchQuery && (
-          <button
-            onClick={() => setSearchQuery('')}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-stone-400 hover:text-white cursor-pointer"
-          >
-            Clear
-          </button>
-        )}
-      </div>
-
-      {/* Categories Horizontal Scroll */}
-      <div className="flex gap-2 overflow-x-auto no-scrollbar py-1">
-        {categories.map((cat) => {
-          const isSelected = selectedCategory === cat;
-          return (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={`px-3.5 py-2 rounded-xl text-xs font-black whitespace-nowrap cursor-pointer transition-all active:scale-95 ${
-                isSelected
-                  ? 'bg-[#FF6A00] text-black shadow-md glow-orange-sm'
-                  : 'bg-[#141414] text-[#A1A1A1] hover:text-white border border-white/8 hover:bg-[#1C1C1C]'
-              }`}
-            >
-              {cat}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Filter Chips Bar */}
-      <div className="flex items-center justify-between text-xs text-[#A1A1A1] pt-0.5 flex-wrap gap-2">
-        <span className="font-mono-token text-[11px]">
-          Showing <strong>{filteredFoods.length}</strong> items
-        </span>
-
-        <div className="flex items-center gap-1.5">
-          <button
-            onClick={() => setOnlyVeg(!onlyVeg)}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-[11px] font-bold cursor-pointer transition-colors ${
-              onlyVeg
-                ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300'
-                : 'bg-[#141414] border-white/8 text-[#A1A1A1] hover:text-white'
-            }`}
-          >
-            <span className="w-2 h-2 rounded-full bg-emerald-400" />
-            <span>Pure Veg</span>
-          </button>
-
-          <button
-            onClick={() => setOnlyAvailable(!onlyAvailable)}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-[11px] font-bold cursor-pointer transition-colors ${
-              onlyAvailable
-                ? 'bg-[#FF6A00]/20 border-[#FF6A00]/50 text-[#FF7A00]'
-                : 'bg-[#141414] border-white/8 text-[#A1A1A1] hover:text-white'
-            }`}
-          >
-            <span>In Stock</span>
-          </button>
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2 border-b border-white/8 pb-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+            Today's Fresh Menu
+          </h1>
+          <p className="text-xs sm:text-sm text-[#A1A1A1] mt-1">
+            Order ahead from SVCE Cafe counters. Fresh. Fast. Ready when you arrive.
+          </p>
+        </div>
+        <div className="text-xs font-mono-token text-[#A1A1A1] self-start sm:self-auto bg-white/5 px-3 py-1.5 rounded-xl border border-white/8">
+          Showing <strong className="text-white">{filteredFoods.length}</strong> of {foods.length} items
         </div>
       </div>
 
-      {/* Food Items Grid */}
-      <div className="grid grid-cols-2 gap-3 pt-1">
-        {filteredFoods.map((food) => (
-          <FoodCard
-            key={food.id}
-            food={food}
-            onSelect={(item) => setSelectedFood(item)}
-          />
-        ))}
+      {/* Search Input Bar & Filter Controls */}
+      <div className="space-y-3">
+        <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
+          <div className="relative flex-1 max-w-xl">
+            <Search className="w-4 h-4 text-stone-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search dosas, meals, snacks, samosas, tea, coffee..."
+              className="w-full pl-10 pr-16 py-3 bg-[#141414] border border-white/8 rounded-2xl text-xs sm:text-sm font-medium text-white placeholder:text-stone-500 focus:outline-none focus:border-[#FF6A00]/60 focus:ring-1 focus:ring-[#FF6A00]/30 shadow-inner"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-stone-400 hover:text-white cursor-pointer px-1 py-0.5"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setOnlyVeg(!onlyVeg)}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-bold cursor-pointer transition-colors ${
+                onlyVeg
+                  ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300'
+                  : 'bg-[#141414] border-white/8 text-[#A1A1A1] hover:text-white'
+              }`}
+            >
+              <span className="w-2 h-2 rounded-full bg-emerald-400" />
+              <span>Pure Veg</span>
+            </button>
+
+            <button
+              onClick={() => setOnlyAvailable(!onlyAvailable)}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-bold cursor-pointer transition-colors ${
+                onlyAvailable
+                  ? 'bg-[#FF6A00]/20 border-[#FF6A00]/50 text-[#FF7A00]'
+                  : 'bg-[#141414] border-white/8 text-[#A1A1A1] hover:text-white'
+              }`}
+            >
+              <span>In Stock Only</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Categories Horizontal Scroll / Wrap */}
+        <div className="flex gap-2 overflow-x-auto no-scrollbar py-1">
+          {categories.map((cat) => {
+            const isSelected = selectedCategory === cat;
+            return (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`px-4 py-2 rounded-xl text-xs font-black whitespace-nowrap cursor-pointer transition-all active:scale-95 ${
+                  isSelected
+                    ? 'bg-[#FF6A00] text-black shadow-md glow-orange-sm'
+                    : 'bg-[#141414] text-[#A1A1A1] hover:text-white border border-white/8 hover:bg-[#1C1C1C]'
+                }`}
+              >
+                {cat}
+              </button>
+            );
+          })}
+        </div>
       </div>
+
+      {/* Food Items Responsive Grid */}
+      {filteredFoods.length === 0 ? (
+        <div className="bg-[#141414] rounded-3xl p-10 text-center border border-white/8 shadow-md max-w-md mx-auto my-8">
+          <AlertCircle className="w-10 h-10 text-stone-500 mx-auto mb-3" />
+          <h3 className="text-sm font-bold text-white">No food matches your filters</h3>
+          <p className="text-xs text-[#A1A1A1] mt-1 leading-relaxed">
+            Try adjusting your search query or clear the dietary filters.
+          </p>
+          <button
+            onClick={() => {
+              setSearchQuery('');
+              setSelectedCategory('All');
+              setOnlyVeg(false);
+              setOnlyAvailable(false);
+            }}
+            className="mt-4 px-4 py-2 bg-[#FF6A00] text-black font-bold text-xs rounded-xl cursor-pointer"
+          >
+            Reset All Filters
+          </button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-5">
+          {filteredFoods.map((food) => (
+            <FoodCard
+              key={food.id}
+              food={food}
+              onSelect={(item) => setSelectedFood(item)}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Food Detail Modal / Bottom Sheet */}
       <AnimatePresence>
@@ -142,7 +166,7 @@ export const MenuPage: React.FC = () => {
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: '100%', opacity: 0 }}
               transition={{ type: 'spring', damping: 25, stiffness: 280 }}
-              className="bg-[#141414] border-t sm:border border-white/10 rounded-t-3xl sm:rounded-3xl max-w-sm w-full overflow-hidden shadow-2xl relative"
+              className="bg-[#141414] border-t sm:border border-white/10 rounded-t-3xl sm:rounded-3xl max-w-md w-full overflow-hidden shadow-2xl relative"
             >
               {/* Close Button */}
               <button
@@ -153,7 +177,7 @@ export const MenuPage: React.FC = () => {
               </button>
 
               {/* Large Image */}
-              <div className="relative w-full h-48 bg-[#1A1A1A]">
+              <div className="relative w-full h-52 bg-[#1A1A1A]">
                 <img
                   src={selectedFood.imageUrl}
                   alt={selectedFood.name}
@@ -181,24 +205,24 @@ export const MenuPage: React.FC = () => {
               </div>
 
               {/* Details Content */}
-              <div className="p-5 space-y-4">
+              <div className="p-6 space-y-4">
                 <div>
                   <div className="flex items-start justify-between gap-2">
                     <h3 className="text-xl font-black text-white leading-tight">
                       {selectedFood.name}
                     </h3>
-                    <span className="text-xl font-black font-mono-token text-[#FF6A00]">
+                    <span className="text-2xl font-black font-mono-token text-[#FF6A00]">
                       ₹{selectedFood.price}
                     </span>
                   </div>
-                  <p className="text-xs text-[#A1A1A1] mt-1.5 leading-relaxed">
+                  <p className="text-xs text-[#A1A1A1] mt-2 leading-relaxed">
                     {selectedFood.description || 'Prepared fresh with high quality campus ingredients.'}
                   </p>
                 </div>
 
                 {/* Metrics */}
                 <div className="grid grid-cols-2 gap-2 text-center text-xs">
-                  <div className="bg-[#1C1C1C] rounded-xl p-2.5 border border-white/5">
+                  <div className="bg-[#1C1C1C] rounded-xl p-3 border border-white/5">
                     <span className="text-[10px] text-[#A1A1A1] uppercase font-bold block mb-0.5">
                       Prep Time
                     </span>
@@ -208,7 +232,7 @@ export const MenuPage: React.FC = () => {
                     </span>
                   </div>
 
-                  <div className="bg-[#1C1C1C] rounded-xl p-2.5 border border-white/5">
+                  <div className="bg-[#1C1C1C] rounded-xl p-3 border border-white/5">
                     <span className="text-[10px] text-[#A1A1A1] uppercase font-bold block mb-0.5">
                       Availability
                     </span>

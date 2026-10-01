@@ -130,11 +130,12 @@ export const CanteenProvider: React.FC<{ children: React.ReactNode }> = ({ child
         const items = snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as FoodItem));
         setFoods(items);
       } else {
-        setFoods([]);
+        setFoods(INITIAL_FOOD_ITEMS);
       }
       setLoading(false);
-    }, () => {
-      setFoods([]);
+    }, (err) => {
+      console.warn('[CANTEEN] Foods listener note (using initial menu catalog):', err);
+      setFoods(INITIAL_FOOD_ITEMS);
       setLoading(false);
     });
 

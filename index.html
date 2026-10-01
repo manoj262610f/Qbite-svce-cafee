@@ -2,6 +2,28 @@
 <html lang="en" style="background-color: #0D0D0D;">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      // Suppress Vite HMR WebSocket proxy errors in AI Studio iframe/proxy environment
+      (function() {
+        const origConsoleError = console.error;
+        console.error = function(...args) {
+          if (
+            typeof args[0] === 'string' &&
+            (args[0].includes('[vite] failed to connect to websocket') ||
+             args[0].includes('WebSocket closed without opened') ||
+             args[0].includes('server-options.html#server-hmr'))
+          ) {
+            return;
+          }
+          origConsoleError.apply(console, args);
+        };
+        window.addEventListener('unhandledrejection', function(e) {
+          if (e && e.reason && typeof e.reason.message === 'string' && e.reason.message.includes('WebSocket closed without opened')) {
+            e.preventDefault();
+          }
+        });
+      })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>QBite – SVCE Cafe</title>
     <meta name="description" content="Order Smart. Skip the Queue. Smart college canteen ordering for SVCE Cafe." />
@@ -39,6 +61,9 @@
         min-height: 100vh;
         margin: 0;
         padding: 0;
+      }
+      vite-error-overlay {
+        display: none !important;
       }
     </style>
   </head>

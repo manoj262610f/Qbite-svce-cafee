@@ -69,6 +69,27 @@ function MainAppContent() {
   // Register service worker with auto-update detection (PWA Requirement)
   useEffect(() => {
     if ('serviceWorker' in navigator && (import.meta.env.PROD || window.location.protocol === 'https:')) {
+      let refreshing = false;
+      const onControllerChange = () => {
+        if (!refreshing) {
+          refreshing = true;
+          console.log('[SW] Controller changed. Reloading page for newest version.');
+          window.location.reload();
+        }
+      };
+      navigator.serviceWorker.addEventListener('controllerchange', onControllerChange);
+
+      const onMessage = (event: MessageEvent) => {
+        if (event.data && event.data.type === 'SW_UPDATED') {
+          console.log('[SW] App update broadcast received:', event.data.version);
+          if (!refreshing) {
+            refreshing = true;
+            window.location.reload();
+          }
+        }
+      };
+      navigator.serviceWorker.addEventListener('message', onMessage);
+
       navigator.serviceWorker
         .register('/sw.js', { updateViaCache: 'none' })
         .then((registration) => {
@@ -100,7 +121,11 @@ function MainAppContent() {
         }
       };
       document.addEventListener('visibilitychange', handleVisibilityChange);
-      return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+      return () => {
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+        navigator.serviceWorker.removeEventListener('controllerchange', onControllerChange);
+        navigator.serviceWorker.removeEventListener('message', onMessage);
+      };
     }
   }, []);
 

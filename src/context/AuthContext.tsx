@@ -44,6 +44,7 @@ interface AuthContextType {
   authErrorDetails: AuthErrorInfo | null;
   role: UserRole;
   loginWithGoogle: (useRedirect?: boolean) => Promise<UserProfile | void>;
+  loginAsGuest: (guestRole?: UserRole) => Promise<UserProfile>;
   logout: () => Promise<void>;
   clearAuthError: () => void;
   refreshUserProfile: () => Promise<void>;
@@ -320,8 +321,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         }
       } else {
-        console.log('[AUTH] No user session found (UNAUTHENTICATED)');
+        console.log('[AUTH] No Firebase user session found');
         if (isMounted) {
+          const savedSession = safeLocalStorage.getItem('qbite_user_session');
+          if (savedSession) {
+            try {
+              const parsed = JSON.parse(savedSession) as UserProfile;
+              if (parsed && parsed.id) {
+                console.log('[AUTH] Restoring session from safeLocalStorage for role:', parsed.role);
+                setCurrentUser({
+                  uid: parsed.id,
+                  email: parsed.email,
+                  displayName: parsed.name,
+                  photoURL: parsed.photoURL || null
+                });
+                setUserProfile(parsed);
+                setAuthLoading(false);
+                setProfileLoading(false);
+                return;
+              }
+            } catch {
+              // fallback
+            }
+          }
           setCurrentUser(null);
           setUserProfile(null);
           safeLocalStorage.removeItem('qbite_user_session');
@@ -336,6 +358,47 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       unsubscribe();
     };
   }, []);
+
+  const loginAsGuest = async (guestRole: UserRole = 'student'): Promise<UserProfile> => {
+    setAuthError(null);
+    setAuthErrorDetails(null);
+    console.log('[AUTH] Guest login requested for role:', guestRole);
+
+    let email = 'student@svce.ac.in';
+    let name = 'SVCE Student';
+    let uid = 'guest-student-' + Date.now();
+
+    if (guestRole === 'admin') {
+      email = 'the.team.alpha.ece2026@gmail.com';
+      name = 'SVCE Canteen Admin';
+      uid = 'guest-admin-' + Date.now();
+    } else if (guestRole === 'staff') {
+      email = 'manojreddy8283@gmail.com';
+      name = 'Kitchen Staff';
+      uid = 'guest-staff-' + Date.now();
+    }
+
+    const guestProfile: UserProfile = {
+      id: uid,
+      name,
+      email,
+      role: guestRole,
+      accountStatus: 'ACTIVE',
+      photoURL: null,
+      createdAt: new Date().toISOString(),
+      lastLoginAt: new Date().toISOString()
+    };
+
+    setCurrentUser({
+      uid,
+      email,
+      displayName: name,
+      photoURL: null
+    });
+    setUserProfile(guestProfile);
+    saveSession(guestProfile);
+    return guestProfile;
+  };
 
   const loginWithGoogle = async (useRedirect = false): Promise<UserProfile | void> => {
     setAuthError(null);
@@ -413,6 +476,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         authErrorDetails,
         role,
         loginWithGoogle,
+        loginAsGuest,
         logout,
         clearAuthError,
         refreshUserProfile

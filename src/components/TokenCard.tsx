@@ -12,11 +12,13 @@ import {
   XCircle,
   QrCode,
   CalendarClock,
-  Calendar
+  Calendar,
+  RotateCcw
 } from 'lucide-react';
 import { Order, OrderStatus } from '../types';
 import { useCanteen } from '../context/CanteenContext';
-import { getTimeRemainingUntilPickup } from '../services/scheduleService';
+import { getTimeRemainingUntilPickup, canRescheduleOrCancel } from '../services/scheduleService';
+import { ScheduleSelectorModal } from './ScheduleSelectorModal';
 
 interface TokenCardProps {
   order: Order;
@@ -32,9 +34,10 @@ const ORDER_STEPS: { status: OrderStatus; label: string; icon: React.ComponentTy
 ];
 
 export const TokenCard: React.FC<TokenCardProps> = ({ order, onViewBill }) => {
-  const { cancelOrder } = useCanteen();
+  const { cancelOrder, settings } = useCanteen();
   const [cancelling, setCancelling] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
+  const [showRescheduleModal, setShowRescheduleModal] = useState(false);
 
   const isReady = order.status === 'READY';
   const isCompleted = order.status === 'COMPLETED';
@@ -322,17 +325,43 @@ export const TokenCard: React.FC<TokenCardProps> = ({ order, onViewBill }) => {
           </button>
         )}
 
-        {/* Cancel order allowed ONLY when status is PLACED */}
+        {/* Reschedule & Cancel buttons allowed ONLY when status is PLACED */}
         {order.status === 'PLACED' && (
-          <button
-            onClick={handleCancel}
-            disabled={cancelling}
-            className="py-3 px-4 rounded-2xl border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 font-extrabold text-xs cursor-pointer transition-colors disabled:opacity-50"
-          >
-            {cancelling ? 'Cancelling...' : 'Cancel Order'}
-          </button>
+          <>
+            {order.orderType === 'scheduled' && (() => {
+              const check = canRescheduleOrCancel(order, settings.cancelCutoffMinutes ?? 30);
+              return check.allowed ? (
+                <button
+                  type="button"
+                  onClick={() => setShowRescheduleModal(true)}
+                  className="py-3 px-3.5 rounded-2xl border border-[#FF6A00]/40 bg-[#261E14] hover:bg-[#332617] text-[#FF9D2E] font-extrabold text-xs cursor-pointer transition-colors flex items-center gap-1.5"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Reschedule</span>
+                </button>
+              ) : null;
+            })()}
+
+            <button
+              onClick={handleCancel}
+              disabled={cancelling}
+              className="py-3 px-4 rounded-2xl border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 font-extrabold text-xs cursor-pointer transition-colors disabled:opacity-50"
+            >
+              {cancelling ? 'Cancelling...' : 'Cancel Order'}
+            </button>
+          </>
         )}
       </div>
+
+      {showRescheduleModal && (
+        <ScheduleSelectorModal
+          isOpen={showRescheduleModal}
+          onClose={() => setShowRescheduleModal(false)}
+          orderIdToReschedule={order.id}
+          title="Reschedule Pickup Time"
+          subtitle={`Pick a new pickup slot for token ${order.tokenString}`}
+        />
+      )}
     </div>
   );
 };

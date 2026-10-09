@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   ShoppingBag,
   Plus,
@@ -9,9 +9,13 @@ import {
   MapPin,
   Clock,
   Sparkles,
-  ShieldCheck
+  ShieldCheck,
+  CalendarClock,
+  AlertCircle
 } from 'lucide-react';
 import { useCanteen } from '../context/CanteenContext';
+import { ScheduleOrderBanner } from '../components/ScheduleOrderBanner';
+import { ScheduleSelectorModal } from '../components/ScheduleSelectorModal';
 
 interface CartPageProps {
   onProceedToCheckout: () => void;
@@ -29,11 +33,26 @@ export const CartPage: React.FC<CartPageProps> = ({
     clearCart,
     cartSubtotal,
     cartTotal,
-    settings
+    settings,
+    orderingMode,
+    selectedSchedule
   } = useCanteen();
+
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [scheduleNotice, setScheduleNotice] = useState<string | null>(null);
 
   const isCanteenClosed = settings.status === 'CLOSED';
   const isCanteenPaused = settings.status === 'PAUSED';
+  const isScheduled = orderingMode === 'scheduled';
+
+  const handleCheckoutClick = () => {
+    if (isScheduled && !selectedSchedule) {
+      setScheduleNotice('Please select a pickup date and time slot for your scheduled order.');
+      setShowScheduleModal(true);
+      return;
+    }
+    onProceedToCheckout();
+  };
 
   if (cart.length === 0) {
     return (
@@ -79,13 +98,32 @@ export const CartPage: React.FC<CartPageProps> = ({
         </button>
       </div>
 
-      {/* Canteen Status Warning */}
-      {(isCanteenClosed || isCanteenPaused) && (
+      {/* Schedule Option Banner */}
+      <ScheduleOrderBanner />
+
+      {/* Notice if scheduled mode selected but slot not chosen */}
+      {isScheduled && !selectedSchedule && (
+        <div className="bg-[#1C170E] border border-amber-500/30 rounded-2xl p-4 text-xs text-amber-300 flex items-center justify-between gap-3 shadow-md">
+          <div className="flex items-center gap-2.5">
+            <CalendarClock className="w-5 h-5 text-amber-500 shrink-0" />
+            <span>You have selected "Schedule Your Order", but no pickup time slot is chosen yet.</span>
+          </div>
+          <button
+            onClick={() => setShowScheduleModal(true)}
+            className="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 font-bold border border-amber-500/30 cursor-pointer shrink-0"
+          >
+            Pick Slot
+          </button>
+        </div>
+      )}
+
+      {/* Canteen Status Warning (Instant only) */}
+      {!isScheduled && (isCanteenClosed || isCanteenPaused) && (
         <div className="bg-[#1C170E] border border-amber-500/30 rounded-2xl p-4 text-xs text-amber-300 flex items-center gap-3">
           <Clock className="w-5 h-5 text-amber-500 shrink-0" />
           <span>
             {isCanteenClosed
-              ? 'Canteen is currently closed. Orders cannot be submitted right now.'
+              ? 'Canteen is currently closed for instant orders. You can schedule an advance order instead!'
               : 'Ordering is temporarily paused while the kitchen clears peak rush.'}
           </span>
         </div>
@@ -157,6 +195,29 @@ export const CartPage: React.FC<CartPageProps> = ({
                 <span className="font-mono-token font-bold text-white">₹{cartSubtotal}</span>
               </div>
               <div className="flex justify-between text-[#A1A1A1]">
+                <span>Ordering Option</span>
+                <span className={`font-bold ${isScheduled ? 'text-[#FF9D2E]' : 'text-stone-300'}`}>
+                  {isScheduled ? 'Scheduled Order' : 'Order Now'}
+                </span>
+              </div>
+              {isScheduled && selectedSchedule && (
+                <div className="p-2.5 rounded-xl bg-[#1C160F] border border-[#FF6A00]/30 space-y-1">
+                  <div className="flex items-center justify-between text-[11px]">
+                    <span className="text-[#FF7A00] font-black uppercase">Pickup Schedule</span>
+                    <button
+                      type="button"
+                      onClick={() => setShowScheduleModal(true)}
+                      className="text-stone-400 hover:text-white underline cursor-pointer"
+                    >
+                      Edit
+                    </button>
+                  </div>
+                  <div className="text-xs font-bold text-white">
+                    {selectedSchedule.displayDate} · <span className="font-mono-token text-[#FF6A00]">{selectedSchedule.timeSlot}</span>
+                  </div>
+                </div>
+              )}
+              <div className="flex justify-between text-[#A1A1A1]">
                 <span>Pickup Method</span>
                 <span className="font-bold text-[#FF7A00]">Counter Pickup (Free)</span>
               </div>
@@ -173,8 +234,8 @@ export const CartPage: React.FC<CartPageProps> = ({
             {/* Desktop Proceed Button */}
             <div className="hidden lg:block pt-3">
               <button
-                onClick={onProceedToCheckout}
-                disabled={isCanteenClosed || isCanteenPaused}
+                onClick={handleCheckoutClick}
+                disabled={(!isScheduled && (isCanteenClosed || isCanteenPaused))}
                 className="w-full py-4 px-5 bg-[#FF6A00] hover:bg-[#FF7A00] text-black font-black text-sm rounded-2xl shadow-xl glow-orange-sm flex items-center justify-between cursor-pointer transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <span>Proceed to Checkout</span>
@@ -194,8 +255,8 @@ export const CartPage: React.FC<CartPageProps> = ({
       <div className="lg:hidden fixed bottom-16 left-0 right-0 p-4 bg-[#080808]/95 backdrop-blur-xl border-t border-white/8 z-30">
         <div className="max-w-md mx-auto">
           <button
-            onClick={onProceedToCheckout}
-            disabled={isCanteenClosed || isCanteenPaused}
+            onClick={handleCheckoutClick}
+            disabled={(!isScheduled && (isCanteenClosed || isCanteenPaused))}
             className="w-full py-3.5 px-5 bg-[#FF6A00] hover:bg-[#FF7A00] text-black font-black text-sm rounded-2xl shadow-xl glow-orange-sm flex items-center justify-between cursor-pointer transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <div className="text-left leading-tight">
@@ -210,6 +271,12 @@ export const CartPage: React.FC<CartPageProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Schedule Picker Modal */}
+      <ScheduleSelectorModal
+        isOpen={showScheduleModal}
+        onClose={() => setShowScheduleModal(false)}
+      />
     </div>
   );
 };

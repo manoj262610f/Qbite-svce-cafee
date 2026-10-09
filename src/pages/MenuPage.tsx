@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useCanteen } from '../context/CanteenContext';
 import { FoodCard } from '../components/FoodCard';
+import { ScheduleOrderBanner } from '../components/ScheduleOrderBanner';
 import { FoodItem } from '../types';
 
 export const MenuPage: React.FC = () => {
@@ -55,6 +56,9 @@ export const MenuPage: React.FC = () => {
           Showing <strong className="text-white">{filteredFoods.length}</strong> of {foods.length} items
         </div>
       </div>
+
+      {/* Two Ordering Options: Order Now vs Schedule Ahead */}
+      <ScheduleOrderBanner />
 
       {/* Search Input Bar & Filter Controls */}
       <div className="space-y-3">

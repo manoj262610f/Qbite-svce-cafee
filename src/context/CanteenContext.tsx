@@ -20,6 +20,8 @@ import {
   Order,
   OrderItem,
   OrderStatus,
+  OrderType,
+  ScheduleSelection,
   QueueState,
   NotificationItem,
   CanteenSettings,
@@ -35,6 +37,12 @@ import {
   formatOrderNumber,
   calculateEstimatedWaitRange
 } from '../services/queueService';
+import {
+  DEFAULT_SCHEDULING_CONFIG,
+  canRescheduleOrCancel,
+  formatISTDateKey,
+  getISTParts
+} from '../services/scheduleService';
 import { safeLocalStorage } from '../services/safeStorage';
 
 interface CartItem extends OrderItem {}
@@ -55,14 +63,20 @@ interface CanteenContextType {
   cartSubtotal: number;
   cartTotal: number;
   loading: boolean;
+  // Scheduling Mode State
+  orderingMode: OrderType;
+  selectedSchedule: ScheduleSelection | null;
+  setOrderingMode: (mode: OrderType) => void;
+  setSelectedSchedule: (schedule: ScheduleSelection | null) => void;
   // Cart Actions
   addToCart: (food: FoodItem, quantity?: number) => void;
   updateCartQuantity: (foodId: string, quantity: number) => void;
   removeFromCart: (foodId: string) => void;
   clearCart: () => void;
   // Order Lifecycle Actions
-  placeOrder: (notes?: string, paymentMethod?: PaymentMethod) => Promise<Order>;
+  placeOrder: (notes?: string, paymentMethod?: PaymentMethod, scheduleOverride?: ScheduleSelection | null) => Promise<Order>;
   cancelOrder: (orderId: string) => Promise<void>;
+  rescheduleOrder: (orderId: string, newSchedule: ScheduleSelection) => Promise<void>;
   // Staff Kitchen Actions
   acceptOrder: (orderId: string) => Promise<void>;
   startPreparingOrder: (orderId: string) => Promise<void>;
@@ -75,6 +89,7 @@ interface CanteenContextType {
   saveFoodItem: (food: FoodItem) => Promise<void>;
   deleteFoodItem: (foodId: string) => Promise<void>;
   updateCanteenStatus: (status: CanteenStatus, announcement?: string, operatingHours?: string) => Promise<void>;
+  updateSchedulingSettings: (schedulingUpdates: Partial<CanteenSettings>) => Promise<void>;
   seedMenuCatalog: () => Promise<void>;
   // User Actions
   toggleFavorite: (foodId: string) => Promise<void>;
@@ -113,6 +128,36 @@ export const CanteenProvider: React.FC<{ children: React.ReactNode }> = ({ child
       return [];
     }
   });
+
+  const [orderingMode, setOrderingMode] = useState<OrderType>(() => {
+    try {
+      const saved = safeLocalStorage.getItem('qbite_order_mode');
+      return (saved === 'scheduled' || saved === 'instant') ? (saved as OrderType) : 'instant';
+    } catch {
+      return 'instant';
+    }
+  });
+
+  const [selectedSchedule, setSelectedSchedule] = useState<ScheduleSelection | null>(() => {
+    try {
+      const saved = safeLocalStorage.getItem('qbite_schedule');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  useEffect(() => {
+    safeLocalStorage.setItem('qbite_order_mode', orderingMode);
+  }, [orderingMode]);
+
+  useEffect(() => {
+    if (selectedSchedule) {
+      safeLocalStorage.setItem('qbite_schedule', JSON.stringify(selectedSchedule));
+    } else {
+      safeLocalStorage.removeItem('qbite_schedule');
+    }
+  }, [selectedSchedule]);
 
   const [loading, setLoading] = useState<boolean>(true);
   const isPlacingOrderRef = useRef<boolean>(false);
@@ -268,6 +313,16 @@ export const CanteenProvider: React.FC<{ children: React.ReactNode }> = ({ child
           status: (data.status as CanteenStatus) || 'OPEN',
           announcement: data.announcement || 'Fresh breakfast & hot meals available at Counters 1 & 2',
           operatingHours: data.operatingHours || '7:30 AM – 5:30 PM',
+          schedulingEnabled: data.schedulingEnabled ?? DEFAULT_SCHEDULING_CONFIG.schedulingEnabled,
+          operatingDays: data.operatingDays ?? DEFAULT_SCHEDULING_CONFIG.operatingDays,
+          slotStartTime: data.slotStartTime ?? DEFAULT_SCHEDULING_CONFIG.slotStartTime,
+          slotEndTime: data.slotEndTime ?? DEFAULT_SCHEDULING_CONFIG.slotEndTime,
+          slotIntervalMinutes: data.slotIntervalMinutes ?? DEFAULT_SCHEDULING_CONFIG.slotIntervalMinutes,
+          maxOrdersPerSlot: data.maxOrdersPerSlot ?? DEFAULT_SCHEDULING_CONFIG.maxOrdersPerSlot,
+          minNoticeMinutes: data.minNoticeMinutes ?? DEFAULT_SCHEDULING_CONFIG.minNoticeMinutes,
+          maxAdvanceDays: data.maxAdvanceDays ?? DEFAULT_SCHEDULING_CONFIG.maxAdvanceDays,
+          cancelCutoffMinutes: data.cancelCutoffMinutes ?? DEFAULT_SCHEDULING_CONFIG.cancelCutoffMinutes,
+          kitchenLeadTimeMinutes: data.kitchenLeadTimeMinutes ?? DEFAULT_SCHEDULING_CONFIG.kitchenLeadTimeMinutes,
           updatedAt: data.updatedAt,
           updatedBy: data.updatedBy
         });
@@ -337,7 +392,11 @@ export const CanteenProvider: React.FC<{ children: React.ReactNode }> = ({ child
    * 4. Writes order document to Firestore
    * 5. No fake local order on error
    */
-  const placeOrder = async (notes?: string, paymentMethod: PaymentMethod = 'COUNTER'): Promise<Order> => {
+  const placeOrder = async (
+    notes?: string,
+    paymentMethod: PaymentMethod = 'COUNTER',
+    scheduleOverride?: ScheduleSelection | null
+  ): Promise<Order> => {
     // 1. Verify authenticated user directly from Firebase Auth
     const fbUser = auth.currentUser;
     if (!fbUser) {
@@ -353,9 +412,78 @@ export const CanteenProvider: React.FC<{ children: React.ReactNode }> = ({ child
     isPlacingOrderRef.current = true;
 
     try {
-      const dateKey = getTodayDateKey();
+      const effectiveSchedule =
+        scheduleOverride !== undefined
+          ? scheduleOverride
+          : orderingMode === 'scheduled'
+          ? selectedSchedule
+          : null;
+      const isScheduled = Boolean(effectiveSchedule);
 
-      // 2. Verify or ensure user record in users/{uid}
+      if (orderingMode === 'scheduled' && !effectiveSchedule) {
+        throw new Error('Please select a valid future pickup date and time slot for your scheduled order.');
+      }
+
+      // 2. Fetch authoritative settings from Firestore
+      const settingsSnap = await getDoc(doc(db, 'settings', 'main'));
+      let currentSettings = settings;
+      if (settingsSnap.exists()) {
+        const sData = settingsSnap.data();
+        currentSettings = {
+          ...settings,
+          ...sData,
+          operatingDays: sData.operatingDays ?? DEFAULT_SCHEDULING_CONFIG.operatingDays,
+          maxOrdersPerSlot: sData.maxOrdersPerSlot ?? DEFAULT_SCHEDULING_CONFIG.maxOrdersPerSlot,
+          minNoticeMinutes: sData.minNoticeMinutes ?? DEFAULT_SCHEDULING_CONFIG.minNoticeMinutes
+        };
+      }
+
+      const dateKey = effectiveSchedule ? effectiveSchedule.date : getTodayDateKey();
+
+      // 3. Operational checks
+      if (!isScheduled) {
+        if (currentSettings.status === 'CLOSED') {
+          throw new Error('The canteen is currently closed. Orders cannot be placed at this time.');
+        }
+        if (currentSettings.status === 'PAUSED') {
+          throw new Error('Ordering is temporarily paused while the kitchen fulfills active orders. Please try again shortly.');
+        }
+      } else if (effectiveSchedule) {
+        // Scheduled Order validations
+        const operatingDays = currentSettings.operatingDays ?? DEFAULT_SCHEDULING_CONFIG.operatingDays;
+        const istDayOfWeek = getISTParts(new Date(effectiveSchedule.isoPickupTime)).dayOfWeek;
+        if (!operatingDays.includes(istDayOfWeek)) {
+          throw new Error('The canteen is closed for scheduled pickups on this day.');
+        }
+
+        const nowMs = Date.now();
+        const pickupMs = new Date(effectiveSchedule.isoPickupTime).getTime();
+        const minNoticeMin = currentSettings.minNoticeMinutes ?? DEFAULT_SCHEDULING_CONFIG.minNoticeMinutes;
+
+        if (pickupMs <= nowMs) {
+          throw new Error('The selected pickup time has already passed. Please select an upcoming time slot.');
+        }
+        if (pickupMs - nowMs < minNoticeMin * 60 * 1000) {
+          throw new Error(`Scheduled orders require at least ${minNoticeMin} minutes advance notice. Please select a later slot.`);
+        }
+
+        // Real slot capacity check to prevent overbooking
+        const maxCapacity = currentSettings.maxOrdersPerSlot ?? DEFAULT_SCHEDULING_CONFIG.maxOrdersPerSlot;
+        const bookedCount = orders.filter(
+          (o) =>
+            o.orderType === 'scheduled' &&
+            o.scheduledDate === effectiveSchedule.date &&
+            o.scheduledTimeSlot === effectiveSchedule.timeSlot &&
+            o.status !== 'CANCELLED' &&
+            o.status !== 'REJECTED'
+        ).length;
+
+        if (bookedCount >= maxCapacity) {
+          throw new Error(`The slot (${effectiveSchedule.timeSlot}) is fully booked (${bookedCount}/${maxCapacity}). Please select another available slot.`);
+        }
+      }
+
+      // 4. Verify or ensure user record in users/{uid}
       const userDocRef = doc(db, 'users', fbUser.uid);
       const userSnap = await getDoc(userDocRef);
       let userName = fbUser.displayName || userProfile?.name || 'SVCE Student';
@@ -382,19 +510,7 @@ export const CanteenProvider: React.FC<{ children: React.ReactNode }> = ({ child
         await setDoc(userDocRef, initialDoc, { merge: true });
       }
 
-      // 3. Verify Canteen Status
-      const settingsSnap = await getDoc(doc(db, 'settings', 'main'));
-      if (settingsSnap.exists()) {
-        const currentCanteenStatus = (settingsSnap.data().status as CanteenStatus) || 'OPEN';
-        if (currentCanteenStatus === 'CLOSED') {
-          throw new Error('The canteen is currently closed. Orders cannot be placed at this time.');
-        }
-        if (currentCanteenStatus === 'PAUSED') {
-          throw new Error('Ordering is temporarily paused while the kitchen fulfills active orders. Please try again shortly.');
-        }
-      }
-
-      // 4. Authoritative Re-validation of Cart Items in Firestore
+      // 5. Authoritative Re-validation of Cart Items in Firestore
       const verifiedItems: OrderItem[] = [];
       let authoritativeSubtotal = 0;
       let maxItemPrepTime = 8;
@@ -416,7 +532,7 @@ export const CanteenProvider: React.FC<{ children: React.ReactNode }> = ({ child
           foodId: foodData.id,
           menuItemId: foodData.id,
           name: foodData.name,
-          price: foodData.price, // Authoritative price snapshot from Firestore
+          price: foodData.price,
           quantity: item.quantity,
           imageUrl: foodData.imageUrl,
           isVeg: foodData.isVeg
@@ -425,11 +541,11 @@ export const CanteenProvider: React.FC<{ children: React.ReactNode }> = ({ child
         maxItemPrepTime = Math.max(maxItemPrepTime, foodData.prepTimeMinutes || 8);
       }
 
-      // 5. Deterministic wait estimate based on active kitchen load
+      // 6. Deterministic wait estimate based on active kitchen load
       const waitRange = calculateEstimatedWaitRange(orders, maxItemPrepTime);
       const estimatedWaitMin = waitRange.minMin;
 
-      // 6. Atomic Firestore Transaction for Token Allocation & Order Creation
+      // 7. Atomic Firestore Transaction for Token Allocation & Order Creation
       const queueDocRef = doc(db, 'queue', dateKey);
       const orderId = `ord_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
       const orderDocRef = doc(db, 'orders', orderId);
@@ -465,16 +581,22 @@ export const CanteenProvider: React.FC<{ children: React.ReactNode }> = ({ child
           tokenString,
           dateKey,
           userId: fbUser.uid,
+          studentUid: fbUser.uid,
           userName,
           userEmail,
           items: verifiedItems,
           status: 'PLACED',
           orderStatus: 'pending',
+          orderType: isScheduled ? 'scheduled' : 'instant',
+          scheduledPickupAt: effectiveSchedule ? effectiveSchedule.isoPickupTime : null,
+          scheduledDate: effectiveSchedule ? effectiveSchedule.date : null,
+          scheduledTimeSlot: effectiveSchedule ? effectiveSchedule.timeSlot : null,
           paymentMethod: paymentMethod || 'COUNTER',
           paymentStatus: 'PENDING',
           subtotal: authoritativeSubtotal,
           discount: 0,
           total: authoritativeSubtotal,
+          totalAmount: authoritativeSubtotal,
           pickupLocation: 'SVCE Central Canteen',
           createdAt: new Date().toISOString(),
           acceptedAt: null,
@@ -491,15 +613,19 @@ export const CanteenProvider: React.FC<{ children: React.ReactNode }> = ({ child
         return newOrder;
       });
 
-      // 7. In-App Notification for Student
+      // 8. In-App Notification for Student
       const notifId = `notif_${Date.now()}_${Math.random().toString(36).substring(2, 5)}`;
+      const notifMessage = isScheduled && effectiveSchedule
+        ? `Scheduled order ${confirmedOrder.tokenString} confirmed for ${effectiveSchedule.timeSlot} on ${effectiveSchedule.displayDate}. Total: ₹${confirmedOrder.total}.`
+        : `Your token ${confirmedOrder.tokenString} (${confirmedOrder.orderNumber}) has been placed. Pay ₹${confirmedOrder.total} on pickup.`;
+
       const notif: NotificationItem = {
         id: notifId,
         userId: fbUser.uid,
         orderId: confirmedOrder.id,
         tokenString: confirmedOrder.tokenString,
-        title: 'Order Confirmed',
-        message: `Your token ${confirmedOrder.tokenString} (${confirmedOrder.orderNumber}) has been placed. Pay ₹${confirmedOrder.total} at counter on pickup.`,
+        title: isScheduled ? 'Scheduled Order Placed ⏰' : 'Order Confirmed',
+        message: notifMessage,
         type: 'STATUS_UPDATE',
         read: false,
         createdAt: new Date().toISOString()
@@ -519,7 +645,7 @@ export const CanteenProvider: React.FC<{ children: React.ReactNode }> = ({ child
   };
 
   /**
-   * CANCEL ORDER (Allowed ONLY when status is PLACED)
+   * CANCEL ORDER (Allowed ONLY when status is PLACED and within cutoff window)
    */
   const cancelOrder = async (orderId: string) => {
     if (!currentUser) throw new Error('Not authenticated');
@@ -533,8 +659,10 @@ export const CanteenProvider: React.FC<{ children: React.ReactNode }> = ({ child
       throw new Error('You do not have permission to cancel this order.');
     }
 
-    if (orderData.status !== 'PLACED') {
-      throw new Error('This order cannot be cancelled as kitchen preparation has already started.');
+    const cutoffMin = settings.cancelCutoffMinutes ?? DEFAULT_SCHEDULING_CONFIG.cancelCutoffMinutes;
+    const check = canRescheduleOrCancel(orderData, cutoffMin);
+    if (!check.allowed && role !== 'admin') {
+      throw new Error(check.reason || 'This order cannot be cancelled.');
     }
 
     const nowIso = new Date().toISOString();
@@ -553,6 +681,78 @@ export const CanteenProvider: React.FC<{ children: React.ReactNode }> = ({ child
       tokenString: orderData.tokenString,
       title: 'Order Cancelled',
       message: `Your order ${orderData.tokenString} has been cancelled.`,
+      type: 'STATUS_UPDATE',
+      read: false,
+      createdAt: nowIso
+    });
+  };
+
+  /**
+   * RESCHEDULE ORDER (Allowed ONLY when status is PLACED and within cutoff window)
+   */
+  const rescheduleOrder = async (orderId: string, newSchedule: ScheduleSelection) => {
+    if (!currentUser) throw new Error('Not authenticated');
+
+    const orderRef = doc(db, 'orders', orderId);
+    const snap = await getDoc(orderRef);
+    if (!snap.exists()) throw new Error('Order not found');
+
+    const orderData = snap.data() as Order;
+    if (orderData.userId !== currentUser.uid && role !== 'admin') {
+      throw new Error('You do not have permission to reschedule this order.');
+    }
+
+    const cutoffMin = settings.cancelCutoffMinutes ?? DEFAULT_SCHEDULING_CONFIG.cancelCutoffMinutes;
+    const check = canRescheduleOrCancel(orderData, cutoffMin);
+    if (!check.allowed && role !== 'admin') {
+      throw new Error(check.reason || 'This order cannot be rescheduled at this stage.');
+    }
+
+    // Verify future slot
+    const nowMs = Date.now();
+    const pickupMs = new Date(newSchedule.isoPickupTime).getTime();
+    const minNoticeMin = settings.minNoticeMinutes ?? DEFAULT_SCHEDULING_CONFIG.minNoticeMinutes;
+
+    if (pickupMs <= nowMs) {
+      throw new Error('The selected pickup time has already passed.');
+    }
+    if (pickupMs - nowMs < minNoticeMin * 60 * 1000) {
+      throw new Error(`Rescheduling requires at least ${minNoticeMin} minutes notice.`);
+    }
+
+    // Capacity check for new slot
+    const maxCapacity = settings.maxOrdersPerSlot ?? DEFAULT_SCHEDULING_CONFIG.maxOrdersPerSlot;
+    const bookedCount = orders.filter(
+      (o) =>
+        o.id !== orderId &&
+        o.orderType === 'scheduled' &&
+        o.scheduledDate === newSchedule.date &&
+        o.scheduledTimeSlot === newSchedule.timeSlot &&
+        o.status !== 'CANCELLED' &&
+        o.status !== 'REJECTED'
+    ).length;
+
+    if (bookedCount >= maxCapacity) {
+      throw new Error(`The slot (${newSchedule.timeSlot}) is already fully booked. Please choose an alternate slot.`);
+    }
+
+    const nowIso = new Date().toISOString();
+    await updateDoc(orderRef, {
+      scheduledPickupAt: newSchedule.isoPickupTime,
+      scheduledDate: newSchedule.date,
+      scheduledTimeSlot: newSchedule.timeSlot,
+      lastStatusChangedAt: nowIso,
+      lastStatusChangedBy: currentUser.uid
+    });
+
+    const notifId = `notif_${Date.now()}`;
+    await setDoc(doc(db, 'notifications', notifId), {
+      id: notifId,
+      userId: orderData.userId,
+      orderId,
+      tokenString: orderData.tokenString,
+      title: 'Pickup Schedule Updated ⏰',
+      message: `Your order ${orderData.tokenString} has been rescheduled to ${newSchedule.timeSlot} on ${newSchedule.displayDate}.`,
       type: 'STATUS_UPDATE',
       read: false,
       createdAt: nowIso
@@ -771,6 +971,16 @@ export const CanteenProvider: React.FC<{ children: React.ReactNode }> = ({ child
     await setDoc(settingsRef, payload, { merge: true });
   };
 
+  const updateSchedulingSettings = async (schedulingUpdates: Partial<CanteenSettings>) => {
+    const settingsRef = doc(db, 'settings', 'main');
+    const nowIso = new Date().toISOString();
+    await setDoc(settingsRef, {
+      ...schedulingUpdates,
+      updatedAt: nowIso,
+      updatedBy: currentUser?.uid || 'admin'
+    }, { merge: true });
+  };
+
   const seedMenuCatalog = async () => {
     for (const item of INITIAL_FOOD_ITEMS) {
       await setDoc(doc(db, 'foods', item.id), item);
@@ -848,12 +1058,17 @@ export const CanteenProvider: React.FC<{ children: React.ReactNode }> = ({ child
         cartSubtotal,
         cartTotal,
         loading,
+        orderingMode,
+        selectedSchedule,
+        setOrderingMode,
+        setSelectedSchedule,
         addToCart,
         updateCartQuantity,
         removeFromCart,
         clearCart,
         placeOrder,
         cancelOrder,
+        rescheduleOrder,
         acceptOrder,
         startPreparingOrder,
         markOrderReady,
@@ -864,6 +1079,7 @@ export const CanteenProvider: React.FC<{ children: React.ReactNode }> = ({ child
         saveFoodItem,
         deleteFoodItem,
         updateCanteenStatus,
+        updateSchedulingSettings,
         seedMenuCatalog,
         toggleFavorite,
         markNotificationAsRead,

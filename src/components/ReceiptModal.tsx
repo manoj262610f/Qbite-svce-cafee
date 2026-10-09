@@ -80,6 +80,14 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ order, isOpen, onClo
                 <span className="font-semibold text-white">{formattedDate} · {formattedTime}</span>
               </div>
               <div className="flex justify-between text-[#A1A1A1]">
+                <span>Order Type</span>
+                <span className={`font-semibold ${order.orderType === 'scheduled' ? 'text-[#FF9D2E]' : 'text-white'}`}>
+                  {order.orderType === 'scheduled'
+                    ? `Scheduled (${order.scheduledDate || ''} · ${order.scheduledTimeSlot || ''})`
+                    : 'Order Now (Instant)'}
+                </span>
+              </div>
+              <div className="flex justify-between text-[#A1A1A1]">
                 <span>Customer</span>
                 <span className="font-semibold text-white">{order.userName}</span>
               </div>

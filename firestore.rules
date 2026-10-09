@@ -100,12 +100,16 @@ service cloud.firestore {
         request.resource.data.userId == request.auth.uid;
 
       // Staff can update order status and operational fields;
-      // Student can only cancel their own order while it is still PLACED / pending
+      // Student can cancel or reschedule their own order while it is still PLACED / pending
       allow update: if (isStaff() && request.resource.data.userId == resource.data.userId) || (
         isSignedIn() &&
         resource.data.userId == request.auth.uid &&
         (resource.data.status == 'PLACED' || resource.data.get('orderStatus', '') == 'pending') &&
-        (request.resource.data.status == 'CANCELLED' || request.resource.data.get('orderStatus', '') == 'cancelled')
+        (
+          request.resource.data.status == 'CANCELLED' ||
+          request.resource.data.get('orderStatus', '') == 'cancelled' ||
+          (request.resource.data.status == 'PLACED' && request.resource.data.userId == request.auth.uid)
+        )
       );
 
       allow delete: if isAdmin();

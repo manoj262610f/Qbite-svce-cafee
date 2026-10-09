@@ -14,7 +14,9 @@ import {
   TrendingUp,
   UserCheck,
   UserX,
-  Power
+  Power,
+  CalendarClock,
+  Calendar
 } from 'lucide-react';
 import {
   collection,
@@ -29,6 +31,7 @@ import { db } from '../firebase/config';
 import { useCanteen } from '../context/CanteenContext';
 import { FoodItem, UserProfile, UserRole, AccountStatus, CanteenStatus } from '../types';
 import { getTodayDateKey } from '../services/queueService';
+import { DEFAULT_SCHEDULING_CONFIG } from '../services/scheduleService';
 
 interface AdminPageProps {
   onBackToHome: () => void;
@@ -42,6 +45,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBackToHome }) => {
     updateFoodAvailability,
     saveFoodItem,
     updateCanteenStatus,
+    updateSchedulingSettings,
     seedMenuCatalog
   } = useCanteen();
 
@@ -67,10 +71,52 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBackToHome }) => {
   const [announcementText, setAnnouncementText] = useState(settings.announcement);
   const [hoursText, setHoursText] = useState(settings.operatingHours);
 
+  // Scheduling Rules state
+  const [schedulingEnabled, setSchedulingEnabled] = useState<boolean>(
+    settings.schedulingEnabled ?? DEFAULT_SCHEDULING_CONFIG.schedulingEnabled
+  );
+  const [operatingDays, setOperatingDays] = useState<number[]>(
+    settings.operatingDays ?? DEFAULT_SCHEDULING_CONFIG.operatingDays
+  );
+  const [slotStartTime, setSlotStartTime] = useState<string>(
+    settings.slotStartTime || DEFAULT_SCHEDULING_CONFIG.slotStartTime
+  );
+  const [slotEndTime, setSlotEndTime] = useState<string>(
+    settings.slotEndTime || DEFAULT_SCHEDULING_CONFIG.slotEndTime
+  );
+  const [slotIntervalMinutes, setSlotIntervalMinutes] = useState<number>(
+    settings.slotIntervalMinutes || DEFAULT_SCHEDULING_CONFIG.slotIntervalMinutes
+  );
+  const [maxOrdersPerSlot, setMaxOrdersPerSlot] = useState<number>(
+    settings.maxOrdersPerSlot || DEFAULT_SCHEDULING_CONFIG.maxOrdersPerSlot
+  );
+  const [minNoticeMinutes, setMinNoticeMinutes] = useState<number>(
+    settings.minNoticeMinutes || DEFAULT_SCHEDULING_CONFIG.minNoticeMinutes
+  );
+  const [maxAdvanceDays, setMaxAdvanceDays] = useState<number>(
+    settings.maxAdvanceDays || DEFAULT_SCHEDULING_CONFIG.maxAdvanceDays
+  );
+  const [cancelCutoffMinutes, setCancelCutoffMinutes] = useState<number>(
+    settings.cancelCutoffMinutes || DEFAULT_SCHEDULING_CONFIG.cancelCutoffMinutes
+  );
+  const [kitchenLeadTimeMinutes, setKitchenLeadTimeMinutes] = useState<number>(
+    settings.kitchenLeadTimeMinutes || DEFAULT_SCHEDULING_CONFIG.kitchenLeadTimeMinutes
+  );
+
   useEffect(() => {
     setCanteenStatus(settings.status);
     setAnnouncementText(settings.announcement);
     setHoursText(settings.operatingHours);
+    setSchedulingEnabled(settings.schedulingEnabled ?? DEFAULT_SCHEDULING_CONFIG.schedulingEnabled);
+    setOperatingDays(settings.operatingDays ?? DEFAULT_SCHEDULING_CONFIG.operatingDays);
+    setSlotStartTime(settings.slotStartTime || DEFAULT_SCHEDULING_CONFIG.slotStartTime);
+    setSlotEndTime(settings.slotEndTime || DEFAULT_SCHEDULING_CONFIG.slotEndTime);
+    setSlotIntervalMinutes(settings.slotIntervalMinutes || DEFAULT_SCHEDULING_CONFIG.slotIntervalMinutes);
+    setMaxOrdersPerSlot(settings.maxOrdersPerSlot || DEFAULT_SCHEDULING_CONFIG.maxOrdersPerSlot);
+    setMinNoticeMinutes(settings.minNoticeMinutes || DEFAULT_SCHEDULING_CONFIG.minNoticeMinutes);
+    setMaxAdvanceDays(settings.maxAdvanceDays || DEFAULT_SCHEDULING_CONFIG.maxAdvanceDays);
+    setCancelCutoffMinutes(settings.cancelCutoffMinutes || DEFAULT_SCHEDULING_CONFIG.cancelCutoffMinutes);
+    setKitchenLeadTimeMinutes(settings.kitchenLeadTimeMinutes || DEFAULT_SCHEDULING_CONFIG.kitchenLeadTimeMinutes);
   }, [settings]);
 
   // Real-time Users Listener for Staff Access Management
@@ -138,7 +184,19 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBackToHome }) => {
   const handleSaveSettings = async () => {
     try {
       await updateCanteenStatus(canteenStatus, announcementText, hoursText);
-      setActionNotice('Canteen operational status updated successfully.');
+      await updateSchedulingSettings({
+        schedulingEnabled,
+        operatingDays,
+        slotStartTime,
+        slotEndTime,
+        slotIntervalMinutes: Number(slotIntervalMinutes),
+        maxOrdersPerSlot: Number(maxOrdersPerSlot),
+        minNoticeMinutes: Number(minNoticeMinutes),
+        maxAdvanceDays: Number(maxAdvanceDays),
+        cancelCutoffMinutes: Number(cancelCutoffMinutes),
+        kitchenLeadTimeMinutes: Number(kitchenLeadTimeMinutes)
+      });
+      setActionNotice('Canteen operational status & scheduling rules updated successfully.');
       setTimeout(() => setActionNotice(null), 3000);
     } catch (e: any) {
       setActionNotice(e?.message || 'Failed to update settings.');
@@ -405,7 +463,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBackToHome }) => {
 
           <div className="space-y-2">
             <label className="text-[10px] font-black uppercase tracking-wider text-[#A1A1A1] block">
-              Operating Hours
+              Operating Hours (Public Display)
             </label>
             <input
               type="text"
@@ -416,11 +474,197 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBackToHome }) => {
             />
           </div>
 
+          {/* Section: Order Scheduling Rules & Engine */}
+          <div className="pt-4 border-t border-white/8 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="font-black text-sm text-white flex items-center gap-2">
+                  <CalendarClock className="w-4 h-4 text-[#FF6A00]" />
+                  <span>"Schedule Your Order" Engine Configuration</span>
+                </h4>
+                <p className="text-[11px] text-[#A1A1A1] mt-0.5">
+                  Configure advance booking windows, operating days, capacity limits & cutoff rules.
+                </p>
+              </div>
+
+              {/* Master Scheduling Toggle */}
+              <button
+                type="button"
+                onClick={() => setSchedulingEnabled(!schedulingEnabled)}
+                className={`py-1.5 px-3 rounded-xl text-xs font-black cursor-pointer transition-colors flex items-center gap-1.5 ${
+                  schedulingEnabled
+                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
+                    : 'bg-rose-500/20 text-rose-400 border border-rose-500/40'
+                }`}
+              >
+                <Power className="w-3.5 h-3.5" />
+                <span>{schedulingEnabled ? 'Feature Enabled' : 'Feature Disabled'}</span>
+              </button>
+            </div>
+
+            {/* Operating Days Toggles */}
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-black uppercase tracking-wider text-[#A1A1A1] block">
+                Operating Days for Advance Bookings
+              </label>
+              <div className="grid grid-cols-7 gap-1 sm:gap-2">
+                {[
+                  { id: 1, label: 'Mon' },
+                  { id: 2, label: 'Tue' },
+                  { id: 3, label: 'Wed' },
+                  { id: 4, label: 'Thu' },
+                  { id: 5, label: 'Fri' },
+                  { id: 6, label: 'Sat' },
+                  { id: 0, label: 'Sun' }
+                ].map((d) => {
+                  const isChecked = operatingDays.includes(d.id);
+                  return (
+                    <button
+                      key={d.id}
+                      type="button"
+                      onClick={() => {
+                        if (isChecked) {
+                          setOperatingDays(operatingDays.filter((id) => id !== d.id));
+                        } else {
+                          setOperatingDays([...operatingDays, d.id]);
+                        }
+                      }}
+                      className={`p-2 rounded-xl text-xs font-black border transition-all cursor-pointer ${
+                        isChecked
+                          ? 'bg-[#FF6A00] text-black border-[#FF6A00]'
+                          : 'bg-[#1C1C1C] text-stone-500 border-white/5 hover:border-white/20'
+                      }`}
+                    >
+                      {d.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Slot Timing Parameters */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-[10px] font-black uppercase tracking-wider text-[#A1A1A1] block">
+                  Daily Slot Start Time (24h)
+                </label>
+                <input
+                  type="time"
+                  value={slotStartTime}
+                  onChange={(e) => setSlotStartTime(e.target.value)}
+                  className="w-full p-2.5 rounded-xl bg-[#1C1C1C] border border-white/8 text-xs font-mono-token font-bold text-white focus:outline-none focus:border-[#FF6A00]"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-black uppercase tracking-wider text-[#A1A1A1] block">
+                  Daily Slot End Time (24h)
+                </label>
+                <input
+                  type="time"
+                  value={slotEndTime}
+                  onChange={(e) => setSlotEndTime(e.target.value)}
+                  className="w-full p-2.5 rounded-xl bg-[#1C1C1C] border border-white/8 text-xs font-mono-token font-bold text-white focus:outline-none focus:border-[#FF6A00]"
+                />
+              </div>
+            </div>
+
+            {/* Intervals, Capacity, Notice, and Cutoffs */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div className="space-y-1">
+                <label className="text-[10px] font-black uppercase tracking-wider text-[#A1A1A1] block">
+                  Slot Interval
+                </label>
+                <select
+                  value={slotIntervalMinutes}
+                  onChange={(e) => setSlotIntervalMinutes(Number(e.target.value))}
+                  className="w-full p-2.5 rounded-xl bg-[#1C1C1C] border border-white/8 text-xs font-bold text-white focus:outline-none focus:border-[#FF6A00]"
+                >
+                  <option value={15}>15 Minutes</option>
+                  <option value={20}>20 Minutes</option>
+                  <option value={30}>30 Minutes</option>
+                  <option value={45}>45 Minutes</option>
+                  <option value={60}>60 Minutes</option>
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-black uppercase tracking-wider text-[#A1A1A1] block">
+                  Max Orders / Slot
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  max={50}
+                  value={maxOrdersPerSlot}
+                  onChange={(e) => setMaxOrdersPerSlot(Number(e.target.value))}
+                  className="w-full p-2.5 rounded-xl bg-[#1C1C1C] border border-white/8 text-xs font-mono-token font-bold text-white focus:outline-none focus:border-[#FF6A00]"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-black uppercase tracking-wider text-[#A1A1A1] block">
+                  Min Advance Notice (min)
+                </label>
+                <input
+                  type="number"
+                  min={5}
+                  max={240}
+                  value={minNoticeMinutes}
+                  onChange={(e) => setMinNoticeMinutes(Number(e.target.value))}
+                  className="w-full p-2.5 rounded-xl bg-[#1C1C1C] border border-white/8 text-xs font-mono-token font-bold text-white focus:outline-none focus:border-[#FF6A00]"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-black uppercase tracking-wider text-[#A1A1A1] block">
+                  Max Booking Horizon (days)
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  max={14}
+                  value={maxAdvanceDays}
+                  onChange={(e) => setMaxAdvanceDays(Number(e.target.value))}
+                  className="w-full p-2.5 rounded-xl bg-[#1C1C1C] border border-white/8 text-xs font-mono-token font-bold text-white focus:outline-none focus:border-[#FF6A00]"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-black uppercase tracking-wider text-[#A1A1A1] block">
+                  Cutoff Notice (min)
+                </label>
+                <input
+                  type="number"
+                  min={5}
+                  max={120}
+                  value={cancelCutoffMinutes}
+                  onChange={(e) => setCancelCutoffMinutes(Number(e.target.value))}
+                  className="w-full p-2.5 rounded-xl bg-[#1C1C1C] border border-white/8 text-xs font-mono-token font-bold text-white focus:outline-none focus:border-[#FF6A00]"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[10px] font-black uppercase tracking-wider text-[#A1A1A1] block">
+                  Kitchen Prep Lead (min)
+                </label>
+                <input
+                  type="number"
+                  min={5}
+                  max={60}
+                  value={kitchenLeadTimeMinutes}
+                  onChange={(e) => setKitchenLeadTimeMinutes(Number(e.target.value))}
+                  className="w-full p-2.5 rounded-xl bg-[#1C1C1C] border border-white/8 text-xs font-mono-token font-bold text-white focus:outline-none focus:border-[#FF6A00]"
+                />
+              </div>
+            </div>
+          </div>
+
           <button
             onClick={handleSaveSettings}
-            className="w-full py-3 bg-[#FF6A00] hover:bg-[#FF7A00] text-black font-black text-xs rounded-xl shadow-md glow-orange-sm cursor-pointer transition-all"
+            className="w-full py-3.5 bg-[#FF6A00] hover:bg-[#FF7A00] text-black font-black text-xs rounded-xl shadow-md glow-orange-sm cursor-pointer transition-all active:scale-[0.99] mt-2"
           >
-            Save Canteen Settings
+            Save All Canteen & Scheduling Settings
           </button>
         </div>
       )}

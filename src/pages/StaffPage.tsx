@@ -11,10 +11,15 @@ import {
   XCircle,
   PackageCheck,
   Banknote,
-  AlertTriangle
+  AlertTriangle,
+  CalendarClock,
+  Calendar,
+  Flame,
+  Sparkles
 } from 'lucide-react';
 import { useCanteen } from '../context/CanteenContext';
 import { Order, OrderStatus } from '../types';
+import { getTimeRemainingUntilPickup } from '../services/scheduleService';
 
 interface StaffPageProps {
   onBackToHome: () => void;
@@ -23,6 +28,7 @@ interface StaffPageProps {
 export const StaffPage: React.FC<StaffPageProps> = ({ onBackToHome }) => {
   const {
     orders,
+    settings,
     acceptOrder,
     startPreparingOrder,
     markOrderReady,
@@ -31,12 +37,14 @@ export const StaffPage: React.FC<StaffPageProps> = ({ onBackToHome }) => {
     rejectOrder
   } = useCanteen();
 
-  const [activeTab, setActiveTab] = useState<'new' | 'accepted' | 'preparing' | 'ready' | 'completed'>('new');
+  const [activeTab, setActiveTab] = useState<'new' | 'accepted' | 'preparing' | 'ready' | 'scheduled' | 'completed'>('new');
   const [rejectDialogOrder, setRejectDialogOrder] = useState<Order | null>(null);
   const [rejectReason, setRejectReason] = useState<string>('Item currently unavailable');
   const [searchToken, setSearchToken] = useState<string>('');
   const [actionError, setActionError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
+
+  const leadTimeMinutes = settings.kitchenLeadTimeMinutes || 25;
 
   // Filter orders by kitchen stages
   const newOrders = orders.filter((o) => o.status === 'PLACED');
@@ -45,12 +53,27 @@ export const StaffPage: React.FC<StaffPageProps> = ({ onBackToHome }) => {
   const readyOrders = orders.filter((o) => o.status === 'READY');
   const completedOrders = orders.filter((o) => o.status === 'COMPLETED').slice(0, 30);
 
+  // Scheduled Orders (Active ones, sorted by pickup time)
+  const scheduledOrders = orders
+    .filter((o) => o.orderType === 'scheduled' && !['COMPLETED', 'CANCELLED', 'REJECTED'].includes(o.status))
+    .sort((a, b) => {
+      const timeA = a.scheduledPickupAt ? new Date(a.scheduledPickupAt).getTime() : 0;
+      const timeB = b.scheduledPickupAt ? new Date(b.scheduledPickupAt).getTime() : 0;
+      return timeA - timeB;
+    });
+
+  const urgentScheduledOrders = scheduledOrders.filter((o) => {
+    const timing = getTimeRemainingUntilPickup(o.scheduledPickupAt, leadTimeMinutes);
+    return timing.isUrgent || timing.isPast;
+  });
+
   const getFilteredList = () => {
     let list: Order[] = [];
     if (activeTab === 'new') list = newOrders;
     else if (activeTab === 'accepted') list = acceptedOrders;
     else if (activeTab === 'preparing') list = preparingOrders;
     else if (activeTab === 'ready') list = readyOrders;
+    else if (activeTab === 'scheduled') list = scheduledOrders;
     else if (activeTab === 'completed') list = completedOrders;
 
     if (searchToken.trim()) {
@@ -60,7 +83,8 @@ export const StaffPage: React.FC<StaffPageProps> = ({ onBackToHome }) => {
           String(o.tokenNumber).includes(q) ||
           o.tokenString.toLowerCase().includes(q) ||
           o.orderNumber.toLowerCase().includes(q) ||
-          o.userName.toLowerCase().includes(q)
+          o.userName.toLowerCase().includes(q) ||
+          (o.scheduledTimeSlot && o.scheduledTimeSlot.toLowerCase().includes(q))
       );
     }
     return list;
@@ -134,7 +158,7 @@ export const StaffPage: React.FC<StaffPageProps> = ({ onBackToHome }) => {
           </span>
         </div>
 
-        <div className="grid grid-cols-4 gap-2 text-center">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-center">
           <div
             onClick={() => setActiveTab('new')}
             className={`p-2.5 rounded-2xl cursor-pointer transition-all ${
@@ -182,6 +206,27 @@ export const StaffPage: React.FC<StaffPageProps> = ({ onBackToHome }) => {
               {readyOrders.length}
             </span>
           </div>
+
+          <div
+            onClick={() => setActiveTab('scheduled')}
+            className={`p-2.5 rounded-2xl cursor-pointer transition-all col-span-2 sm:col-span-1 ${
+              activeTab === 'scheduled'
+                ? 'bg-amber-600/30 border border-amber-500'
+                : urgentScheduledOrders.length > 0
+                ? 'bg-amber-950/40 border border-amber-500/50 glow-orange-sm'
+                : 'bg-[#1C1C1C]'
+            }`}
+          >
+            <span className="text-[9px] uppercase font-black text-stone-400 flex items-center justify-center gap-1">
+              <span>SCHEDULED</span>
+              {urgentScheduledOrders.length > 0 && (
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+              )}
+            </span>
+            <span className="text-2xl font-black font-mono-token text-amber-400">
+              {scheduledOrders.length}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -190,6 +235,31 @@ export const StaffPage: React.FC<StaffPageProps> = ({ onBackToHome }) => {
           <span>{actionError}</span>
           <button onClick={() => setActionError(null)} className="p-1 text-rose-400 hover:text-white">
             <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Urgent Preparation Notification Alert */}
+      {urgentScheduledOrders.length > 0 && (
+        <div className="bg-gradient-to-r from-[#2B1705] to-[#1C140C] border border-[#FF6A00] rounded-2xl p-4 shadow-xl glow-orange-sm flex items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-[#FF6A00] text-black flex items-center justify-center shrink-0 animate-pulse">
+              <Flame className="w-5 h-5 fill-black" />
+            </div>
+            <div>
+              <strong className="text-white font-black block">
+                {urgentScheduledOrders.length} Scheduled {urgentScheduledOrders.length === 1 ? 'Order Needs' : 'Orders Need'} Kitchen Prep Now!
+              </strong>
+              <p className="text-stone-300 text-[11px] mt-0.5">
+                Within lead time window ({leadTimeMinutes}m). Check pickup slots to begin cooking on time.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setActiveTab('scheduled')}
+            className="px-3.5 py-2 rounded-xl bg-[#FF6A00] hover:bg-[#FF7A00] text-black font-black text-xs cursor-pointer shrink-0 transition-colors"
+          >
+            View Scheduled
           </button>
         </div>
       )}
@@ -247,6 +317,19 @@ export const StaffPage: React.FC<StaffPageProps> = ({ onBackToHome }) => {
           }`}
         >
           Ready ({readyOrders.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('scheduled')}
+          className={`flex-1 py-2 px-3 text-xs font-black rounded-xl whitespace-nowrap cursor-pointer transition-all flex items-center justify-center gap-1.5 ${
+            activeTab === 'scheduled'
+              ? 'bg-amber-500 text-black shadow-md glow-orange-sm'
+              : urgentScheduledOrders.length > 0
+              ? 'bg-amber-950/40 text-amber-300 border border-amber-500/40'
+              : 'text-stone-400 hover:text-white'
+          }`}
+        >
+          <CalendarClock className="w-3.5 h-3.5" />
+          <span>Scheduled ({scheduledOrders.length})</span>
         </button>
         <button
           onClick={() => setActiveTab('completed')}
@@ -312,6 +395,50 @@ export const StaffPage: React.FC<StaffPageProps> = ({ onBackToHome }) => {
                     </span>
                   </div>
                 </div>
+
+                {/* Scheduled Order Timing & Countdown Highlight */}
+                {order.orderType === 'scheduled' && (() => {
+                  const timing = getTimeRemainingUntilPickup(order.scheduledPickupAt, leadTimeMinutes);
+                  return (
+                    <div
+                      className={`p-3 rounded-2xl border space-y-1.5 transition-all ${
+                        timing.isUrgent
+                          ? 'bg-gradient-to-r from-[#291705] to-[#1F1206] border-[#FF6A00] glow-orange-sm shadow-md'
+                          : 'bg-[#181614] border-[#FF6A00]/30'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-black text-[#FF9D2E] flex items-center gap-1.5">
+                          <CalendarClock className="w-4 h-4 text-[#FF6A00]" />
+                          <span>SCHEDULED PICKUP</span>
+                        </span>
+                        <span className="font-mono-token font-black text-white text-xs">
+                          {order.scheduledTimeSlot || timing.formattedTime}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-1 border-t border-white/5 text-[11px]">
+                        <span className="text-stone-300 flex items-center gap-1">
+                          <Calendar className="w-3 h-3 text-stone-400" />
+                          <span>{order.scheduledDate}</span>
+                        </span>
+
+                        <span
+                          className={`font-mono-token font-bold px-2 py-0.5 rounded-md flex items-center gap-1 ${
+                            timing.isUrgent
+                              ? 'bg-[#FF6A00] text-black font-black animate-pulse'
+                              : timing.isPast
+                              ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                              : 'bg-white/10 text-stone-200'
+                          }`}
+                        >
+                          {timing.isUrgent && <Flame className="w-3 h-3 fill-black" />}
+                          <span>{timing.isUrgent ? `COOK NOW · ${timing.label}` : timing.label}</span>
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* Items List */}
                 <div className="space-y-1.5 text-xs">

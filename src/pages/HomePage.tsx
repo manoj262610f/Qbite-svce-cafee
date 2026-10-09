@@ -10,23 +10,27 @@ import {
   Volume2,
   ArrowRight,
   UtensilsCrossed,
-  Sparkles
+  Sparkles,
+  CalendarClock
 } from 'lucide-react';
 import { useCanteen } from '../context/CanteenContext';
 import { useAuth } from '../context/AuthContext';
 import { LiveQueueCard } from '../components/LiveQueueCard';
 import { FoodCard } from '../components/FoodCard';
 import { FoodCardSkeleton } from '../components/Skeletons';
+import { ScheduleOrderBanner } from '../components/ScheduleOrderBanner';
+import { ScheduleSelectorModal } from '../components/ScheduleSelectorModal';
 
 interface HomePageProps {
   onNavigate: (route: string) => void;
 }
 
 export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
-  const { foods, categories, loading, settings } = useCanteen();
+  const { foods, categories, loading, settings, setOrderingMode } = useCanteen();
   const { userProfile } = useAuth();
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [showScheduleModal, setShowScheduleModal] = useState<boolean>(false);
 
   const filteredFoods = foods.filter((food) => {
     const matchesCategory =
@@ -103,17 +107,27 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
               </p>
             </div>
 
-            <div className="flex items-center gap-3 pt-2">
+            <div className="flex flex-wrap items-center gap-3 pt-2">
               <button
-                onClick={() => onNavigate('/menu')}
+                onClick={() => {
+                  setOrderingMode('instant');
+                  onNavigate('/menu');
+                }}
                 className="py-3 px-5 bg-[#FF6A00] hover:bg-[#FF7A00] text-black font-black text-xs sm:text-sm rounded-xl shadow-md glow-orange-sm flex items-center gap-2 cursor-pointer transition-all active:scale-95"
               >
                 <span>Order Now</span>
                 <ArrowRight className="w-4 h-4 stroke-[2.5]" />
               </button>
               <button
+                onClick={() => setShowScheduleModal(true)}
+                className="py-3 px-5 bg-[#1F1F1F] hover:bg-[#282828] text-white font-bold text-xs sm:text-sm rounded-xl border border-white/10 flex items-center gap-2 cursor-pointer transition-colors"
+              >
+                <CalendarClock className="w-4 h-4 text-[#FF6A00]" />
+                <span>Schedule Your Order</span>
+              </button>
+              <button
                 onClick={() => onNavigate('/menu')}
-                className="py-3 px-5 bg-[#1F1F1F] hover:bg-[#282828] text-white font-bold text-xs sm:text-sm rounded-xl border border-white/8 cursor-pointer transition-colors"
+                className="py-3 px-4 text-[#A1A1A1] hover:text-white font-bold text-xs sm:text-sm cursor-pointer transition-colors"
               >
                 Explore Menu
               </button>
@@ -126,6 +140,9 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
           <LiveQueueCard onTrackQueue={() => onNavigate('/queue')} />
         </div>
       </div>
+
+      {/* Two Ordering Options Interactive Banner */}
+      <ScheduleOrderBanner />
 
       {/* Search Input Bar & Category Filters */}
       <div className="space-y-3 pt-2">
@@ -240,6 +257,14 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
           </div>
         )}
       </div>
+
+      <ScheduleSelectorModal
+        isOpen={showScheduleModal}
+        onClose={() => setShowScheduleModal(false)}
+        onConfirmSchedule={() => {
+          onNavigate('/menu');
+        }}
+      />
     </div>
   );
 };

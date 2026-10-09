@@ -8,7 +8,10 @@ import {
   AlertCircle,
   CreditCard,
   Banknote,
-  QrCode
+  QrCode,
+  CalendarClock,
+  Calendar,
+  Zap
 } from 'lucide-react';
 import { useCanteen } from '../context/CanteenContext';
 import { useAuth } from '../context/AuthContext';
@@ -28,7 +31,9 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
     cartSubtotal,
     cartTotal,
     placeOrder,
-    settings
+    settings,
+    orderingMode,
+    selectedSchedule
   } = useCanteen();
 
   const { currentUser, userProfile } = useAuth();
@@ -38,18 +43,25 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const isScheduled = orderingMode === 'scheduled' && Boolean(selectedSchedule);
   const isCanteenClosed = settings.status === 'CLOSED';
   const isCanteenPaused = settings.status === 'PAUSED';
 
   const handlePlaceOrder = async () => {
-    if (isCanteenClosed) {
-      setError('Canteen is currently closed. Orders cannot be accepted.');
+    if (!isScheduled) {
+      if (isCanteenClosed) {
+        setError('Canteen is currently closed. Instant orders cannot be accepted right now.');
+        return;
+      }
+      if (isCanteenPaused) {
+        setError('Ordering is temporarily paused due to kitchen rush. Please try in 5 minutes.');
+        return;
+      }
+    } else if (!selectedSchedule) {
+      setError('Please select a pickup time slot for your scheduled order.');
       return;
     }
-    if (isCanteenPaused) {
-      setError('Ordering is temporarily paused due to kitchen rush. Please try in 5 minutes.');
-      return;
-    }
+
     if (cart.length === 0) {
       setError('Your cart is empty. Please add items to order.');
       return;
@@ -59,7 +71,11 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
     setError(null);
 
     try {
-      const order = await placeOrder(specialInstructions, paymentMethod);
+      const order = await placeOrder(
+        specialInstructions,
+        paymentMethod,
+        isScheduled ? selectedSchedule : null
+      );
       onOrderSuccess(order);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to place order. Please try again.';
@@ -122,11 +138,52 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left Column: Pickup & Payment Details */}
         <div className="lg:col-span-7 space-y-4">
+          {/* Pickup Timing / Schedule Confirmation Card */}
+          {isScheduled && selectedSchedule ? (
+            <div className="bg-gradient-to-r from-[#1C160F] to-[#141414] rounded-3xl p-5 border border-[#FF6A00]/40 shadow-xl glow-orange-sm space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-[#FF7A00]">
+                  <CalendarClock className="w-4 h-4" />
+                  <span>Scheduled Pickup Time</span>
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-black bg-[#FF6A00] px-2.5 py-0.5 rounded-full">
+                  Advance Order
+                </span>
+              </div>
+              <div className="pt-1">
+                <h3 className="font-black text-base text-white">
+                  {selectedSchedule.displayDate}
+                </h3>
+                <p className="text-sm font-bold font-mono-token text-[#FF6A00] mt-0.5">
+                  Slot: {selectedSchedule.timeSlot}
+                </p>
+                <p className="text-[11px] text-stone-400 mt-1">
+                  Kitchen will begin fresh preparation {settings.kitchenLeadTimeMinutes || 25} minutes prior to your arrival.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-[#141414] rounded-3xl p-5 border border-white/8 shadow-md space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-stone-300">
+                  <Zap className="w-4 h-4 text-[#FF6A00]" />
+                  <span>Immediate Fulfillment</span>
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-stone-300 bg-white/5 border border-white/10 px-2.5 py-0.5 rounded-full">
+                  Order Now
+                </span>
+              </div>
+              <p className="text-xs text-[#A1A1A1]">
+                Canteen kitchen will begin preparing your order immediately. Live queue token assigned instantly.
+              </p>
+            </div>
+          )}
+
           {/* Pickup Location Card */}
           <div className="bg-[#141414] rounded-3xl p-5 border border-white/8 shadow-md space-y-2">
             <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-[#A1A1A1]">
               <MapPin className="w-4 h-4 text-[#FF6A00]" />
-              <span>Pickup Location</span>
+              <span>Campus Pickup Counter</span>
             </div>
             <div className="flex items-center justify-between">
               <div>
@@ -230,6 +287,12 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
             {/* Bill Breakdown */}
             <div className="pt-3 border-t border-white/8 space-y-2 text-xs sm:text-sm">
               <div className="flex justify-between text-[#A1A1A1]">
+                <span>Order Option</span>
+                <span className={`font-bold ${isScheduled ? 'text-[#FF9D2E]' : 'text-stone-300'}`}>
+                  {isScheduled ? `Scheduled (${selectedSchedule?.timeSlot})` : 'Order Now'}
+                </span>
+              </div>
+              <div className="flex justify-between text-[#A1A1A1]">
                 <span>Items Subtotal</span>
                 <span className="font-mono-token font-bold text-white">₹{cartSubtotal}</span>
               </div>
@@ -247,7 +310,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
             <div className="hidden lg:block pt-3">
               <button
                 onClick={handlePlaceOrder}
-                disabled={submitting || isCanteenClosed || isCanteenPaused || cart.length === 0}
+                disabled={submitting || (!isScheduled && (isCanteenClosed || isCanteenPaused)) || (isScheduled && !selectedSchedule) || cart.length === 0}
                 className="w-full py-4 px-6 bg-[#FF6A00] hover:bg-[#FF7A00] text-black font-black text-base rounded-2xl shadow-xl glow-orange-sm flex items-center justify-between cursor-pointer transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed group"
               >
                 {submitting ? (
@@ -278,7 +341,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
         <div className="max-w-md mx-auto">
           <button
             onClick={handlePlaceOrder}
-            disabled={submitting || isCanteenClosed || isCanteenPaused || cart.length === 0}
+            disabled={submitting || (!isScheduled && (isCanteenClosed || isCanteenPaused)) || (isScheduled && !selectedSchedule) || cart.length === 0}
             className="w-full py-4 px-6 bg-[#FF6A00] hover:bg-[#FF7A00] text-black font-black text-base rounded-2xl shadow-xl glow-orange-sm flex items-center justify-between cursor-pointer transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed group"
           >
             {submitting ? (

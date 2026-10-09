@@ -10,10 +10,13 @@ import {
   FileText,
   AlertCircle,
   XCircle,
-  QrCode
+  QrCode,
+  CalendarClock,
+  Calendar
 } from 'lucide-react';
 import { Order, OrderStatus } from '../types';
 import { useCanteen } from '../context/CanteenContext';
+import { getTimeRemainingUntilPickup } from '../services/scheduleService';
 
 interface TokenCardProps {
   order: Order;
@@ -189,6 +192,38 @@ export const TokenCard: React.FC<TokenCardProps> = ({ order, onViewBill }) => {
           </div>
         </div>
       </div>
+
+      {/* Scheduled Order Details Banner */}
+      {order.orderType === 'scheduled' && (() => {
+        const timing = getTimeRemainingUntilPickup(order.scheduledPickupAt);
+        return (
+          <div className="bg-gradient-to-r from-[#1C160F] to-[#141414] rounded-3xl p-4 border border-[#FF6A00]/40 shadow-xl glow-orange-sm space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] uppercase font-black tracking-wider text-[#FF7A00] flex items-center gap-1.5">
+                <CalendarClock className="w-4 h-4" />
+                <span>Scheduled Pickup Order</span>
+              </span>
+              <span className={`text-[10px] font-mono-token font-bold px-2 py-0.5 rounded-full ${
+                timing.isUrgent
+                  ? 'bg-[#FF6A00] text-black'
+                  : 'bg-white/10 text-stone-200'
+              }`}>
+                {timing.label}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between text-xs sm:text-sm pt-1">
+              <span className="font-bold text-white flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5 text-[#FF6A00]" />
+                <span>{order.scheduledDate}</span>
+              </span>
+              <span className="font-mono-token font-black text-[#FF6A00]">
+                {order.scheduledTimeSlot || timing.formattedTime}
+              </span>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Timeline Status Tracker (Visible for active/completed orders) */}
       {!isCancelled && !isRejected && (

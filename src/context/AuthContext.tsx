@@ -327,7 +327,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (savedSession) {
             try {
               const parsed = JSON.parse(savedSession) as UserProfile;
-              if (parsed && parsed.id) {
+              if (parsed && parsed.id && !parsed.id.startsWith('guest-')) {
                 console.log('[AUTH] Restoring session from safeLocalStorage for role:', parsed.role);
                 setCurrentUser({
                   uid: parsed.id,
@@ -339,9 +339,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 setAuthLoading(false);
                 setProfileLoading(false);
                 return;
+              } else {
+                safeLocalStorage.removeItem('qbite_user_session');
               }
             } catch {
-              // fallback
+              safeLocalStorage.removeItem('qbite_user_session');
             }
           }
           setCurrentUser(null);

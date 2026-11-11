@@ -26,7 +26,7 @@ interface ProfilePageProps {
 }
 
 export const ProfilePage: React.FC<ProfilePageProps> = ({ onNavigate, onLogout }) => {
-  const { userProfile, role, loginAsGuest } = useAuth();
+  const { userProfile, role } = useAuth();
   const { myOrders, favorites } = useCanteen();
   const [modalContent, setModalContent] = useState<{ title: string; body: string } | null>(null);
   const [imageError, setImageError] = useState(false);
@@ -205,46 +205,6 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onNavigate, onLogout }
               <span className="text-xs text-[#D9D9D9]/70">· SVCE Campus</span>
             </div>
           </div>
-        </div>
-
-        {/* Role Quick Switch (Helpful for test reviewers) */}
-        <div className="flex items-center gap-1.5 bg-[#000000] p-1.5 rounded-2xl border border-white/10 self-start sm:self-auto">
-          <button
-            onClick={() => loginAsGuest('student')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              role === 'student'
-                ? 'bg-[#FF6B00] text-black font-black'
-                : 'text-[#D9D9D9] hover:text-white'
-            }`}
-          >
-            Student
-          </button>
-          <button
-            onClick={() => {
-              loginAsGuest('staff');
-              onNavigate('/staff');
-            }}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              role === 'staff'
-                ? 'bg-[#FF6B00] text-black font-black'
-                : 'text-[#D9D9D9] hover:text-white'
-            }`}
-          >
-            Staff
-          </button>
-          <button
-            onClick={() => {
-              loginAsGuest('admin');
-              onNavigate('/admin');
-            }}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              role === 'admin'
-                ? 'bg-purple-500 text-white font-black'
-                : 'text-[#D9D9D9] hover:text-white'
-            }`}
-          >
-            Admin
-          </button>
         </div>
       </div>
 

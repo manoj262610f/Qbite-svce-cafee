@@ -14,7 +14,9 @@ export default defineConfig(() => {
         closeBundle() {
           const distDir = path.resolve(import.meta.dirname ?? process.cwd(), 'dist');
           const distRedirects = path.join(distDir, '_redirects');
-          fs.writeFileSync(distRedirects, '/*    /index.html   200\n');
+          if (fs.existsSync(distRedirects)) {
+            fs.unlinkSync(distRedirects);
+          }
           const indexHtml = path.join(distDir, 'index.html');
           const fallbackHtml = path.join(distDir, '200.html');
           const errorHtml = path.join(distDir, '404.html');

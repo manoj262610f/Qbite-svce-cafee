@@ -1,6 +1,6 @@
 {
   "name": "QBite – SVCE Cafe",
-  "description": "Smart college canteen ordering and queue management. Be Smart. Leave the Queue.",
+  "description": "QBite is an online food ordering platform for Sri Venkateshwara College of Engineering (SVCE). Browse the menu, order food online and save time waiting in the college canteen queue.",
   "requestFramePermissions": [],
   "majorCapabilities": [
     "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"

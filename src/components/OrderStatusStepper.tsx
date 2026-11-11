@@ -48,7 +48,7 @@ export const OrderStatusStepper: React.FC<OrderStatusStepperProps> = ({
         
         {/* Active Progress Fill */}
         <motion.div
-          className="absolute left-3 top-1/2 -translate-y-1/2 h-1 bg-gradient-to-r from-[#FF6A00] to-[#FF9D2E] rounded-full z-0"
+          className="absolute left-3 top-1/2 -translate-y-1/2 h-1 bg-[#FF6B00] rounded-full z-0"
           initial={false}
           animate={{
             width: `${(activeIdx / (STEPS.length - 1)) * 100}%`
@@ -70,10 +70,10 @@ export const OrderStatusStepper: React.FC<OrderStatusStepperProps> = ({
                 }}
                 className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${
                   isCurrent
-                    ? 'bg-[#FF6A00] text-black ring-4 ring-[#FF6A00]/30 shadow-lg glow-orange-sm'
+                    ? 'bg-[#FF6B00] text-black ring-2 ring-[#FF6B00]/40 shadow-sm'
                     : isDone
-                    ? 'bg-[#FF6A00]/20 border border-[#FF6A00] text-[#FF6A00]'
-                    : 'bg-[#181818] border border-white/10 text-stone-500'
+                    ? 'bg-[#FF6B00] text-black font-bold'
+                    : 'bg-[#151515] border border-white/10 text-stone-500'
                 }`}
               >
                 {isDone ? (
@@ -86,7 +86,7 @@ export const OrderStatusStepper: React.FC<OrderStatusStepperProps> = ({
               <span
                 className={`text-[10px] font-bold mt-1.5 transition-colors whitespace-nowrap ${
                   isCurrent
-                    ? 'text-[#FF6A00]'
+                    ? 'text-[#FF6B00]'
                     : isDone
                     ? 'text-white'
                     : 'text-stone-500'
@@ -100,9 +100,9 @@ export const OrderStatusStepper: React.FC<OrderStatusStepperProps> = ({
       </div>
 
       {/* Dynamic current status narrative */}
-      <div className="bg-[#141414] border border-white/5 rounded-2xl p-3 flex items-center justify-between">
+      <div className="bg-[#000000] border border-white/10 rounded-2xl p-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-[#FF6A00] animate-ping" />
+          <span className="w-2 h-2 rounded-full bg-[#FF6B00] animate-ping" />
           <span className="text-xs font-bold text-white">
             {status === 'PLACED' && 'Order received. Kitchen will accept shortly.'}
             {status === 'ACCEPTED' && 'Order confirmed. Queued for preparation.'}
@@ -113,7 +113,7 @@ export const OrderStatusStepper: React.FC<OrderStatusStepperProps> = ({
         </div>
 
         {status !== 'COMPLETED' && status !== 'READY' && estimatedWaitMin && (
-          <span className="text-xs font-mono-token font-bold text-[#FF9D2E] bg-white/5 px-2 py-0.5 rounded-lg shrink-0">
+          <span className="text-xs font-mono-token font-bold text-[#FF6B00] bg-white/5 px-2 py-0.5 rounded-lg shrink-0">
             ~{estimatedWaitMin} min
           </span>
         )}

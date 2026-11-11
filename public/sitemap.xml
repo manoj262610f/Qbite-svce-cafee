@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
+        http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+  <!-- QBite SVCE Cafe Homepage -->
+  <url>
+    <loc>https://qbite-svce-cafe.manojreddy8022.workers.dev/</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <!-- Student Food Ordering Portal -->
+  <url>
+    <loc>https://qbite-svce-cafe.manojreddy8022.workers.dev/home</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <!-- SVCE Canteen Food Menu Catalog -->
+  <url>
+    <loc>https://qbite-svce-cafe.manojreddy8022.workers.dev/menu</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <!-- Student Favorites & Quick Order -->
+  <url>
+    <loc>https://qbite-svce-cafe.manojreddy8022.workers.dev/favorites</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <!-- Canteen TV Digital Pickup Board -->
+  <url>
+    <loc>https://qbite-svce-cafe.manojreddy8022.workers.dev/display</loc>
+    <lastmod>2026-11-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+</urlset>

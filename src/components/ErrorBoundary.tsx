@@ -75,16 +75,13 @@ export class ErrorBoundary extends Component<Props, State> {
   public render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-[#080808] text-white flex flex-col items-center justify-center p-6 text-center select-none">
-          {/* Ambient Glow */}
-          <div className="absolute w-72 h-72 rounded-full bg-[#FF6A00]/10 blur-[90px] pointer-events-none" />
-
+        <div className="min-h-screen bg-[#000000] text-white flex flex-col items-center justify-center p-6 text-center select-none">
           <div className="relative z-10 max-w-sm w-full mx-auto space-y-5">
             {/* Logo Badge */}
-            <div className="w-16 h-16 rounded-full overflow-hidden bg-[#0D0D0D] border border-white/10 flex items-center justify-center mx-auto shadow-2xl glow-orange-sm">
+            <div className="w-16 h-16 rounded-full overflow-hidden bg-[#151515] border border-white/10 flex items-center justify-center mx-auto shadow-2xl">
               <img
                 src="/icons/qbite-icon-192.png"
-                alt="QBite"
+                alt="QBite – SVCE Cafe Logo"
                 className="w-full h-full object-contain"
                 referrerPolicy="no-referrer"
               />
@@ -94,7 +91,7 @@ export class ErrorBoundary extends Component<Props, State> {
               <h1 className="text-xl font-black text-white tracking-tight">
                 QBite couldn't load
               </h1>
-              <p className="text-xs text-[#A1A1A1] leading-relaxed max-w-xs mx-auto">
+              <p className="text-xs text-[#D9D9D9] leading-relaxed max-w-xs mx-auto">
                 A display or connection issue prevented the app from loading properly. Your orders and account remain safe.
               </p>
             </div>
@@ -103,7 +100,7 @@ export class ErrorBoundary extends Component<Props, State> {
             <div className="space-y-2.5 pt-2">
               <button
                 onClick={this.handleReload}
-                className="w-full py-3.5 px-4 rounded-2xl bg-[#FF6A00] hover:bg-[#FF7A00] active:scale-[0.98] text-black font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg glow-orange-sm transition-all cursor-pointer"
+                className="w-full py-3.5 px-4 rounded-2xl bg-[#FF6B00] hover:bg-[#FF6B00]/90 active:scale-[0.98] text-black font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer"
               >
                 <RefreshCw className="w-4 h-4 stroke-[2.5]" />
                 <span>Reload App</span>
@@ -112,17 +109,17 @@ export class ErrorBoundary extends Component<Props, State> {
               <button
                 onClick={this.handleClearCacheAndReload}
                 disabled={this.state.isClearingCache}
-                className="w-full py-3 px-4 rounded-2xl bg-[#141414] hover:bg-[#1E1E1E] active:scale-[0.98] text-stone-300 hover:text-white border border-white/10 font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
+                className="w-full py-3 px-4 rounded-2xl bg-[#151515] hover:bg-white/10 active:scale-[0.98] text-[#D9D9D9] hover:text-white border border-white/10 font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
               >
-                <Trash2 className="w-3.5 h-3.5 text-stone-400" />
+                <Trash2 className="w-3.5 h-3.5 text-[#D9D9D9]" />
                 <span>{this.state.isClearingCache ? 'Clearing...' : 'Clear Cache & Restart'}</span>
               </button>
             </div>
 
             {/* Error detail for diagnosis */}
             {this.state.error && (
-              <details className="mt-4 text-left bg-black/40 rounded-xl border border-white/5 p-3 text-[10px] text-stone-400 overflow-hidden">
-                <summary className="font-bold text-stone-300 cursor-pointer flex items-center gap-1.5 select-none">
+              <details className="mt-4 text-left bg-[#151515] rounded-xl border border-white/10 p-3 text-[10px] text-[#D9D9D9] overflow-hidden">
+                <summary className="font-bold text-white cursor-pointer flex items-center gap-1.5 select-none">
                   <AlertTriangle className="w-3 h-3 text-amber-500 shrink-0" />
                   <span>Technical Diagnostics</span>
                 </summary>

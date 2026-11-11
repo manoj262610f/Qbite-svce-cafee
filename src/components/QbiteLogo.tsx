@@ -40,11 +40,11 @@ export const QbiteLogo: React.FC<QbiteLogoProps> = ({
 
   if (variant === 'icon-only') {
     return (
-      <div className={`relative ${iconSizes[size]} shrink-0 ${glow ? 'glow-orange-sm' : ''} ${className}`}>
+      <div className={`relative ${iconSizes[size]} shrink-0 ${className}`}>
         <img
           src="/icons/qbite-icon-512.png"
           alt="QBite – SVCE Cafe"
-          className="w-full h-full rounded-full object-contain select-none shadow-md"
+          className="w-full h-full rounded-full object-contain select-none"
           referrerPolicy="no-referrer"
           loading="eager"
         />
@@ -56,13 +56,11 @@ export const QbiteLogo: React.FC<QbiteLogoProps> = ({
     <div className={`flex items-center gap-2.5 select-none ${className}`}>
       {/* Official Circular Logo Badge */}
       <div
-        className={`relative ${iconSizes[size]} shrink-0 rounded-full overflow-hidden bg-[#0D0D0D] border border-white/10 flex items-center justify-center shadow-lg ${
-          glow ? 'glow-orange-sm' : ''
-        }`}
+        className={`relative ${iconSizes[size]} shrink-0 rounded-full overflow-hidden bg-[#151515] border border-white/10 flex items-center justify-center`}
       >
         <img
           src="/icons/qbite-icon-192.png"
-          alt="QBite"
+          alt="QBite – SVCE Cafe Logo"
           className="w-full h-full object-contain"
           referrerPolicy="no-referrer"
           loading="eager"
@@ -78,7 +76,7 @@ export const QbiteLogo: React.FC<QbiteLogoProps> = ({
         </div>
         {showSubtitle && (
           <span
-            className={`block font-bold uppercase tracking-[0.2em] text-[#A1A1A1] mt-0.5 ${subSizes[size]}`}
+            className={`block font-bold uppercase tracking-[0.2em] text-[#D9D9D9] mt-0.5 ${subSizes[size]}`}
           >
             {subtitle}
           </span>

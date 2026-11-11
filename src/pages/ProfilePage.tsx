@@ -122,7 +122,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onNavigate, onLogout }
           onClick: () =>
             setModalContent({
               title: 'About QBite',
-              body: 'QBite is a smart college canteen remote ordering and queue-management application designed for Sri Venkateswara College of Engineering. Our motto: "Order Smart. Skip the Queue." Order ahead from anywhere on campus, track your live token, and pick up hot food without standing in line.'
+              body: 'QBite is a smart college canteen remote ordering and queue-management application designed for Sri Venkateswara College of Engineering. Tagline: "Be Smart. Leave the Queue." Order ahead from anywhere on campus, track your live token, and pick up hot food without standing in line.'
             })
         },
         {
@@ -149,15 +149,15 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onNavigate, onLogout }
 
   return (
     <div className="pb-24 pt-4 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto space-y-6">
-      <div className="border-b border-white/8 pb-4">
+      <div className="border-b border-white/10 pb-4">
         <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
           User Profile
         </h1>
-        <p className="text-xs sm:text-sm text-[#A1A1A1] mt-0.5">Account credentials, campus role and settings</p>
+        <p className="text-xs sm:text-sm text-[#D9D9D9] mt-0.5">Account credentials, campus role and settings</p>
       </div>
 
       {/* User Card: Authenticated Google Profile */}
-      <div className="bg-[#141414] rounded-3xl p-5 sm:p-6 border border-white/8 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-[#151515] rounded-3xl p-5 sm:p-6 border border-white/10 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           {/* Profile Avatar: Google Photo or Fallback Initial */}
           <div className="relative shrink-0">
@@ -166,16 +166,16 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onNavigate, onLogout }
                 src={userProfile.photoURL}
                 alt={userProfile.name || 'User'}
                 onError={() => setImageError(true)}
-                className="w-16 h-16 rounded-2xl object-cover border-2 border-[#FF6A00] shadow-md glow-orange-sm"
+                className="w-16 h-16 rounded-2xl object-cover border-2 border-[#FF6B00] shadow-md"
                 referrerPolicy="no-referrer"
               />
             ) : (
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#FF6A00] to-[#FF9D2E] flex items-center justify-center text-black font-black text-2xl shadow-lg glow-orange-sm">
+              <div className="w-16 h-16 rounded-2xl bg-[#FF6B00] flex items-center justify-center text-black font-black text-2xl shadow-lg">
                 {userProfile?.name?.charAt(0).toUpperCase() || 'U'}
               </div>
             )}
             {/* Google Indicator Dot */}
-            <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-[#1F1F1F] border border-white/10 shadow-sm flex items-center justify-center">
+            <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-[#151515] border border-white/10 shadow-sm flex items-center justify-center">
               <svg className="w-3 h-3" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z" />
                 <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z" />
@@ -194,27 +194,27 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onNavigate, onLogout }
                 <ShieldCheck className="w-4 h-4" />
               </span>
             </div>
-            <p className="text-xs sm:text-sm text-[#A1A1A1] truncate flex items-center gap-1.5 mt-0.5">
-              <Mail className="w-3.5 h-3.5 text-stone-500 shrink-0" />
+            <p className="text-xs sm:text-sm text-[#D9D9D9] truncate flex items-center gap-1.5 mt-0.5">
+              <Mail className="w-3.5 h-3.5 text-[#D9D9D9]/70 shrink-0" />
               <span>{userProfile?.email || 'student@svce.ac.in'}</span>
             </p>
             <div className="mt-2 flex items-center gap-2 flex-wrap">
-              <span className="text-[11px] font-black uppercase tracking-wider text-[#FF7A00] bg-[#FF6A00]/15 border border-[#FF6A00]/30 px-2.5 py-0.5 rounded-full">
+              <span className="text-[11px] font-black uppercase tracking-wider text-[#FF6B00] bg-[#FF6B00]/15 border border-[#FF6B00]/30 px-2.5 py-0.5 rounded-full">
                 {role}
               </span>
-              <span className="text-xs text-stone-500">· SVCE Campus</span>
+              <span className="text-xs text-[#D9D9D9]/70">· SVCE Campus</span>
             </div>
           </div>
         </div>
 
         {/* Role Quick Switch (Helpful for test reviewers) */}
-        <div className="flex items-center gap-1.5 bg-[#1C1C1C] p-1.5 rounded-2xl border border-white/8 self-start sm:self-auto">
+        <div className="flex items-center gap-1.5 bg-[#000000] p-1.5 rounded-2xl border border-white/10 self-start sm:self-auto">
           <button
             onClick={() => loginAsGuest('student')}
             className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               role === 'student'
-                ? 'bg-[#FF6A00] text-black font-black'
-                : 'text-stone-400 hover:text-white'
+                ? 'bg-[#FF6B00] text-black font-black'
+                : 'text-[#D9D9D9] hover:text-white'
             }`}
           >
             Student
@@ -226,8 +226,8 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onNavigate, onLogout }
             }}
             className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               role === 'staff'
-                ? 'bg-[#FF6A00] text-black font-black'
-                : 'text-stone-400 hover:text-white'
+                ? 'bg-[#FF6B00] text-black font-black'
+                : 'text-[#D9D9D9] hover:text-white'
             }`}
           >
             Staff
@@ -240,7 +240,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onNavigate, onLogout }
             className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               role === 'admin'
                 ? 'bg-purple-500 text-white font-black'
-                : 'text-stone-400 hover:text-white'
+                : 'text-[#D9D9D9] hover:text-white'
             }`}
           >
             Admin
@@ -252,29 +252,29 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onNavigate, onLogout }
       <div className="space-y-4">
         {menuSections.map((section, idx) => (
           <div key={idx} className="space-y-1.5">
-            <h3 className="text-xs font-black uppercase tracking-wider text-[#A1A1A1] px-1">
+            <h3 className="text-xs font-black uppercase tracking-wider text-[#D9D9D9] px-1">
               {section.label}
             </h3>
-            <div className="bg-[#141414] rounded-3xl border border-white/8 shadow-sm divide-y divide-white/5 overflow-hidden">
+            <div className="bg-[#151515] rounded-3xl border border-white/10 shadow-sm divide-y divide-white/5 overflow-hidden">
               {section.items.map((item, itemIdx) => {
                 const Icon = item.icon;
                 return (
                   <button
                     key={itemIdx}
                     onClick={item.onClick}
-                    className="w-full px-5 py-4 flex items-center justify-between text-xs sm:text-sm font-bold text-stone-200 hover:bg-[#1A1A1A] cursor-pointer transition-colors"
+                    className="w-full px-5 py-4 flex items-center justify-between text-xs sm:text-sm font-bold text-white hover:bg-[#000000] cursor-pointer transition-colors"
                   >
                     <div className="flex items-center gap-3.5">
-                      <Icon className="w-4 h-4 text-[#FF6A00]" />
+                      <Icon className="w-4 h-4 text-[#FF6B00]" />
                       <span>{item.label}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       {item.badge && (
-                        <span className="font-mono-token text-xs text-stone-400 font-bold bg-white/5 px-2 py-0.5 rounded-md">
+                        <span className="font-mono-token text-xs text-[#D9D9D9] font-bold bg-[#000000] border border-white/10 px-2 py-0.5 rounded-md">
                           {item.badge}
                         </span>
                       )}
-                      <ChevronRight className="w-4 h-4 text-stone-600" />
+                      <ChevronRight className="w-4 h-4 text-[#D9D9D9]/50" />
                     </div>
                   </button>
                 );
@@ -284,20 +284,20 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onNavigate, onLogout }
         ))}
       </div>
 
-      {/* Cache Refresh & App Update Action (Addresses user's "not still coming in mobile" requirement) */}
-      <div className="bg-[#141414] rounded-3xl p-5 border border-white/8 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      {/* Cache Refresh & App Update Action */}
+      <div className="bg-[#151515] rounded-3xl p-5 border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h3 className="font-black text-sm text-white">App Version & Mobile Sync</h3>
-          <p className="text-xs text-[#A1A1A1] mt-0.5">
+          <p className="text-xs text-[#D9D9D9] mt-0.5">
             Tap to clear cached assets and force-sync with the latest server update
           </p>
         </div>
         <button
           onClick={handleClearCacheAndUpdate}
           disabled={isUpdatingApp}
-          className="px-4 py-2.5 bg-white/10 hover:bg-white/15 text-stone-200 text-xs font-bold rounded-xl border border-white/10 flex items-center justify-center gap-2 cursor-pointer transition-colors self-start sm:self-auto shrink-0"
+          className="px-4 py-2.5 bg-[#000000] hover:bg-white/10 text-white text-xs font-bold rounded-xl border border-white/10 flex items-center justify-center gap-2 cursor-pointer transition-colors self-start sm:self-auto shrink-0"
         >
-          <RefreshCw className={`w-3.5 h-3.5 text-[#FF6A00] ${isUpdatingApp ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`w-3.5 h-3.5 text-[#FF6B00] ${isUpdatingApp ? 'animate-spin' : ''}`} />
           <span>{isUpdatingApp ? 'Syncing...' : 'Sync & Update Now'}</span>
         </button>
       </div>
@@ -316,16 +316,16 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({ onNavigate, onLogout }
       {/* Modal for About, Help, Privacy, Terms */}
       {modalContent && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-          <div className="bg-[#141414] rounded-3xl max-w-md w-full p-6 shadow-2xl border border-white/10 space-y-4">
+          <div className="bg-[#151515] rounded-3xl max-w-md w-full p-6 shadow-2xl border border-white/10 space-y-4">
             <h3 className="font-black text-base text-white">
               {modalContent.title}
             </h3>
-            <p className="text-xs sm:text-sm text-stone-300 leading-relaxed">
+            <p className="text-xs sm:text-sm text-[#D9D9D9] leading-relaxed">
               {modalContent.body}
             </p>
             <button
               onClick={() => setModalContent(null)}
-              className="w-full py-3 bg-[#FF6A00] text-black font-black text-xs rounded-xl cursor-pointer hover:bg-[#FF7A00] transition-colors glow-orange-sm"
+              className="w-full py-3 bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-black font-black text-xs rounded-xl cursor-pointer transition-colors shadow-md active:scale-95"
             >
               Close
             </button>

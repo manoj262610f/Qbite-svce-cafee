@@ -73,9 +73,9 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
 
       {/* Campus Announcement Banner */}
       {settings.announcement && (
-        <div className="bg-[#141414] rounded-2xl p-3.5 border border-white/8 text-xs text-stone-300 flex items-center gap-3 shadow-sm">
-          <Volume2 className="w-4 h-4 text-[#FF6A00] shrink-0" />
-          <p className="line-clamp-2 leading-relaxed text-[#A1A1A1]">
+        <div className="bg-[#151515] rounded-2xl p-3.5 border border-white/10 text-xs text-stone-300 flex items-center gap-3 shadow-sm">
+          <Volume2 className="w-4 h-4 text-[#FF6B00] shrink-0" />
+          <p className="line-clamp-2 leading-relaxed text-[#D9D9D9]">
             <span className="font-black text-white mr-1.5">Campus Notice:</span>
             {settings.announcement}
           </p>
@@ -88,21 +88,19 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="lg:col-span-7 relative rounded-3xl p-6 sm:p-8 bg-gradient-to-br from-[#1C1C1C] via-[#141414] to-[#0A0A0A] border border-white/10 shadow-2xl overflow-hidden flex flex-col justify-between"
+          className="lg:col-span-7 relative rounded-3xl p-6 sm:p-8 bg-[#151515] border border-white/10 shadow-2xl overflow-hidden flex flex-col justify-between"
         >
-          <div className="absolute -right-10 -bottom-10 w-56 h-56 rounded-full bg-[#FF6A00]/15 blur-3xl pointer-events-none" />
-
           <div className="relative z-10 space-y-4">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FF6A00]/15 border border-[#FF6A00]/30 text-[#FF7A00] text-[11px] font-black uppercase tracking-wider">
-              <Sparkles className="w-3.5 h-3.5 text-[#FF6A00]" />
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#000000] border border-[#FF6B00]/40 text-[#FF6B00] text-[11px] font-black uppercase tracking-wider">
+              <Sparkles className="w-3.5 h-3.5 text-[#FF6B00]" />
               <span>SVCE Campus Dining</span>
             </div>
 
             <div>
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight">
-                Hungry? <span className="text-[#FF7A00]">Skip the queue.</span>
+                Be Smart. <span className="text-[#FF6B00]">Leave the Queue.</span>
               </h1>
-              <p className="text-sm text-[#A1A1A1] mt-2 max-w-lg leading-relaxed">
+              <p className="text-sm text-[#D9D9D9] mt-2 max-w-lg leading-relaxed">
                 Order directly from classrooms or campus hostels. Track your real-time token and pick up freshly prepared food at the counter.
               </p>
             </div>
@@ -113,21 +111,21 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
                   setOrderingMode('instant');
                   onNavigate('/menu');
                 }}
-                className="py-3 px-5 bg-[#FF6A00] hover:bg-[#FF7A00] text-black font-black text-xs sm:text-sm rounded-xl shadow-md glow-orange-sm flex items-center gap-2 cursor-pointer transition-all active:scale-95"
+                className="py-3 px-5 bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-black font-black text-xs sm:text-sm rounded-xl shadow-md flex items-center gap-2 cursor-pointer transition-all active:scale-95"
               >
                 <span>Order Now</span>
                 <ArrowRight className="w-4 h-4 stroke-[2.5]" />
               </button>
               <button
                 onClick={() => setShowScheduleModal(true)}
-                className="py-3 px-5 bg-[#1F1F1F] hover:bg-[#282828] text-white font-bold text-xs sm:text-sm rounded-xl border border-white/10 flex items-center gap-2 cursor-pointer transition-colors"
+                className="py-3 px-5 bg-[#000000] hover:bg-stone-900 text-white font-bold text-xs sm:text-sm rounded-xl border border-white/10 flex items-center gap-2 cursor-pointer transition-colors"
               >
-                <CalendarClock className="w-4 h-4 text-[#FF6A00]" />
+                <CalendarClock className="w-4 h-4 text-[#FF6B00]" />
                 <span>Schedule Your Order</span>
               </button>
               <button
                 onClick={() => onNavigate('/menu')}
-                className="py-3 px-4 text-[#A1A1A1] hover:text-white font-bold text-xs sm:text-sm cursor-pointer transition-colors"
+                className="py-3 px-4 text-[#D9D9D9] hover:text-white font-bold text-xs sm:text-sm cursor-pointer transition-colors"
               >
                 Explore Menu
               </button>
@@ -154,12 +152,12 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search dishes, breakfast, meals, snacks and drinks..."
-              className="w-full pl-10 pr-16 py-3 bg-[#141414] border border-white/8 rounded-2xl text-xs sm:text-sm font-medium text-white placeholder:text-stone-500 focus:outline-none focus:border-[#FF6A00]/60 focus:ring-1 focus:ring-[#FF6A00]/30 shadow-inner"
+              className="w-full pl-10 pr-16 py-3 bg-[#151515] border border-white/10 rounded-2xl text-xs sm:text-sm font-medium text-white placeholder:text-stone-500 focus:outline-none focus:border-[#FF6B00] focus:ring-1 focus:ring-[#FF6B00]/30 shadow-inner"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-stone-400 hover:text-white cursor-pointer px-1 py-0.5"
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-[#D9D9D9] hover:text-white cursor-pointer px-1 py-0.5"
               >
                 Clear
               </button>
@@ -169,7 +167,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
           <div className="flex items-center gap-2 self-end sm:self-auto">
             <button
               onClick={() => onNavigate('/menu')}
-              className="text-xs font-black text-[#FF6A00] hover:text-[#FF7A00] flex items-center gap-1 cursor-pointer bg-white/5 hover:bg-white/10 px-3 py-2 rounded-xl border border-white/8"
+              className="text-xs font-black text-[#FF6B00] hover:text-[#FF6B00]/90 flex items-center gap-1 cursor-pointer bg-white/5 hover:bg-white/10 px-3 py-2 rounded-xl border border-white/10"
             >
               <span>View Full Menu</span>
               <ChevronRight className="w-3.5 h-3.5" />
@@ -187,8 +185,8 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
                 onClick={() => setSelectedCategory(cat)}
                 className={`px-4 py-2 rounded-xl text-xs font-black whitespace-nowrap cursor-pointer transition-all active:scale-95 ${
                   isSelected
-                    ? 'bg-[#FF6A00] text-black shadow-md glow-orange-sm'
-                    : 'bg-[#141414] text-[#A1A1A1] hover:text-white border border-white/8 hover:bg-[#1A1A1A]'
+                    ? 'bg-[#FF6B00] text-black shadow-sm'
+                    : 'bg-[#151515] text-[#D9D9D9] hover:text-white border border-white/10 hover:bg-[#202020]'
                 }`}
               >
                 {cat}
@@ -202,7 +200,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
       {selectedCategory === 'All' && !searchQuery && popularFoods.length > 0 && (
         <div className="space-y-3 pt-2">
           <div className="flex items-center gap-2">
-            <Flame className="w-5 h-5 text-[#FF6A00] fill-[#FF6A00]" />
+            <Flame className="w-5 h-5 text-[#FF6B00] fill-[#FF6B00]" />
             <h2 className="text-base sm:text-lg font-black text-white tracking-tight">
               Campus Favorites
             </h2>
@@ -220,7 +218,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
         <div className="flex items-center justify-between">
           <h2 className="text-base sm:text-lg font-black text-white tracking-tight">
             {selectedCategory === 'All' ? 'All Dishes & Beverages' : selectedCategory}
-            <span className="ml-2 text-xs font-mono-token font-normal text-[#A1A1A1]">
+            <span className="ml-2 text-xs font-mono-token font-normal text-[#D9D9D9]">
               ({filteredFoods.length} items)
             </span>
           </h2>
@@ -233,10 +231,10 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
             ))}
           </div>
         ) : filteredFoods.length === 0 ? (
-          <div className="bg-[#141414] rounded-3xl p-8 text-center border border-white/8 shadow-md max-w-md mx-auto">
+          <div className="bg-[#151515] rounded-3xl p-8 text-center border border-white/10 shadow-md max-w-md mx-auto">
             <AlertCircle className="w-10 h-10 text-stone-500 mx-auto mb-3" />
             <h3 className="text-sm font-bold text-white">No food items found</h3>
-            <p className="text-xs text-[#A1A1A1] mt-1 leading-relaxed">
+            <p className="text-xs text-[#D9D9D9] mt-1 leading-relaxed">
               We couldn't find matches for "{searchQuery}". Try searching for another item or reset filters.
             </p>
             <button
@@ -244,7 +242,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
                 setSearchQuery('');
                 setSelectedCategory('All');
               }}
-              className="mt-4 px-4 py-2 bg-[#FF6A00] text-black font-bold text-xs rounded-xl cursor-pointer"
+              className="mt-4 px-4 py-2 bg-[#FF6B00] text-black font-bold text-xs rounded-xl cursor-pointer"
             >
               Reset Filters
             </button>

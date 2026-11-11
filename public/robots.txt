@@ -1,0 +1,28 @@
+# robots.txt for QBite – SVCE Cafe
+# Website: https://qbite-svce-cafe.manojreddy8022.workers.dev/
+
+User-agent: *
+Allow: /
+Allow: /home
+Allow: /menu
+Allow: /favorites
+Allow: /schedule
+Allow: /display
+Allow: /manifest.webmanifest
+Allow: /favicon.ico
+Allow: /favicon-32x32.png
+Allow: /favicon-16x16.png
+Allow: /icons/
+
+# Disallow private user data, administrative consoles, and auth sessions
+Disallow: /admin
+Disallow: /staff
+Disallow: /checkout
+Disallow: /orders
+Disallow: /queue
+Disallow: /token
+Disallow: /notifications
+Disallow: /profile
+Disallow: /api/
+
+Sitemap: https://qbite-svce-cafe.manojreddy8022.workers.dev/sitemap.xml

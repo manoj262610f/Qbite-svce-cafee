@@ -29,10 +29,10 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, size = 'md' })
     },
     PREPARING: {
       label: 'Cooking',
-      dotClass: 'bg-[#FF6A00] animate-pulse',
-      textClass: 'text-[#FF7A00]',
-      bgClass: 'bg-[#FF6A00]/10',
-      borderClass: 'border-[#FF6A00]/30'
+      dotClass: 'bg-[#FF6B00] animate-pulse',
+      textClass: 'text-[#FF6B00]',
+      bgClass: 'bg-[#FF6B00]/10',
+      borderClass: 'border-[#FF6B00]/30'
     },
     READY: {
       label: 'Ready for Pickup',

@@ -8,10 +8,6 @@ import {
   AlertCircle,
   Zap,
   CalendarClock,
-  Sparkles,
-  ChevronRight,
-  Info,
-  MapPin,
   CheckCircle2
 } from 'lucide-react';
 import { useCanteen } from '../context/CanteenContext';
@@ -157,49 +153,49 @@ export const ScheduleSelectorModal: React.FC<ScheduleSelectorModalProps> = ({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-sm">
         <motion.div
-          initial={{ opacity: 0, scale: 0.96, y: 12 }}
+          initial={{ opacity: 0, scale: 0.97, y: 10 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.96, y: 12 }}
+          exit={{ opacity: 0, scale: 0.97, y: 10 }}
           transition={{ duration: 0.2 }}
-          className="bg-[#121212] border border-white/10 rounded-3xl max-w-xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden text-white"
+          className="bg-[#151515] border border-white/10 rounded-3xl max-w-xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden text-white"
         >
           {/* Header */}
-          <div className="p-5 sm:p-6 border-b border-white/8 relative bg-gradient-to-b from-[#1A1A1A] to-[#121212]">
+          <div className="p-5 sm:p-6 border-b border-white/10 relative bg-[#151515]">
             <button
               onClick={onClose}
               disabled={isSubmitting}
-              className="absolute right-5 top-5 w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 text-stone-300 hover:text-white flex items-center justify-center cursor-pointer transition-colors"
+              className="absolute right-5 top-5 w-8 h-8 rounded-full bg-[#000000] hover:bg-[#202020] text-[#D9D9D9] hover:text-white flex items-center justify-center cursor-pointer transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
 
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FF6A00]/15 border border-[#FF6A00]/30 text-[#FF7A00] text-[10px] font-black uppercase tracking-wider mb-2">
-              <CalendarClock className="w-3.5 h-3.5 text-[#FF6A00]" />
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#000000] border border-[#FF6B00] text-[#FF6B00] text-[10px] font-black uppercase tracking-wider mb-2">
+              <CalendarClock className="w-3.5 h-3.5 text-[#FF6B00]" />
               <span>SVCE Cafe Schedule</span>
             </div>
 
             <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white">
               {title || 'Your Time. Your Order.'}
             </h2>
-            <p className="text-xs sm:text-sm text-[#A1A1A1] mt-1 leading-relaxed">
-              {subtitle || 'Schedule ahead, skip the queue, and pick up your food on time.'}
+            <p className="text-xs sm:text-sm text-[#D9D9D9] mt-1 leading-relaxed">
+              {subtitle || 'Be Smart. Leave the Queue. Schedule ahead and pick up on time.'}
             </p>
 
             {/* Mode Selector Tabs (Hidden if rescheduling an existing order) */}
             {!orderIdToReschedule && (
-              <div className="grid grid-cols-2 gap-2 mt-4 bg-[#0A0A0A] p-1.5 rounded-2xl border border-white/8">
+              <div className="grid grid-cols-2 gap-2 mt-4 bg-[#000000] p-1.5 rounded-2xl border border-white/10">
                 <button
                   type="button"
                   onClick={() => {
                     setActiveMode('instant');
                     setErrorNotice(null);
                   }}
-                  className={`py-2.5 px-3 rounded-xl text-xs font-black flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                  className={`py-2.5 px-3 rounded-xl text-xs font-black flex items-center justify-center gap-2 transition-colors cursor-pointer ${
                     activeMode === 'instant'
-                      ? 'bg-[#FF6A00] text-black shadow-md glow-orange-sm'
-                      : 'text-[#A1A1A1] hover:text-white'
+                      ? 'bg-[#FF6B00] text-black'
+                      : 'text-[#D9D9D9] hover:text-white'
                   }`}
                 >
                   <Zap className="w-4 h-4 fill-current stroke-[2]" />
@@ -211,10 +207,10 @@ export const ScheduleSelectorModal: React.FC<ScheduleSelectorModalProps> = ({
                     setActiveMode('scheduled');
                     setErrorNotice(null);
                   }}
-                  className={`py-2.5 px-3 rounded-xl text-xs font-black flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                  className={`py-2.5 px-3 rounded-xl text-xs font-black flex items-center justify-center gap-2 transition-colors cursor-pointer ${
                     activeMode === 'scheduled'
-                      ? 'bg-[#FF6A00] text-black shadow-md glow-orange-sm'
-                      : 'text-[#A1A1A1] hover:text-white'
+                      ? 'bg-[#FF6B00] text-black'
+                      : 'text-[#D9D9D9] hover:text-white'
                   }`}
                 >
                   <CalendarClock className="w-4 h-4 stroke-[2.2]" />
@@ -227,7 +223,7 @@ export const ScheduleSelectorModal: React.FC<ScheduleSelectorModalProps> = ({
           {/* Scrollable Body */}
           <div className="p-5 sm:p-6 overflow-y-auto space-y-6 flex-1 text-xs sm:text-sm">
             {errorNotice && (
-              <div className="p-3.5 rounded-2xl bg-[#1C1111] border border-rose-500/30 text-rose-300 text-xs flex items-start gap-2.5">
+              <div className="p-3.5 rounded-2xl bg-[#000000] border border-rose-500 text-rose-300 text-xs flex items-start gap-2.5">
                 <AlertCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
                 <div className="flex-1">
                   <strong className="block font-bold text-white">Scheduling Notice</strong>
@@ -238,16 +234,16 @@ export const ScheduleSelectorModal: React.FC<ScheduleSelectorModalProps> = ({
 
             {activeMode === 'instant' ? (
               <div className="space-y-4 py-2">
-                <div className="bg-[#181818] rounded-2xl p-5 border border-white/8 space-y-3">
-                  <div className="flex items-center gap-2 text-stone-200 font-bold">
-                    <Zap className="w-5 h-5 text-[#FF6A00]" />
+                <div className="bg-[#000000] rounded-2xl p-5 border border-white/10 space-y-3">
+                  <div className="flex items-center gap-2 text-white font-bold">
+                    <Zap className="w-5 h-5 text-[#FF6B00]" />
                     <span>Instant Preparation</span>
                   </div>
-                  <p className="text-xs text-[#A1A1A1] leading-relaxed">
+                  <p className="text-xs text-[#D9D9D9] leading-relaxed">
                     Your order will be prepared immediately upon placement by the canteen kitchen. A live queue token will be assigned with real-time tracking on your screen.
                   </p>
-                  <div className="flex items-center gap-2 text-[11px] font-mono-token text-stone-400 pt-2 border-t border-white/5">
-                    <Clock className="w-3.5 h-3.5 text-[#FF6A00]" />
+                  <div className="flex items-center gap-2 text-[11px] font-mono-token text-[#D9D9D9] pt-2 border-t border-white/10">
+                    <Clock className="w-3.5 h-3.5 text-[#FF6B00]" />
                     <span>Estimated kitchen preparation time: ~12-18 minutes</span>
                   </div>
                 </div>
@@ -256,12 +252,12 @@ export const ScheduleSelectorModal: React.FC<ScheduleSelectorModalProps> = ({
               <div className="space-y-5">
                 {/* 1. Date Picker Cards */}
                 <div>
-                  <label className="text-[10px] font-black uppercase tracking-wider text-[#A1A1A1] flex items-center justify-between mb-2.5">
+                  <label className="text-[10px] font-black uppercase tracking-wider text-[#D9D9D9] flex items-center justify-between mb-2.5">
                     <span className="flex items-center gap-1.5">
-                      <Calendar className="w-3.5 h-3.5 text-[#FF6A00]" />
+                      <Calendar className="w-3.5 h-3.5 text-[#FF6B00]" />
                       <span>1. Select Pickup Date (IST)</span>
                     </span>
-                    <span className="text-stone-400 normal-case">Operating: Mon–Sat</span>
+                    <span className="text-[#D9D9D9] normal-case">Operating: Mon–Sat</span>
                   </label>
 
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -278,20 +274,20 @@ export const ScheduleSelectorModal: React.FC<ScheduleSelectorModalProps> = ({
                             setSelectedDateKey(dateOpt.dateKey);
                             setErrorNotice(null);
                           }}
-                          className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer ${
+                          className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-colors cursor-pointer ${
                             isDisabled
-                              ? 'bg-[#141414]/50 border-white/5 opacity-40 cursor-not-allowed'
+                              ? 'bg-[#000000] border-white/5 opacity-40 cursor-not-allowed'
                               : isSelected
-                              ? 'bg-[#1F1914] border-[#FF6A00] shadow-md glow-orange-sm text-white'
-                              : 'bg-[#161616] border-white/8 hover:border-white/20 text-stone-300'
+                              ? 'bg-[#000000] border-[#FF6B00] text-white shadow-md'
+                              : 'bg-[#000000] border-white/10 hover:border-white/20 text-[#D9D9D9]'
                           }`}
                         >
                           <div>
                             <span
                               className={`text-[9px] uppercase font-black px-1.5 py-0.5 rounded-md inline-block mb-1 ${
                                 dateOpt.isToday
-                                  ? 'bg-[#FF6A00]/20 text-[#FF7A00]'
-                                  : 'bg-white/5 text-stone-400'
+                                  ? 'bg-[#FF6B00] text-black font-black'
+                                  : 'bg-[#151515] text-[#D9D9D9]'
                               }`}
                             >
                               {dateOpt.isToday ? 'Today' : dateOpt.fullLabel.split(',')[0]}
@@ -301,11 +297,11 @@ export const ScheduleSelectorModal: React.FC<ScheduleSelectorModalProps> = ({
                             </div>
                           </div>
 
-                          <div className="mt-2 text-[10px] text-[#A1A1A1]">
+                          <div className="mt-2 text-[10px] text-[#D9D9D9]">
                             {isDisabled ? (
                               <span className="text-rose-400 font-bold">Closed</span>
                             ) : isSelected ? (
-                              <span className="text-[#FF7A00] font-bold flex items-center gap-1">
+                              <span className="text-[#FF6B00] font-bold flex items-center gap-1">
                                 <Check className="w-3 h-3 stroke-[3]" /> Selected
                               </span>
                             ) : (
@@ -321,20 +317,20 @@ export const ScheduleSelectorModal: React.FC<ScheduleSelectorModalProps> = ({
                 {/* 2. Pickup Time Slot Selector */}
                 <div>
                   <div className="flex items-center justify-between mb-2.5">
-                    <label className="text-[10px] font-black uppercase tracking-wider text-[#A1A1A1] flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5 text-[#FF6A00]" />
+                    <label className="text-[10px] font-black uppercase tracking-wider text-[#D9D9D9] flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 text-[#FF6B00]" />
                       <span>2. Select Pickup Time Slot</span>
                     </label>
-                    <span className="text-[11px] text-[#A1A1A1]">
+                    <span className="text-[11px] text-[#D9D9D9]">
                       {settings.operatingHours || '7:30 AM – 5:30 PM'}
                     </span>
                   </div>
 
                   {timeSlots.length === 0 ? (
-                    <div className="p-6 rounded-2xl bg-[#161616] border border-white/8 text-center text-xs text-[#A1A1A1]">
-                      <Clock className="w-8 h-8 text-stone-600 mx-auto mb-2" />
+                    <div className="p-6 rounded-2xl bg-[#000000] border border-white/10 text-center text-xs text-[#D9D9D9]">
+                      <Clock className="w-8 h-8 text-[#D9D9D9] mx-auto mb-2" />
                       <p className="font-bold text-white">No available time slots for this date</p>
-                      <p className="mt-1 text-stone-400">
+                      <p className="mt-1 text-[#D9D9D9]">
                         Operating hours have concluded or all advance booking slots have passed.
                       </p>
                     </div>
@@ -354,12 +350,12 @@ export const ScheduleSelectorModal: React.FC<ScheduleSelectorModalProps> = ({
                               setSelectedSlot(slot);
                               setErrorNotice(null);
                             }}
-                            className={`p-2.5 rounded-xl border text-left transition-all relative ${
+                            className={`p-2.5 rounded-xl border text-left transition-colors relative ${
                               !isAvailable
-                                ? 'bg-[#141414] border-white/5 opacity-40 cursor-not-allowed'
+                                ? 'bg-[#000000] border-white/5 opacity-40 cursor-not-allowed'
                                 : isSelected
-                                ? 'bg-[#241A12] border-[#FF6A00] shadow-md glow-orange-sm text-white'
-                                : 'bg-[#181818] border-white/8 hover:border-white/20 text-stone-200 cursor-pointer'
+                                ? 'bg-[#000000] border-[#FF6B00] text-white shadow-md'
+                                : 'bg-[#000000] border-white/10 hover:border-white/20 text-[#D9D9D9] cursor-pointer'
                             }`}
                           >
                             <div className="flex items-center justify-between">
@@ -367,23 +363,23 @@ export const ScheduleSelectorModal: React.FC<ScheduleSelectorModalProps> = ({
                                 {slot.time}
                               </span>
                               {isSelected && (
-                                <span className="w-4 h-4 rounded-full bg-[#FF6A00] text-black flex items-center justify-center shrink-0">
+                                <span className="w-4 h-4 rounded-full bg-[#FF6B00] text-black flex items-center justify-center shrink-0">
                                   <Check className="w-2.5 h-2.5 stroke-[3]" />
                                 </span>
                               )}
                             </div>
 
-                            <p className="text-[10px] text-stone-400 mt-0.5 truncate">
+                            <p className="text-[10px] text-[#D9D9D9] mt-0.5 truncate">
                               until {slot.endTime}
                             </p>
 
                             <div className="mt-1.5 flex items-center justify-between text-[9px]">
                               {!isAvailable ? (
-                                <span className="text-stone-500 font-bold truncate">
+                                <span className="text-[#D9D9D9] font-bold truncate">
                                   {slot.reason || 'Unavailable'}
                                 </span>
                               ) : isSelected ? (
-                                <span className="text-[#FF7A00] font-black">Selected</span>
+                                <span className="text-[#FF6B00] font-black">Selected</span>
                               ) : (
                                 <span className="text-emerald-400 font-bold">
                                   {capacityLeft} slot{capacityLeft === 1 ? '' : 's'} open
@@ -399,17 +395,13 @@ export const ScheduleSelectorModal: React.FC<ScheduleSelectorModalProps> = ({
 
                 {/* 3. Selected Schedule Summary Confirmation Card */}
                 {selectedSlot && selectedDateObj && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="p-4 rounded-2xl bg-[#1A1815] border border-[#FF6A00]/40 space-y-2"
-                  >
+                  <div className="p-4 rounded-2xl bg-[#000000] border border-[#FF6B00] space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] uppercase font-black tracking-wider text-[#FF7A00] flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span className="text-[10px] uppercase font-black tracking-wider text-[#FF6B00] flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-[#FF6B00]" />
                         <span>Confirmed Pickup Schedule</span>
                       </span>
-                      <span className="text-[10px] font-mono-token text-stone-400">
+                      <span className="text-[10px] font-mono-token text-[#D9D9D9]">
                         Counter 1 & 2
                       </span>
                     </div>
@@ -419,35 +411,35 @@ export const ScheduleSelectorModal: React.FC<ScheduleSelectorModalProps> = ({
                         <p className="font-black text-sm text-white">
                           {selectedDateObj.dayLabel}
                         </p>
-                        <p className="text-xs text-[#FF6A00] font-mono-token font-bold">
+                        <p className="text-xs text-[#FF6B00] font-mono-token font-bold">
                           {selectedSlot.displayLabel}
                         </p>
                       </div>
 
                       <div className="text-right">
-                        <span className="text-[10px] text-stone-400 block">Lead Time</span>
-                        <span className="text-xs font-bold text-stone-200">
+                        <span className="text-[10px] text-[#D9D9D9] block">Lead Time</span>
+                        <span className="text-xs font-bold text-white">
                           {settings.kitchenLeadTimeMinutes || 25} min prep notice
                         </span>
                       </div>
                     </div>
 
-                    <p className="text-[11px] text-[#A1A1A1] pt-1 border-t border-white/5">
+                    <p className="text-[11px] text-[#D9D9D9] pt-1 border-t border-white/10">
                       Food will be freshly prepared to be hot & ready at Counter 1 & 2 during this window.
                     </p>
-                  </motion.div>
+                  </div>
                 )}
               </div>
             )}
           </div>
 
           {/* Footer Action */}
-          <div className="p-4 sm:p-5 border-t border-white/8 bg-[#0D0D0D] flex items-center justify-between gap-3">
+          <div className="p-4 sm:p-5 border-t border-white/10 bg-[#000000] flex items-center justify-between gap-3">
             <button
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="px-4 py-3 rounded-xl bg-[#1C1C1C] hover:bg-[#252525] text-stone-300 hover:text-white font-bold text-xs cursor-pointer transition-colors"
+              className="px-4 py-3 rounded-xl bg-[#151515] hover:bg-[#202020] text-[#D9D9D9] hover:text-white font-bold text-xs cursor-pointer transition-colors"
             >
               Cancel
             </button>
@@ -456,7 +448,7 @@ export const ScheduleSelectorModal: React.FC<ScheduleSelectorModalProps> = ({
               type="button"
               onClick={handleApply}
               disabled={isSubmitting || (activeMode === 'scheduled' && !selectedSlot)}
-              className="flex-1 py-3 px-5 bg-[#FF6A00] hover:bg-[#FF7A00] text-black font-black text-xs sm:text-sm rounded-xl shadow-lg glow-orange-sm flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 py-3 px-5 bg-[#FF6B00] hover:bg-[#e05e00] text-black font-black text-xs sm:text-sm rounded-xl shadow-md flex items-center justify-center gap-2 cursor-pointer transition-colors active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting ? (
                 <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />

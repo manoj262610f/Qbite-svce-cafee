@@ -94,7 +94,7 @@ export const TokenCard: React.FC<TokenCardProps> = ({ order, onViewBill }) => {
         <motion.div
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="bg-gradient-to-r from-emerald-600 to-teal-700 text-white rounded-3xl p-5 shadow-2xl flex items-start gap-3.5 border border-emerald-400/50 glow-emerald-sm"
+          className="bg-emerald-600 text-white rounded-3xl p-5 shadow-2xl flex items-start gap-3.5 border border-emerald-400"
         >
           <div className="w-12 h-12 rounded-2xl bg-black/20 flex items-center justify-center shrink-0 animate-bounce">
             <BellRing className="w-6 h-6 text-white" />
@@ -135,13 +135,13 @@ export const TokenCard: React.FC<TokenCardProps> = ({ order, onViewBill }) => {
       <div
         className={`rounded-3xl p-6 text-white text-center shadow-2xl relative overflow-hidden border ${
           isReady
-            ? 'bg-gradient-to-br from-[#0D261B] to-[#071710] border-emerald-500/40 glow-emerald-sm'
+            ? 'bg-[#151515] border-2 border-emerald-500'
             : isCancelled || isRejected
-            ? 'bg-[#141414] border-white/8 opacity-80'
-            : 'bg-gradient-to-br from-[#1C1C1C] via-[#141414] to-[#0D0D0D] border-white/10 glow-orange-sm'
+            ? 'bg-[#151515] border-white/10 opacity-80'
+            : 'bg-[#151515] border-white/10'
         }`}
       >
-        <p className="text-[10px] uppercase font-black tracking-[0.25em] text-[#A1A1A1] mb-1">
+        <p className="text-[10px] uppercase font-black tracking-[0.25em] text-[#D9D9D9] mb-1">
           TOKEN IDENTIFIER
         </p>
 
@@ -151,42 +151,42 @@ export const TokenCard: React.FC<TokenCardProps> = ({ order, onViewBill }) => {
           initial={{ scale: 0.9 }}
           animate={{ scale: 1 }}
           className={`text-7xl md:text-8xl font-black font-mono-token tracking-tight my-2 ${
-            isReady ? 'text-emerald-400' : 'text-[#FF6A00]'
+            isReady ? 'text-emerald-400' : 'text-[#FF6B00]'
           }`}
         >
           {order.tokenString}
         </motion.div>
 
-        <p className="text-xs text-[#A1A1A1] font-medium">
+        <p className="text-xs text-[#D9D9D9] font-medium">
           Order ID: <span className="font-mono-token text-white font-bold">{order.orderNumber}</span>
         </p>
 
         {/* 3 Metric Cards */}
         <div className="grid grid-cols-3 gap-2 mt-5 pt-4 border-t border-white/8 text-center">
-          <div className="bg-[#0A0A0A]/60 rounded-2xl p-2.5 border border-white/5">
-            <span className="text-[10px] text-[#A1A1A1] uppercase font-bold block mb-0.5">
+          <div className="bg-[#000000] rounded-2xl p-2.5 border border-white/5">
+            <span className="text-[10px] text-[#D9D9D9] uppercase font-bold block mb-0.5">
               Pickup Point
             </span>
-            <span className="text-xs font-black text-[#FF9D2E] block">
+            <span className="text-xs font-black text-[#FF6B00] block">
               Counter 1 & 2
             </span>
           </div>
 
-          <div className="bg-[#0A0A0A]/60 rounded-2xl p-2.5 border border-white/5">
-            <span className="text-[10px] text-[#A1A1A1] uppercase font-bold block mb-0.5">
+          <div className="bg-[#000000] rounded-2xl p-2.5 border border-white/5">
+            <span className="text-[10px] text-[#D9D9D9] uppercase font-bold block mb-0.5">
               Payment
             </span>
             <span
               className={`text-xs font-black block ${
-                order.paymentStatus === 'PAID' ? 'text-emerald-400' : 'text-[#FF7A00]'
+                order.paymentStatus === 'PAID' ? 'text-emerald-400' : 'text-[#FF6B00]'
               }`}
             >
               {order.paymentStatus === 'PAID' ? 'PAID ✓' : 'Pay ₹' + order.total}
             </span>
           </div>
 
-          <div className="bg-[#0A0A0A]/60 rounded-2xl p-2.5 border border-white/5">
-            <span className="text-[10px] text-[#A1A1A1] uppercase font-bold block mb-0.5">
+          <div className="bg-[#000000] rounded-2xl p-2.5 border border-white/5">
+            <span className="text-[10px] text-[#D9D9D9] uppercase font-bold block mb-0.5">
               Est. Waiting
             </span>
             <span className="text-xs font-black font-mono-token text-white block">
@@ -200,15 +200,15 @@ export const TokenCard: React.FC<TokenCardProps> = ({ order, onViewBill }) => {
       {order.orderType === 'scheduled' && (() => {
         const timing = getTimeRemainingUntilPickup(order.scheduledPickupAt);
         return (
-          <div className="bg-gradient-to-r from-[#1C160F] to-[#141414] rounded-3xl p-4 border border-[#FF6A00]/40 shadow-xl glow-orange-sm space-y-2">
+          <div className="bg-[#151515] rounded-3xl p-4 border border-[#FF6B00]/40 shadow-xl space-y-2">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] uppercase font-black tracking-wider text-[#FF7A00] flex items-center gap-1.5">
+              <span className="text-[10px] uppercase font-black tracking-wider text-[#FF6B00] flex items-center gap-1.5">
                 <CalendarClock className="w-4 h-4" />
                 <span>Scheduled Pickup Order</span>
               </span>
               <span className={`text-[10px] font-mono-token font-bold px-2 py-0.5 rounded-full ${
                 timing.isUrgent
-                  ? 'bg-[#FF6A00] text-black'
+                  ? 'bg-[#FF6B00] text-black'
                   : 'bg-white/10 text-stone-200'
               }`}>
                 {timing.label}
@@ -217,10 +217,10 @@ export const TokenCard: React.FC<TokenCardProps> = ({ order, onViewBill }) => {
 
             <div className="flex items-center justify-between text-xs sm:text-sm pt-1">
               <span className="font-bold text-white flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-[#FF6A00]" />
+                <Calendar className="w-3.5 h-3.5 text-[#FF6B00]" />
                 <span>{order.scheduledDate}</span>
               </span>
-              <span className="font-mono-token font-black text-[#FF6A00]">
+              <span className="font-mono-token font-black text-[#FF6B00]">
                 {order.scheduledTimeSlot || timing.formattedTime}
               </span>
             </div>
@@ -230,8 +230,8 @@ export const TokenCard: React.FC<TokenCardProps> = ({ order, onViewBill }) => {
 
       {/* Timeline Status Tracker (Visible for active/completed orders) */}
       {!isCancelled && !isRejected && (
-        <div className="bg-[#141414] rounded-3xl p-5 border border-white/8 shadow-xl">
-          <h4 className="text-[11px] font-black uppercase tracking-wider text-[#A1A1A1] mb-4">
+        <div className="bg-[#151515] rounded-3xl p-5 border border-white/10 shadow-xl">
+          <h4 className="text-[11px] font-black uppercase tracking-wider text-[#D9D9D9] mb-4">
             Live Order Lifecycle
           </h4>
 
@@ -254,7 +254,7 @@ export const TokenCard: React.FC<TokenCardProps> = ({ order, onViewBill }) => {
                   {idx < ORDER_STEPS.length - 1 && (
                     <div
                       className={`absolute left-4 top-8 w-0.5 h-6 -translate-x-1/2 transition-colors ${
-                        currentIndex > idx ? 'bg-[#FF6A00]' : 'bg-white/10'
+                        currentIndex > idx ? 'bg-[#FF6B00]' : 'bg-white/10'
                       }`}
                     />
                   )}
@@ -265,8 +265,8 @@ export const TokenCard: React.FC<TokenCardProps> = ({ order, onViewBill }) => {
                       isDone
                         ? isReady && step.status === 'READY'
                           ? 'bg-emerald-500 text-black ring-4 ring-emerald-500/30'
-                          : 'bg-[#FF6A00] text-black font-black'
-                        : 'bg-[#1F1F1F] text-stone-500 border border-white/5'
+                          : 'bg-[#FF6B00] text-black font-black'
+                        : 'bg-[#000000] text-stone-500 border border-white/10'
                     }`}
                   >
                     <Icon className="w-4 h-4 stroke-[2.5]" />
@@ -278,7 +278,7 @@ export const TokenCard: React.FC<TokenCardProps> = ({ order, onViewBill }) => {
                       <p
                         className={`text-xs font-bold ${
                           isCurrent
-                            ? 'text-[#FF6A00]'
+                            ? 'text-[#FF6B00]'
                             : isDone
                             ? 'text-white'
                             : 'text-stone-500'
@@ -318,9 +318,9 @@ export const TokenCard: React.FC<TokenCardProps> = ({ order, onViewBill }) => {
         {onViewBill && (
           <button
             onClick={onViewBill}
-            className="flex-1 py-3 px-4 rounded-2xl border border-white/10 bg-[#161616] hover:bg-[#202020] text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-md cursor-pointer transition-colors"
+            className="flex-1 py-3 px-4 rounded-2xl border border-white/10 bg-[#151515] hover:bg-stone-800 text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-md cursor-pointer transition-colors"
           >
-            <FileText className="w-4 h-4 text-[#FF6A00]" />
+            <FileText className="w-4 h-4 text-[#FF6B00]" />
             <span>VIEW DIGITAL BILL</span>
           </button>
         )}
@@ -334,7 +334,7 @@ export const TokenCard: React.FC<TokenCardProps> = ({ order, onViewBill }) => {
                 <button
                   type="button"
                   onClick={() => setShowRescheduleModal(true)}
-                  className="py-3 px-3.5 rounded-2xl border border-[#FF6A00]/40 bg-[#261E14] hover:bg-[#332617] text-[#FF9D2E] font-extrabold text-xs cursor-pointer transition-colors flex items-center gap-1.5"
+                  className="py-3 px-3.5 rounded-2xl border border-[#FF6B00]/40 bg-[#151515] hover:bg-stone-800 text-[#FF6B00] font-extrabold text-xs cursor-pointer transition-colors flex items-center gap-1.5"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
                   <span>Reschedule</span>

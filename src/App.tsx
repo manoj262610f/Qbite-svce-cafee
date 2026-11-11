@@ -66,6 +66,25 @@ function MainAppContent() {
     }
   }, []);
 
+  // Synchronize dynamic page title with active route for SEO & browser navigation
+  useEffect(() => {
+    const titles: Record<string, string> = {
+      '/home': 'QBite – SVCE Cafe | Online Food Ordering',
+      '/menu': 'Food Menu & Pricing | QBite – SVCE Cafe',
+      '/cart': 'Your Food Tray | QBite – SVCE Cafe',
+      '/checkout': 'Checkout & Confirmation | QBite – SVCE Cafe',
+      '/orders': 'My Orders & Live Tokens | QBite – SVCE Cafe',
+      '/queue': 'Queue & Token Tracking | QBite – SVCE Cafe',
+      '/favorites': 'My Saved Favorites | QBite – SVCE Cafe',
+      '/notifications': 'Order Notifications | QBite – SVCE Cafe',
+      '/profile': 'Student Profile & Settings | QBite – SVCE Cafe',
+      '/display': 'Digital Pickup Board | SVCE Canteen Live Queue',
+      '/staff': 'Kitchen Staff Fulfillment Terminal | QBite – SVCE Cafe',
+      '/admin': 'Canteen Administration Hub | QBite – SVCE Cafe'
+    };
+    document.title = titles[currentRoute] || 'QBite – SVCE Cafe | Online Food Ordering';
+  }, [currentRoute]);
+
   // Register service worker with auto-update detection (PWA Requirement)
   useEffect(() => {
     if ('serviceWorker' in navigator && (import.meta.env.PROD || window.location.protocol === 'https:')) {
@@ -151,17 +170,17 @@ function MainAppContent() {
   // NEVER assume the user is logged out before Firebase finishes checking the session!
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-[#080808] flex flex-col items-center justify-center p-6 text-center text-white">
-        <div className="w-14 h-14 rounded-full overflow-hidden bg-[#0D0D0D] border border-white/10 flex items-center justify-center shadow-lg glow-orange-sm mb-3">
+      <div className="min-h-screen bg-[#000000] flex flex-col items-center justify-center p-6 text-center text-white">
+        <div className="w-14 h-14 rounded-full overflow-hidden bg-[#151515] border border-white/10 flex items-center justify-center mb-3">
           <img
             src="/icons/qbite-icon-192.png"
-            alt="QBite"
+            alt="QBite – SVCE Cafe Logo"
             className="w-full h-full object-contain"
             referrerPolicy="no-referrer"
           />
         </div>
         <p className="font-black text-sm text-white tracking-tight">QBite · SVCE Cafe</p>
-        <p className="text-[11px] text-[#A1A1A1] mt-1">Connecting to campus session...</p>
+        <p className="text-[11px] text-[#D9D9D9] mt-1">Connecting to campus session...</p>
       </div>
     );
   }
@@ -194,28 +213,28 @@ function MainAppContent() {
   if (currentRoute === '/staff') {
     if (profileLoading) {
       return (
-        <div className="min-h-screen bg-[#080808] flex flex-col items-center justify-center p-6 text-center text-white">
-          <div className="w-12 h-12 rounded-2xl bg-[#FF6A00]/20 text-[#FF7A00] border border-[#FF6A00]/30 flex items-center justify-center mb-3 shadow-md glow-orange-sm animate-pulse">
+        <div className="min-h-screen bg-[#000000] flex flex-col items-center justify-center p-6 text-center text-white">
+          <div className="w-12 h-12 rounded-2xl bg-[#151515] text-[#FF6B00] border border-[#FF6B00]/30 flex items-center justify-center mb-3">
             <ChefHat className="w-6 h-6 stroke-[2.5]" />
           </div>
           <p className="font-black text-sm text-white tracking-tight">Kitchen Portal</p>
-          <p className="text-[11px] text-[#A1A1A1] mt-1">Verifying staff credentials...</p>
+          <p className="text-[11px] text-[#D9D9D9] mt-1">Verifying staff credentials...</p>
         </div>
       );
     }
     if (role !== 'staff' && role !== 'admin') {
       return (
-        <div className="min-h-screen bg-[#080808] flex flex-col items-center justify-center p-6 text-center text-white">
-          <div className="w-12 h-12 rounded-2xl bg-[#FF6A00]/20 text-[#FF7A00] border border-[#FF6A00]/30 flex items-center justify-center mb-3 shadow-md glow-orange-sm">
+        <div className="min-h-screen bg-[#000000] flex flex-col items-center justify-center p-6 text-center text-white">
+          <div className="w-12 h-12 rounded-2xl bg-[#151515] text-[#FF6B00] border border-[#FF6B00]/30 flex items-center justify-center mb-3">
             <ChefHat className="w-6 h-6 stroke-[2.5]" />
           </div>
           <h2 className="text-lg font-black text-white tracking-tight">Staff Portal Restricted</h2>
-          <p className="text-xs text-[#A1A1A1] max-w-xs mt-1 mb-4">
+          <p className="text-xs text-[#D9D9D9] max-w-xs mt-1 mb-4">
             This kitchen fulfillment terminal is restricted to authorized SVCE canteen staff.
           </p>
           <button
             onClick={() => navigate('/home')}
-            className="px-4 py-2 bg-[#FF6A00] hover:bg-[#FF7A00] text-black rounded-xl text-xs font-black cursor-pointer shadow-md glow-orange-sm transition-all"
+            className="px-4 py-2 bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-black rounded-xl text-xs font-black cursor-pointer transition-all"
           >
             Return to Student App
           </button>
@@ -229,28 +248,28 @@ function MainAppContent() {
   if (currentRoute === '/admin') {
     if (profileLoading) {
       return (
-        <div className="min-h-screen bg-[#080808] flex flex-col items-center justify-center p-6 text-center text-white">
-          <div className="w-12 h-12 rounded-2xl bg-purple-500/20 text-purple-300 border border-purple-500/30 flex items-center justify-center mb-3 shadow-md animate-pulse">
+        <div className="min-h-screen bg-[#000000] flex flex-col items-center justify-center p-6 text-center text-white">
+          <div className="w-12 h-12 rounded-2xl bg-[#151515] text-[#FF6B00] border border-[#FF6B00]/30 flex items-center justify-center mb-3">
             <Shield className="w-6 h-6 stroke-[2.5]" />
           </div>
           <p className="font-black text-sm text-white tracking-tight">Admin Console</p>
-          <p className="text-[11px] text-[#A1A1A1] mt-1">Verifying administrator credentials...</p>
+          <p className="text-[11px] text-[#D9D9D9] mt-1">Verifying administrator credentials...</p>
         </div>
       );
     }
     if (role !== 'admin') {
       return (
-        <div className="min-h-screen bg-[#080808] flex flex-col items-center justify-center p-6 text-center text-white">
-          <div className="w-12 h-12 rounded-2xl bg-purple-500/20 text-purple-300 border border-purple-500/30 flex items-center justify-center mb-3 shadow-md">
+        <div className="min-h-screen bg-[#000000] flex flex-col items-center justify-center p-6 text-center text-white">
+          <div className="w-12 h-12 rounded-2xl bg-[#151515] text-[#FF6B00] border border-[#FF6B00]/30 flex items-center justify-center mb-3">
             <Shield className="w-6 h-6 stroke-[2.5]" />
           </div>
           <h2 className="text-lg font-black text-white tracking-tight">Admin Access Required</h2>
-          <p className="text-xs text-[#A1A1A1] max-w-xs mt-1 mb-4">
+          <p className="text-xs text-[#D9D9D9] max-w-xs mt-1 mb-4">
             Only designated canteen administrators can access policy control, pricing, and staff permissions.
           </p>
           <button
             onClick={() => navigate('/home')}
-            className="px-4 py-2 bg-stone-800 hover:bg-stone-700 text-white rounded-xl text-xs font-bold cursor-pointer transition-colors"
+            className="px-4 py-2 bg-[#151515] hover:bg-stone-800 border border-white/10 text-white rounded-xl text-xs font-bold cursor-pointer transition-colors"
           >
             Return to Student App
           </button>
@@ -262,7 +281,7 @@ function MainAppContent() {
 
   // Standard Student App Experience with Header & Bottom Navigation
   return (
-    <div className="min-h-screen bg-[#080808] text-white flex flex-col justify-between selection:bg-[#FF6A00] selection:text-black">
+    <div className="min-h-screen bg-[#000000] text-white flex flex-col justify-between selection:bg-[#FF6B00] selection:text-black">
       {/* Top Navbar */}
       <Navbar
         onOpenNotifications={() => navigate('/notifications')}

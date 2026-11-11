@@ -29,7 +29,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useCanteen } from '../context/CanteenContext';
-import { FoodItem, UserProfile, UserRole, AccountStatus, CanteenStatus } from '../types';
+import { FoodItem, UserProfile, UserRole, AccountStatus, CanteenStatus, OrderStatus } from '../types';
 import { getTodayDateKey } from '../services/queueService';
 import { DEFAULT_SCHEDULING_CONFIG } from '../services/scheduleService';
 
@@ -49,7 +49,9 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBackToHome }) => {
     seedMenuCatalog
   } = useCanteen();
 
-  const [activeTab, setActiveTab] = useState<'analytics' | 'menu' | 'canteen' | 'staff'>('analytics');
+  const [activeTab, setActiveTab] = useState<'analytics' | 'orders' | 'menu' | 'canteen' | 'staff'>('analytics');
+  const [orderSearchQuery, setOrderSearchQuery] = useState('');
+  const [orderStatusFilter, setOrderStatusFilter] = useState<'all' | OrderStatus | 'scheduled'>('all');
   const [editingFood, setEditingFood] = useState<FoodItem | null>(null);
   const [isAddingFood, setIsAddingFood] = useState(false);
   const [newFood, setNewFood] = useState<Partial<FoodItem>>({
@@ -266,7 +268,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBackToHome }) => {
       {/* Top Admin Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="w-10 h-10 rounded-2xl overflow-hidden bg-[#0D0D0D] border border-white/10 flex items-center justify-center shadow-lg glow-orange-sm shrink-0">
+          <div className="w-10 h-10 rounded-2xl overflow-hidden bg-[#151515] border border-white/10 flex items-center justify-center shrink-0">
             <img
               src="/icons/qbite-icon-192.png"
               alt="QBite"
@@ -278,13 +280,13 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBackToHome }) => {
             <h2 className="text-xl font-black text-white tracking-tight">
               QBite · Admin Hub
             </h2>
-            <p className="text-xs text-[#A1A1A1] font-medium">SVCE Cafe · Operations & Access Control</p>
+            <p className="text-xs text-[#D9D9D9] font-medium">SVCE Cafe · Operations & Access Control</p>
           </div>
         </div>
 
         <button
           onClick={onBackToHome}
-          className="text-xs font-bold text-stone-300 hover:text-white bg-[#141414] hover:bg-[#1E1E1E] border border-white/10 px-3 py-1.5 rounded-xl cursor-pointer transition-colors"
+          className="text-xs font-bold text-stone-300 hover:text-white bg-[#151515] hover:bg-stone-800 border border-white/10 px-3 py-1.5 rounded-xl cursor-pointer transition-colors"
         >
           Exit Admin
         </button>
@@ -298,19 +300,27 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBackToHome }) => {
       )}
 
       {/* Tabs */}
-      <div className="flex gap-1.5 bg-[#141414] p-1.5 rounded-2xl border border-white/8 overflow-x-auto no-scrollbar">
+      <div className="flex gap-1.5 bg-[#151515] p-1.5 rounded-2xl border border-white/10 overflow-x-auto no-scrollbar">
         <button
           onClick={() => setActiveTab('analytics')}
           className={`flex-1 py-2 px-3 text-xs font-black rounded-xl whitespace-nowrap cursor-pointer transition-all ${
-            activeTab === 'analytics' ? 'bg-[#FF6A00] text-black shadow-md glow-orange-sm' : 'text-stone-400 hover:text-white'
+            activeTab === 'analytics' ? 'bg-[#FF6B00] text-black shadow-sm' : 'text-stone-400 hover:text-white'
           }`}
         >
-          Analytics & Metrics
+          Overview & Stats
+        </button>
+        <button
+          onClick={() => setActiveTab('orders')}
+          className={`flex-1 py-2 px-3 text-xs font-black rounded-xl whitespace-nowrap cursor-pointer transition-all ${
+            activeTab === 'orders' ? 'bg-[#FF6B00] text-black shadow-sm' : 'text-stone-400 hover:text-white'
+          }`}
+        >
+          Order Monitor ({orders.length})
         </button>
         <button
           onClick={() => setActiveTab('canteen')}
           className={`flex-1 py-2 px-3 text-xs font-black rounded-xl whitespace-nowrap cursor-pointer transition-all ${
-            activeTab === 'canteen' ? 'bg-[#FF6A00] text-black shadow-md glow-orange-sm' : 'text-stone-400 hover:text-white'
+            activeTab === 'canteen' ? 'bg-[#FF6B00] text-black shadow-sm' : 'text-stone-400 hover:text-white'
           }`}
         >
           Canteen Status
@@ -318,7 +328,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBackToHome }) => {
         <button
           onClick={() => setActiveTab('menu')}
           className={`flex-1 py-2 px-3 text-xs font-black rounded-xl whitespace-nowrap cursor-pointer transition-all ${
-            activeTab === 'menu' ? 'bg-[#FF6A00] text-black shadow-md glow-orange-sm' : 'text-stone-400 hover:text-white'
+            activeTab === 'menu' ? 'bg-[#FF6B00] text-black shadow-sm' : 'text-stone-400 hover:text-white'
           }`}
         >
           Menu & Pricing ({foods.length})
@@ -326,7 +336,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBackToHome }) => {
         <button
           onClick={() => setActiveTab('staff')}
           className={`flex-1 py-2 px-3 text-xs font-black rounded-xl whitespace-nowrap cursor-pointer transition-all ${
-            activeTab === 'staff' ? 'bg-[#FF6A00] text-black shadow-md glow-orange-sm' : 'text-stone-400 hover:text-white'
+            activeTab === 'staff' ? 'bg-[#FF6B00] text-black shadow-sm' : 'text-stone-400 hover:text-white'
           }`}
         >
           Staff & Access
@@ -337,32 +347,32 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBackToHome }) => {
       {activeTab === 'analytics' && (
         <div className="space-y-4">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="bg-[#141414] rounded-3xl p-4 border border-white/8 shadow-xl">
-              <span className="text-[10px] uppercase font-black text-[#A1A1A1] block mb-1">
-                TODAY'S ORDERS
+            <div className="bg-[#151515] rounded-3xl p-4 border border-white/10 shadow-xl">
+              <span className="text-[10px] uppercase font-black text-[#D9D9D9] block mb-1">
+                TOTAL ORDERS
               </span>
               <div className="text-3xl font-black font-mono-token text-white">
-                {totalOrdersCount}
+                {orders.length}
               </div>
-              <span className="text-[11px] text-stone-500 font-medium mt-1 block">
-                {todayKey}
+              <span className="text-[11px] text-[#FF6B00] font-medium mt-1 block">
+                Today: {todayOrders.length} orders
               </span>
             </div>
 
-            <div className="bg-[#141414] rounded-3xl p-4 border border-white/8 shadow-xl">
-              <span className="text-[10px] uppercase font-black text-[#A1A1A1] block mb-1">
+            <div className="bg-[#151515] rounded-3xl p-4 border border-white/10 shadow-xl">
+              <span className="text-[10px] uppercase font-black text-[#D9D9D9] block mb-1">
                 ACTIVE IN QUEUE
               </span>
-              <div className="text-3xl font-black font-mono-token text-[#FF6A00]">
+              <div className="text-3xl font-black font-mono-token text-[#FF6B00]">
                 {activeOrdersCount}
               </div>
-              <span className="text-[11px] text-[#FF7A00] font-medium mt-1 block">
+              <span className="text-[11px] text-[#FF6B00] font-medium mt-1 block">
                 {preparingCount} cooking · {readyCount} ready
               </span>
             </div>
 
-            <div className="bg-[#141414] rounded-3xl p-4 border border-white/8 shadow-xl">
-              <span className="text-[10px] uppercase font-black text-[#A1A1A1] block mb-1">
+            <div className="bg-[#151515] rounded-3xl p-4 border border-white/10 shadow-xl">
+              <span className="text-[10px] uppercase font-black text-[#D9D9D9] block mb-1">
                 COMPLETED
               </span>
               <div className="text-3xl font-black font-mono-token text-emerald-400">
@@ -373,8 +383,8 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBackToHome }) => {
               </span>
             </div>
 
-            <div className="bg-[#141414] rounded-3xl p-4 border border-white/8 shadow-xl">
-              <span className="text-[10px] uppercase font-black text-[#A1A1A1] block mb-1">
+            <div className="bg-[#151515] rounded-3xl p-4 border border-white/10 shadow-xl">
+              <span className="text-[10px] uppercase font-black text-[#D9D9D9] block mb-1">
                 COLLECTED VALUE
               </span>
               <div className="text-3xl font-black font-mono-token text-white">
@@ -387,13 +397,13 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBackToHome }) => {
           </div>
 
           {/* Operational Timings Metrics */}
-          <div className="bg-[#141414] rounded-3xl p-5 border border-white/8 shadow-xl space-y-3">
+          <div className="bg-[#151515] rounded-3xl p-5 border border-white/10 shadow-xl space-y-3">
             <h3 className="font-black text-sm text-white">
               Kitchen Preparation Performance
             </h3>
             <div className="grid grid-cols-2 gap-3 text-center">
-              <div className="bg-[#1C1C1C] rounded-2xl p-4 border border-white/5">
-                <span className="text-[10px] uppercase font-bold text-[#A1A1A1] block">
+              <div className="bg-[#000000] rounded-2xl p-4 border border-white/5">
+                <span className="text-[10px] uppercase font-bold text-[#D9D9D9] block">
                   AVG ORDER-TO-READY
                 </span>
                 <span className="text-3xl font-black font-mono-token text-white block my-1">
@@ -404,11 +414,11 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBackToHome }) => {
                 </span>
               </div>
 
-              <div className="bg-[#1C1C1C] rounded-2xl p-4 border border-white/5">
-                <span className="text-[10px] uppercase font-bold text-[#A1A1A1] block">
+              <div className="bg-[#000000] rounded-2xl p-4 border border-white/5">
+                <span className="text-[10px] uppercase font-bold text-[#D9D9D9] block">
                   AVG COOKING DURATION
                 </span>
-                <span className="text-3xl font-black font-mono-token text-[#FF9D2E] block my-1">
+                <span className="text-3xl font-black font-mono-token text-[#FF6B00] block my-1">
                   {avgPrepMin !== null ? `${avgPrepMin} min` : '—'}
                 </span>
                 <span className="text-[10px] text-stone-500">
@@ -420,15 +430,135 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBackToHome }) => {
         </div>
       )}
 
-      {/* TAB 2: CANTEEN STATUS & SETTINGS */}
+      {/* TAB 2: ORDER MONITOR */}
+      {activeTab === 'orders' && (
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            <div className="relative flex-1">
+              <input
+                type="text"
+                value={orderSearchQuery}
+                onChange={(e) => setOrderSearchQuery(e.target.value)}
+                placeholder="Search by token, order ID, student name, or item..."
+                className="w-full px-4 py-2.5 rounded-2xl bg-[#151515] border border-white/10 text-xs text-white placeholder:text-stone-500 focus:outline-none focus:border-[#FF6B00]"
+              />
+            </div>
+
+            <div className="flex gap-1.5 overflow-x-auto no-scrollbar">
+              {(['all', 'PLACED', 'ACCEPTED', 'PREPARING', 'READY', 'COMPLETED', 'scheduled'] as const).map((filter) => (
+                <button
+                  key={filter}
+                  onClick={() => setOrderStatusFilter(filter)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap cursor-pointer transition-colors ${
+                    orderStatusFilter === filter
+                      ? 'bg-[#FF6B00] text-black font-black'
+                      : 'bg-[#151515] text-[#D9D9D9] hover:text-white border border-white/10'
+                  }`}
+                >
+                  {filter === 'all' ? 'All Orders' : filter === 'scheduled' ? 'Scheduled' : filter}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Orders Table / List */}
+          {(() => {
+            const query = orderSearchQuery.toLowerCase().trim();
+            const filtered = orders.filter((o) => {
+              if (orderStatusFilter === 'scheduled') {
+                if (o.orderType !== 'scheduled') return false;
+              } else if (orderStatusFilter !== 'all') {
+                if (o.status !== orderStatusFilter) return false;
+              }
+              if (!query) return true;
+              return (
+                o.tokenString.toLowerCase().includes(query) ||
+                o.orderNumber.toLowerCase().includes(query) ||
+                o.userName.toLowerCase().includes(query) ||
+                o.userEmail.toLowerCase().includes(query) ||
+                (o.items || []).some((item) => item.name.toLowerCase().includes(query))
+              );
+            });
+
+            if (filtered.length === 0) {
+              return (
+                <div className="bg-[#151515] rounded-3xl p-10 text-center border border-white/10">
+                  <p className="text-sm font-bold text-white">No orders match this filter</p>
+                  <p className="text-xs text-[#D9D9D9] mt-1">Try searching with a different token or changing status filters.</p>
+                </div>
+              );
+            }
+
+            return (
+              <div className="bg-[#151515] rounded-3xl border border-white/10 overflow-hidden shadow-xl">
+                <div className="divide-y divide-white/5">
+                  {filtered.map((order) => (
+                    <div key={order.id} className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-[#1A1A1A] transition-colors">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xl font-black font-mono-token text-[#FF6B00]">
+                            {order.tokenString}
+                          </span>
+                          <span className="text-stone-600">·</span>
+                          <span className="text-xs font-mono-token text-stone-400">
+                            {order.orderNumber}
+                          </span>
+                          {order.orderType === 'scheduled' ? (
+                            <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-[#000000] border border-[#FF6B00]/40 text-[#FF6B00]">
+                              Scheduled ({order.scheduledDate} {order.scheduledTimeSlot})
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full bg-white/5 text-stone-400">
+                              Instant
+                            </span>
+                          )}
+                          <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
+                            order.paymentStatus === 'PAID'
+                              ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                              : 'bg-[#FF6B00]/15 text-[#FF6B00] border border-[#FF6B00]/30'
+                          }`}>
+                            {order.paymentStatus === 'PAID' ? 'PAID' : 'COLLECT CASH'}
+                          </span>
+                        </div>
+
+                        <p className="text-xs font-bold text-white">
+                          {order.userName} <span className="text-[#D9D9D9] font-normal">({order.userEmail})</span>
+                        </p>
+
+                        <p className="text-xs text-[#D9D9D9]">
+                          {(order.items || []).map((item) => `${item.name} × ${item.quantity}`).join(', ')}
+                        </p>
+                      </div>
+
+                      <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-1.5 shrink-0">
+                        <span className="text-base font-black font-mono-token text-white">
+                          ₹{order.total}
+                        </span>
+                        <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[#000000] border border-white/10 text-stone-300">
+                          {order.status}
+                        </span>
+                        <span className="text-[10px] font-mono-token text-stone-500">
+                          {new Date(order.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+      )}
+
+      {/* TAB 3: CANTEEN STATUS & SETTINGS */}
       {activeTab === 'canteen' && (
-        <div className="bg-[#141414] rounded-3xl p-5 border border-white/8 shadow-xl space-y-4">
+        <div className="bg-[#151515] rounded-3xl p-5 border border-white/10 shadow-xl space-y-4">
           <h3 className="font-black text-base text-white">
             Canteen Operational State
           </h3>
 
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-wider text-[#A1A1A1] block">
+            <label className="text-[10px] font-black uppercase tracking-wider text-[#D9D9D9] block">
               Operational Status
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -438,8 +568,8 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBackToHome }) => {
                   onClick={() => setCanteenStatus(status)}
                   className={`p-3 rounded-2xl font-black text-xs border cursor-pointer transition-all ${
                     canteenStatus === status
-                      ? 'bg-[#FF6A00] text-black border-[#FF6A00] shadow-md glow-orange-sm'
-                      : 'bg-[#1C1C1C] text-stone-300 border-white/5 hover:bg-[#252525]'
+                      ? 'bg-[#FF6B00] text-black border-[#FF6B00] shadow-sm'
+                      : 'bg-[#000000] text-stone-300 border-white/5 hover:bg-stone-900'
                   }`}
                 >
                   {status}
@@ -449,7 +579,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBackToHome }) => {
           </div>
 
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-wider text-[#A1A1A1] block">
+            <label className="text-[10px] font-black uppercase tracking-wider text-[#D9D9D9] block">
               Public Campus Announcement
             </label>
             <input
@@ -457,12 +587,12 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBackToHome }) => {
               value={announcementText}
               onChange={(e) => setAnnouncementText(e.target.value)}
               placeholder="e.g. Counter 2 is serving hot South Indian meals today..."
-              className="w-full p-3 rounded-xl bg-[#1C1C1C] border border-white/8 text-xs font-medium text-white focus:outline-none focus:border-[#FF6A00]"
+              className="w-full p-3 rounded-xl bg-[#000000] border border-white/10 text-xs font-medium text-white focus:outline-none focus:border-[#FF6B00]"
             />
           </div>
 
           <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase tracking-wider text-[#A1A1A1] block">
+            <label className="text-[10px] font-black uppercase tracking-wider text-[#D9D9D9] block">
               Operating Hours (Public Display)
             </label>
             <input
@@ -470,7 +600,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBackToHome }) => {
               value={hoursText}
               onChange={(e) => setHoursText(e.target.value)}
               placeholder="7:30 AM – 5:30 PM"
-              className="w-full p-3 rounded-xl bg-[#1C1C1C] border border-white/8 text-xs font-medium text-white focus:outline-none focus:border-[#FF6A00]"
+              className="w-full p-3 rounded-xl bg-[#000000] border border-white/10 text-xs font-medium text-white focus:outline-none focus:border-[#FF6B00]"
             />
           </div>
 
@@ -479,10 +609,10 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBackToHome }) => {
             <div className="flex items-center justify-between">
               <div>
                 <h4 className="font-black text-sm text-white flex items-center gap-2">
-                  <CalendarClock className="w-4 h-4 text-[#FF6A00]" />
+                  <CalendarClock className="w-4 h-4 text-[#FF6B00]" />
                   <span>"Schedule Your Order" Engine Configuration</span>
                 </h4>
-                <p className="text-[11px] text-[#A1A1A1] mt-0.5">
+                <p className="text-[11px] text-[#D9D9D9] mt-0.5">
                   Configure advance booking windows, operating days, capacity limits & cutoff rules.
                 </p>
               </div>
@@ -504,7 +634,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBackToHome }) => {
 
             {/* Operating Days Toggles */}
             <div className="space-y-1.5">
-              <label className="text-[10px] font-black uppercase tracking-wider text-[#A1A1A1] block">
+              <label className="text-[10px] font-black uppercase tracking-wider text-[#D9D9D9] block">
                 Operating Days for Advance Bookings
               </label>
               <div className="grid grid-cols-7 gap-1 sm:gap-2">
@@ -531,8 +661,8 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBackToHome }) => {
                       }}
                       className={`p-2 rounded-xl text-xs font-black border transition-all cursor-pointer ${
                         isChecked
-                          ? 'bg-[#FF6A00] text-black border-[#FF6A00]'
-                          : 'bg-[#1C1C1C] text-stone-500 border-white/5 hover:border-white/20'
+                          ? 'bg-[#FF6B00] text-black border-[#FF6B00]'
+                          : 'bg-[#000000] text-stone-500 border-white/5 hover:border-white/20'
                       }`}
                     >
                       {d.label}
@@ -545,26 +675,26 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBackToHome }) => {
             {/* Slot Timing Parameters */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label className="text-[10px] font-black uppercase tracking-wider text-[#A1A1A1] block">
+                <label className="text-[10px] font-black uppercase tracking-wider text-[#D9D9D9] block">
                   Daily Slot Start Time (24h)
                 </label>
                 <input
                   type="time"
                   value={slotStartTime}
                   onChange={(e) => setSlotStartTime(e.target.value)}
-                  className="w-full p-2.5 rounded-xl bg-[#1C1C1C] border border-white/8 text-xs font-mono-token font-bold text-white focus:outline-none focus:border-[#FF6A00]"
+                  className="w-full p-2.5 rounded-xl bg-[#000000] border border-white/10 text-xs font-mono-token font-bold text-white focus:outline-none focus:border-[#FF6B00]"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-black uppercase tracking-wider text-[#A1A1A1] block">
+                <label className="text-[10px] font-black uppercase tracking-wider text-[#D9D9D9] block">
                   Daily Slot End Time (24h)
                 </label>
                 <input
                   type="time"
                   value={slotEndTime}
                   onChange={(e) => setSlotEndTime(e.target.value)}
-                  className="w-full p-2.5 rounded-xl bg-[#1C1C1C] border border-white/8 text-xs font-mono-token font-bold text-white focus:outline-none focus:border-[#FF6A00]"
+                  className="w-full p-2.5 rounded-xl bg-[#000000] border border-white/10 text-xs font-mono-token font-bold text-white focus:outline-none focus:border-[#FF6B00]"
                 />
               </div>
             </div>
@@ -572,13 +702,13 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBackToHome }) => {
             {/* Intervals, Capacity, Notice, and Cutoffs */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               <div className="space-y-1">
-                <label className="text-[10px] font-black uppercase tracking-wider text-[#A1A1A1] block">
+                <label className="text-[10px] font-black uppercase tracking-wider text-[#D9D9D9] block">
                   Slot Interval
                 </label>
                 <select
                   value={slotIntervalMinutes}
                   onChange={(e) => setSlotIntervalMinutes(Number(e.target.value))}
-                  className="w-full p-2.5 rounded-xl bg-[#1C1C1C] border border-white/8 text-xs font-bold text-white focus:outline-none focus:border-[#FF6A00]"
+                  className="w-full p-2.5 rounded-xl bg-[#000000] border border-white/10 text-xs font-bold text-white focus:outline-none focus:border-[#FF6B00]"
                 >
                   <option value={15}>15 Minutes</option>
                   <option value={20}>20 Minutes</option>
@@ -589,7 +719,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBackToHome }) => {
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-black uppercase tracking-wider text-[#A1A1A1] block">
+                <label className="text-[10px] font-black uppercase tracking-wider text-[#D9D9D9] block">
                   Max Orders / Slot
                 </label>
                 <input
@@ -598,12 +728,12 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBackToHome }) => {
                   max={50}
                   value={maxOrdersPerSlot}
                   onChange={(e) => setMaxOrdersPerSlot(Number(e.target.value))}
-                  className="w-full p-2.5 rounded-xl bg-[#1C1C1C] border border-white/8 text-xs font-mono-token font-bold text-white focus:outline-none focus:border-[#FF6A00]"
+                  className="w-full p-2.5 rounded-xl bg-[#000000] border border-white/10 text-xs font-mono-token font-bold text-white focus:outline-none focus:border-[#FF6B00]"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-black uppercase tracking-wider text-[#A1A1A1] block">
+                <label className="text-[10px] font-black uppercase tracking-wider text-[#D9D9D9] block">
                   Min Advance Notice (min)
                 </label>
                 <input
@@ -612,12 +742,12 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBackToHome }) => {
                   max={240}
                   value={minNoticeMinutes}
                   onChange={(e) => setMinNoticeMinutes(Number(e.target.value))}
-                  className="w-full p-2.5 rounded-xl bg-[#1C1C1C] border border-white/8 text-xs font-mono-token font-bold text-white focus:outline-none focus:border-[#FF6A00]"
+                  className="w-full p-2.5 rounded-xl bg-[#000000] border border-white/10 text-xs font-mono-token font-bold text-white focus:outline-none focus:border-[#FF6B00]"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-black uppercase tracking-wider text-[#A1A1A1] block">
+                <label className="text-[10px] font-black uppercase tracking-wider text-[#D9D9D9] block">
                   Max Booking Horizon (days)
                 </label>
                 <input
@@ -626,12 +756,12 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBackToHome }) => {
                   max={14}
                   value={maxAdvanceDays}
                   onChange={(e) => setMaxAdvanceDays(Number(e.target.value))}
-                  className="w-full p-2.5 rounded-xl bg-[#1C1C1C] border border-white/8 text-xs font-mono-token font-bold text-white focus:outline-none focus:border-[#FF6A00]"
+                  className="w-full p-2.5 rounded-xl bg-[#000000] border border-white/10 text-xs font-mono-token font-bold text-white focus:outline-none focus:border-[#FF6B00]"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-black uppercase tracking-wider text-[#A1A1A1] block">
+                <label className="text-[10px] font-black uppercase tracking-wider text-[#D9D9D9] block">
                   Cutoff Notice (min)
                 </label>
                 <input
@@ -640,12 +770,12 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBackToHome }) => {
                   max={120}
                   value={cancelCutoffMinutes}
                   onChange={(e) => setCancelCutoffMinutes(Number(e.target.value))}
-                  className="w-full p-2.5 rounded-xl bg-[#1C1C1C] border border-white/8 text-xs font-mono-token font-bold text-white focus:outline-none focus:border-[#FF6A00]"
+                  className="w-full p-2.5 rounded-xl bg-[#000000] border border-white/10 text-xs font-mono-token font-bold text-white focus:outline-none focus:border-[#FF6B00]"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-black uppercase tracking-wider text-[#A1A1A1] block">
+                <label className="text-[10px] font-black uppercase tracking-wider text-[#D9D9D9] block">
                   Kitchen Prep Lead (min)
                 </label>
                 <input
@@ -654,7 +784,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBackToHome }) => {
                   max={60}
                   value={kitchenLeadTimeMinutes}
                   onChange={(e) => setKitchenLeadTimeMinutes(Number(e.target.value))}
-                  className="w-full p-2.5 rounded-xl bg-[#1C1C1C] border border-white/8 text-xs font-mono-token font-bold text-white focus:outline-none focus:border-[#FF6A00]"
+                  className="w-full p-2.5 rounded-xl bg-[#000000] border border-white/10 text-xs font-mono-token font-bold text-white focus:outline-none focus:border-[#FF6B00]"
                 />
               </div>
             </div>
@@ -662,7 +792,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBackToHome }) => {
 
           <button
             onClick={handleSaveSettings}
-            className="w-full py-3.5 bg-[#FF6A00] hover:bg-[#FF7A00] text-black font-black text-xs rounded-xl shadow-md glow-orange-sm cursor-pointer transition-all active:scale-[0.99] mt-2"
+            className="w-full py-3.5 bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-black font-black text-xs rounded-xl shadow-md cursor-pointer transition-all active:scale-[0.99] mt-2"
           >
             Save All Canteen & Scheduling Settings
           </button>
@@ -687,7 +817,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBackToHome }) => {
               )}
               <button
                 onClick={() => setIsAddingFood(true)}
-                className="py-2 px-3 bg-[#FF6A00] hover:bg-[#FF7A00] text-black text-xs font-black rounded-xl flex items-center gap-1 cursor-pointer shadow-md glow-orange-sm transition-all"
+                className="py-2 px-3 bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-black text-xs font-black rounded-xl flex items-center gap-1 cursor-pointer shadow-md transition-all active:scale-95"
               >
                 <Plus className="w-4 h-4 stroke-[3]" />
                 <span>Add Item</span>
@@ -697,7 +827,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBackToHome }) => {
 
           {/* Add Food Form */}
           {isAddingFood && (
-            <div className="bg-[#141414] rounded-3xl p-5 border border-white/10 space-y-3">
+            <div className="bg-[#151515] rounded-3xl p-5 border border-white/10 space-y-3">
               <h4 className="font-black text-sm text-white">Create New Menu Item</h4>
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <input
@@ -705,28 +835,28 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBackToHome }) => {
                   placeholder="Food Name"
                   value={newFood.name}
                   onChange={(e) => setNewFood({ ...newFood, name: e.target.value })}
-                  className="p-2.5 rounded-xl border border-white/8 bg-[#1C1C1C] text-white"
+                  className="p-2.5 rounded-xl border border-white/10 bg-[#000000] text-white focus:outline-none focus:border-[#FF6B00]"
                 />
                 <input
                   type="number"
                   placeholder="Price (₹)"
                   value={newFood.price}
                   onChange={(e) => setNewFood({ ...newFood, price: Number(e.target.value) })}
-                  className="p-2.5 rounded-xl border border-white/8 bg-[#1C1C1C] text-white"
+                  className="p-2.5 rounded-xl border border-white/10 bg-[#000000] text-white focus:outline-none focus:border-[#FF6B00]"
                 />
                 <input
                   type="text"
                   placeholder="Category (Breakfast, Snacks...)"
                   value={newFood.category}
                   onChange={(e) => setNewFood({ ...newFood, category: e.target.value })}
-                  className="p-2.5 rounded-xl border border-white/8 bg-[#1C1C1C] text-white"
+                  className="p-2.5 rounded-xl border border-white/10 bg-[#000000] text-white focus:outline-none focus:border-[#FF6B00]"
                 />
                 <input
                   type="number"
                   placeholder="Prep time (min)"
                   value={newFood.prepTimeMinutes}
                   onChange={(e) => setNewFood({ ...newFood, prepTimeMinutes: Number(e.target.value) })}
-                  className="p-2.5 rounded-xl border border-white/8 bg-[#1C1C1C] text-white"
+                  className="p-2.5 rounded-xl border border-white/10 bg-[#000000] text-white focus:outline-none focus:border-[#FF6B00]"
                 />
               </div>
               <input
@@ -734,18 +864,18 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBackToHome }) => {
                 placeholder="Description"
                 value={newFood.description}
                 onChange={(e) => setNewFood({ ...newFood, description: e.target.value })}
-                className="w-full p-2.5 rounded-xl border border-white/8 bg-[#1C1C1C] text-white text-xs"
+                className="w-full p-2.5 rounded-xl border border-white/10 bg-[#000000] text-white text-xs focus:outline-none focus:border-[#FF6B00]"
               />
               <div className="flex gap-2">
                 <button
                   onClick={handleCreateFood}
-                  className="flex-1 py-2.5 bg-[#FF6A00] text-black font-black text-xs rounded-xl cursor-pointer glow-orange-sm shadow-md"
+                  className="flex-1 py-2.5 bg-[#FF6B00] text-black font-black text-xs rounded-xl cursor-pointer shadow-md transition-all active:scale-95"
                 >
                   Save Food Item
                 </button>
                 <button
                   onClick={() => setIsAddingFood(false)}
-                  className="py-2.5 px-4 border border-white/10 text-xs font-bold text-stone-300 rounded-xl cursor-pointer"
+                  className="py-2.5 px-4 border border-white/10 text-xs font-bold text-[#D9D9D9] hover:text-white rounded-xl cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -758,19 +888,19 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBackToHome }) => {
             {foods.map((food) => (
               <div
                 key={food.id}
-                className="bg-[#141414] rounded-3xl p-4 border border-white/8 shadow-md flex items-center justify-between gap-3"
+                className="bg-[#151515] rounded-3xl p-4 border border-white/10 shadow-md flex items-center justify-between gap-3"
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <img
                     src={food.imageUrl}
                     alt={food.name}
-                    className="w-12 h-12 rounded-2xl object-cover shrink-0 bg-[#202020]"
+                    className="w-12 h-12 rounded-2xl object-cover shrink-0 bg-[#000000] border border-white/10"
                   />
                   <div className="min-w-0">
                     <h4 className="font-bold text-sm text-white truncate">
                       {food.name}
                     </h4>
-                    <p className="text-xs text-[#A1A1A1] font-mono-token">
+                    <p className="text-xs text-[#D9D9D9] font-mono-token">
                       ₹{food.price} · {food.prepTimeMinutes} min
                     </p>
                   </div>
@@ -797,14 +927,14 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBackToHome }) => {
       {/* TAB 4: STAFF & USER ACCESS */}
       {activeTab === 'staff' && (
         <div className="space-y-4">
-          <div className="bg-[#141414] border border-purple-500/30 rounded-3xl p-4 text-xs text-purple-200 space-y-1">
+          <div className="bg-[#151515] border border-white/10 rounded-3xl p-4 text-xs text-white space-y-1">
             <strong className="block font-black text-white">Designated Staff & Role Control</strong>
-            <p className="leading-relaxed text-[#A1A1A1]">
+            <p className="leading-relaxed text-[#D9D9D9]">
               New accounts start as students. As Admin, you can grant verified staff members access to the Kitchen Fulfillment Terminal below.
             </p>
           </div>
 
-          <div className="bg-[#141414] rounded-3xl p-5 border border-white/8 shadow-xl space-y-3">
+          <div className="bg-[#151515] rounded-3xl p-5 border border-white/10 shadow-xl space-y-3">
             <h3 className="font-black text-sm text-white">
               Registered Canteen Users ({usersList.length})
             </h3>
@@ -814,14 +944,14 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBackToHome }) => {
                 <div key={user.id} className="py-3 first:pt-0 last:pb-0 flex items-center justify-between text-xs">
                   <div>
                     <p className="font-bold text-white">{user.name}</p>
-                    <p className="text-[11px] text-[#A1A1A1] font-mono-token">{user.email}</p>
+                    <p className="text-[11px] text-[#D9D9D9] font-mono-token">{user.email}</p>
                     <div className="flex items-center gap-1.5 mt-1">
                       <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
                         user.role === 'admin'
                           ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
                           : user.role === 'staff'
-                          ? 'bg-[#FF6A00]/20 text-[#FF7A00] border border-[#FF6A00]/30'
-                          : 'bg-white/5 text-stone-400'
+                          ? 'bg-[#FF6B00]/20 text-[#FF6B00] border border-[#FF6B00]/30'
+                          : 'bg-white/5 text-[#D9D9D9]'
                       }`}>
                         {user.role}
                       </span>
@@ -839,7 +969,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onBackToHome }) => {
                     {user.role !== 'admin' && (
                       <button
                         onClick={() => handleToggleUserRole(user)}
-                        className="py-1.5 px-3 bg-[#1C1C1C] hover:bg-[#252525] border border-white/10 text-white font-bold rounded-xl cursor-pointer transition-colors"
+                        className="py-1.5 px-3 bg-[#000000] hover:bg-white/10 border border-white/10 text-white font-bold rounded-xl cursor-pointer transition-colors"
                       >
                         {user.role === 'staff' ? 'Demote to Student' : 'Promote to Staff'}
                       </button>

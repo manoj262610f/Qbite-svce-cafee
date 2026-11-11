@@ -112,7 +112,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
         <button
           onClick={onBack}
           disabled={submitting}
-          className="w-9 h-9 rounded-xl bg-[#141414] hover:bg-[#1E1E1E] border border-white/10 flex items-center justify-center text-stone-300 hover:text-white cursor-pointer disabled:opacity-50 transition-colors"
+          className="w-9 h-9 rounded-xl bg-[#151515] hover:bg-stone-800 border border-white/10 flex items-center justify-center text-stone-300 hover:text-white cursor-pointer disabled:opacity-50 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
         </button>
@@ -120,7 +120,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
           <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
             Confirm Order
           </h1>
-          <p className="text-xs sm:text-sm text-[#A1A1A1]">Official SVCE Cafe remote ordering</p>
+          <p className="text-xs sm:text-sm text-[#D9D9D9]">Official SVCE Cafe remote ordering</p>
         </div>
       </div>
 
@@ -140,13 +140,13 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
         <div className="lg:col-span-7 space-y-4">
           {/* Pickup Timing / Schedule Confirmation Card */}
           {isScheduled && selectedSchedule ? (
-            <div className="bg-gradient-to-r from-[#1C160F] to-[#141414] rounded-3xl p-5 border border-[#FF6A00]/40 shadow-xl glow-orange-sm space-y-2">
+            <div className="bg-[#151515] rounded-3xl p-5 border border-[#FF6B00]/40 shadow-xl space-y-2">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-[#FF7A00]">
+                <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-[#FF6B00]">
                   <CalendarClock className="w-4 h-4" />
                   <span>Scheduled Pickup Time</span>
                 </div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-black bg-[#FF6A00] px-2.5 py-0.5 rounded-full">
+                <span className="text-[10px] font-black uppercase tracking-wider text-black bg-[#FF6B00] px-2.5 py-0.5 rounded-full">
                   Advance Order
                 </span>
               </div>
@@ -154,7 +154,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                 <h3 className="font-black text-base text-white">
                   {selectedSchedule.displayDate}
                 </h3>
-                <p className="text-sm font-bold font-mono-token text-[#FF6A00] mt-0.5">
+                <p className="text-sm font-bold font-mono-token text-[#FF6B00] mt-0.5">
                   Slot: {selectedSchedule.timeSlot}
                 </p>
                 <p className="text-[11px] text-stone-400 mt-1">
@@ -163,26 +163,26 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
               </div>
             </div>
           ) : (
-            <div className="bg-[#141414] rounded-3xl p-5 border border-white/8 shadow-md space-y-2">
+            <div className="bg-[#151515] rounded-3xl p-5 border border-white/10 shadow-md space-y-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-stone-300">
-                  <Zap className="w-4 h-4 text-[#FF6A00]" />
+                  <Zap className="w-4 h-4 text-[#FF6B00]" />
                   <span>Immediate Fulfillment</span>
                 </div>
                 <span className="text-[10px] font-black uppercase tracking-wider text-stone-300 bg-white/5 border border-white/10 px-2.5 py-0.5 rounded-full">
                   Order Now
                 </span>
               </div>
-              <p className="text-xs text-[#A1A1A1]">
+              <p className="text-xs text-[#D9D9D9]">
                 Canteen kitchen will begin preparing your order immediately. Live queue token assigned instantly.
               </p>
             </div>
           )}
 
           {/* Pickup Location Card */}
-          <div className="bg-[#141414] rounded-3xl p-5 border border-white/8 shadow-md space-y-2">
-            <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-[#A1A1A1]">
-              <MapPin className="w-4 h-4 text-[#FF6A00]" />
+          <div className="bg-[#151515] rounded-3xl p-5 border border-white/10 shadow-md space-y-2">
+            <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-[#D9D9D9]">
+              <MapPin className="w-4 h-4 text-[#FF6B00]" />
               <span>Campus Pickup Counter</span>
             </div>
             <div className="flex items-center justify-between">
@@ -190,7 +190,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                 <h3 className="font-black text-sm sm:text-base text-white">
                   SVCE Central Canteen
                 </h3>
-                <p className="text-xs text-[#A1A1A1]">
+                <p className="text-xs text-[#D9D9D9]">
                   Counters 1 & 2 · Campus Ground Floor
                 </p>
               </div>
@@ -201,8 +201,8 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
           </div>
 
           {/* Payment Method Selector */}
-          <div className="bg-[#141414] rounded-3xl p-5 border border-white/8 shadow-md space-y-3">
-            <h2 className="text-xs font-black uppercase tracking-wider text-[#A1A1A1]">
+          <div className="bg-[#151515] rounded-3xl p-5 border border-white/10 shadow-md space-y-3">
+            <h2 className="text-xs font-black uppercase tracking-wider text-[#D9D9D9]">
               Select Payment Method
             </h2>
 
@@ -216,27 +216,27 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
                     onClick={() => setPaymentMethod(opt.id)}
                     className={`p-3.5 rounded-2xl border flex items-center justify-between cursor-pointer transition-all ${
                       isSelected
-                        ? 'bg-[#1C1C1C] border-[#FF6A00] shadow-md glow-orange-sm'
-                        : 'bg-[#181818] border-white/5 hover:border-white/15'
+                        ? 'bg-[#000000] border-[#FF6B00] shadow-sm'
+                        : 'bg-[#000000] border-white/5 hover:border-white/15'
                     }`}
                   >
                     <div className="flex items-center gap-3">
                       <div
                         className={`w-9 h-9 rounded-xl flex items-center justify-center ${
-                          isSelected ? 'bg-[#FF6A00] text-black' : 'bg-[#222] text-[#A1A1A1]'
+                          isSelected ? 'bg-[#FF6B00] text-black' : 'bg-[#222] text-[#D9D9D9]'
                         }`}
                       >
                         <Icon className="w-4 h-4" />
                       </div>
                       <div>
                         <p className="font-black text-xs sm:text-sm text-white">{opt.label}</p>
-                        <p className="text-[11px] text-[#A1A1A1]">{opt.desc}</p>
+                        <p className="text-[11px] text-[#D9D9D9]">{opt.desc}</p>
                       </div>
                     </div>
 
                     <div
                       className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                        isSelected ? 'border-[#FF6A00] bg-[#FF6A00]' : 'border-stone-600'
+                        isSelected ? 'border-[#FF6B00] bg-[#FF6B00]' : 'border-stone-600'
                       }`}
                     >
                       {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-black" />}
@@ -248,8 +248,8 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
           </div>
 
           {/* Special Kitchen Notes */}
-          <div className="bg-[#141414] rounded-3xl p-5 border border-white/8 shadow-md space-y-2">
-            <label htmlFor="notes" className="text-xs font-black uppercase tracking-wider text-[#A1A1A1] block">
+          <div className="bg-[#151515] rounded-3xl p-5 border border-white/10 shadow-md space-y-2">
+            <label htmlFor="notes" className="text-xs font-black uppercase tracking-wider text-[#D9D9D9] block">
               Kitchen Preparation Note (Optional)
             </label>
             <input
@@ -259,14 +259,14 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
               onChange={(e) => setSpecialInstructions(e.target.value)}
               placeholder="e.g. Extra chutney, less oil, takeaway parcel packing..."
               maxLength={100}
-              className="w-full p-3.5 rounded-2xl bg-[#1C1C1C] border border-white/8 text-xs sm:text-sm font-medium text-white placeholder:text-stone-500 focus:outline-none focus:border-[#FF6A00]/60 focus:ring-1 focus:ring-[#FF6A00]/30 shadow-inner"
+              className="w-full p-3.5 rounded-2xl bg-[#000000] border border-white/10 text-xs sm:text-sm font-medium text-white placeholder:text-stone-500 focus:outline-none focus:border-[#FF6B00] focus:ring-1 focus:ring-[#FF6B00]/30 shadow-inner"
             />
           </div>
         </div>
 
         {/* Right Column: Order Summary & Place Order Action */}
         <div className="lg:col-span-5 space-y-4">
-          <div className="bg-[#141414] rounded-3xl p-6 border border-white/8 shadow-xl space-y-4">
+          <div className="bg-[#151515] rounded-3xl p-6 border border-white/10 shadow-xl space-y-4">
             <h2 className="text-base font-black text-white pb-3 border-b border-white/8">
               Items Summary ({cart.length} {cart.length === 1 ? 'item' : 'items'})
             </h2>
@@ -286,23 +286,23 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
 
             {/* Bill Breakdown */}
             <div className="pt-3 border-t border-white/8 space-y-2 text-xs sm:text-sm">
-              <div className="flex justify-between text-[#A1A1A1]">
+              <div className="flex justify-between text-[#D9D9D9]">
                 <span>Order Option</span>
-                <span className={`font-bold ${isScheduled ? 'text-[#FF9D2E]' : 'text-stone-300'}`}>
+                <span className={`font-bold ${isScheduled ? 'text-[#FF6B00]' : 'text-stone-300'}`}>
                   {isScheduled ? `Scheduled (${selectedSchedule?.timeSlot})` : 'Order Now'}
                 </span>
               </div>
-              <div className="flex justify-between text-[#A1A1A1]">
+              <div className="flex justify-between text-[#D9D9D9]">
                 <span>Items Subtotal</span>
                 <span className="font-mono-token font-bold text-white">₹{cartSubtotal}</span>
               </div>
-              <div className="flex justify-between text-[#A1A1A1]">
+              <div className="flex justify-between text-[#D9D9D9]">
                 <span>Convenience Fee</span>
                 <span className="font-mono-token font-bold text-emerald-400">FREE</span>
               </div>
               <div className="pt-2 border-t border-white/8 flex justify-between text-lg font-black text-white">
                 <span>Total Due</span>
-                <span className="font-mono-token text-[#FF6A00]">₹{cartTotal}</span>
+                <span className="font-mono-token text-[#FF6B00]">₹{cartTotal}</span>
               </div>
             </div>
 
@@ -311,7 +311,7 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
               <button
                 onClick={handlePlaceOrder}
                 disabled={submitting || (!isScheduled && (isCanteenClosed || isCanteenPaused)) || (isScheduled && !selectedSchedule) || cart.length === 0}
-                className="w-full py-4 px-6 bg-[#FF6A00] hover:bg-[#FF7A00] text-black font-black text-base rounded-2xl shadow-xl glow-orange-sm flex items-center justify-between cursor-pointer transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed group"
+                className="w-full py-4 px-6 bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-black font-black text-base rounded-2xl shadow-md flex items-center justify-between cursor-pointer transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed group"
               >
                 {submitting ? (
                   <div className="w-full flex items-center justify-center gap-2">
@@ -337,12 +337,12 @@ export const CheckoutPage: React.FC<CheckoutPageProps> = ({
       </div>
 
       {/* Fixed Bottom Confirmation Button (Mobile only) */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 p-4 bg-[#080808]/95 backdrop-blur-xl border-t border-white/8 z-30">
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 p-4 bg-[#000000]/95 backdrop-blur-xl border-t border-white/8 z-30">
         <div className="max-w-md mx-auto">
           <button
             onClick={handlePlaceOrder}
             disabled={submitting || (!isScheduled && (isCanteenClosed || isCanteenPaused)) || (isScheduled && !selectedSchedule) || cart.length === 0}
-            className="w-full py-4 px-6 bg-[#FF6A00] hover:bg-[#FF7A00] text-black font-black text-base rounded-2xl shadow-xl glow-orange-sm flex items-center justify-between cursor-pointer transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed group"
+            className="w-full py-4 px-6 bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-black font-black text-base rounded-2xl shadow-md flex items-center justify-between cursor-pointer transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed group"
           >
             {submitting ? (
               <div className="w-full flex items-center justify-center gap-2">

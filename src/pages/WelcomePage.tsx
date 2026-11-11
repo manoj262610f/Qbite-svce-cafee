@@ -76,11 +76,7 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({
   const displayedError = localError || authError;
 
   return (
-    <div className="min-h-screen bg-[#080808] text-white flex flex-col justify-between p-4 sm:p-6 lg:p-8 selection:bg-[#FF6A00] selection:text-black relative overflow-hidden">
-      {/* Ambient Orange Glow */}
-      <div className="absolute w-[500px] h-[500px] rounded-full bg-[#FF6A00]/10 blur-[140px] pointer-events-none -top-32 -right-32" />
-      <div className="absolute w-[450px] h-[450px] rounded-full bg-[#FF9D2E]/8 blur-[120px] pointer-events-none -bottom-32 -left-32" />
-
+    <div className="min-h-screen bg-[#000000] text-white flex flex-col justify-between p-4 sm:p-6 lg:p-8 selection:bg-[#FF6B00] selection:text-black relative">
       {/* Top Header Branding */}
       <header className="max-w-6xl w-full mx-auto flex items-center justify-between pt-1 relative z-10">
         <QbiteLogo size="md" />
@@ -89,9 +85,9 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({
           <button
             onClick={onNavigateToDisplay}
             title="Open Live Canteen TV Display"
-            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#141414] hover:bg-[#1E1E1E] border border-white/8 text-xs font-bold text-stone-300 hover:text-white cursor-pointer shadow-md transition-colors"
+            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#151515] hover:bg-stone-800 border border-white/10 text-xs font-bold text-stone-300 hover:text-white cursor-pointer shadow-md transition-colors"
           >
-            <Monitor className="w-4 h-4 text-[#FF6A00]" />
+            <Monitor className="w-4 h-4 text-[#FF6B00]" />
             <span className="hidden sm:inline">Live TV Display</span>
             <span className="sm:hidden">TV Display</span>
           </button>
@@ -104,7 +100,7 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({
           {/* Left Column: Brand Hero Revelation & Features */}
           <div className="lg:col-span-7 text-center lg:text-left space-y-5">
             <div className="relative inline-block mx-auto lg:mx-0">
-              <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-full p-1 bg-[#0D0D0D] border border-white/20 shadow-2xl glow-orange-lg flex items-center justify-center overflow-hidden">
+              <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-full p-1 bg-[#151515] border border-white/20 shadow-2xl flex items-center justify-center overflow-hidden">
                 <img
                   src="/icons/qbite-icon-512.png"
                   alt="QBite – SVCE Cafe"
@@ -114,51 +110,51 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({
                 />
               </div>
               {/* Live Status Pill */}
-              <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 lg:left-0 lg:translate-x-0 px-3.5 py-1 rounded-full bg-[#181818] border border-[#FF6A00]/40 text-[#FF7A00] text-[10px] sm:text-xs font-black uppercase tracking-wider shadow-lg whitespace-nowrap flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-[#FF6A00]" />
+              <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 lg:left-0 lg:translate-x-0 px-3.5 py-1 rounded-full bg-[#151515] border border-[#FF6B00]/40 text-[#FF6B00] text-[10px] sm:text-xs font-black uppercase tracking-wider shadow-lg whitespace-nowrap flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-[#FF6B00]" />
                 <span>SVCE Campus Dining</span>
               </div>
             </div>
 
             <div className="pt-2">
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-tight">
-                QBite <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF6A00] to-[#FF9D2E]">Cafe</span>
+                QBite <span className="text-[#FF6B00]">Cafe</span>
               </h1>
-              <p className="text-xs sm:text-sm uppercase tracking-[0.25em] text-[#A1A1A1] font-bold mt-1">
+              <p className="text-xs sm:text-sm uppercase tracking-[0.25em] text-[#D9D9D9] font-bold mt-1">
                 Sri Venkateswara College of Engineering
               </p>
-              <p className="text-base sm:text-lg font-bold text-[#FF7A00] mt-3">
-                Order Smart. Skip the Queue.
+              <p className="text-base sm:text-lg font-bold text-[#FF6B00] mt-3">
+                Be Smart. Leave the Queue.
               </p>
-              <p className="text-xs sm:text-sm text-[#A1A1A1] max-w-lg mx-auto lg:mx-0 leading-relaxed mt-2">
+              <p className="text-xs sm:text-sm text-[#D9D9D9] max-w-lg mx-auto lg:mx-0 leading-relaxed mt-2">
                 Order hot meals, breakfast, and snacks from anywhere on campus. Watch your live token update on your phone and collect freshly prepared food with zero queueing.
               </p>
             </div>
 
             {/* Feature Highlights on Desktop */}
             <div className="hidden sm:grid grid-cols-3 gap-3 pt-3 text-left">
-              <div className="bg-[#141414] p-3 rounded-2xl border border-white/5 space-y-1">
-                <div className="flex items-center gap-1.5 text-[#FF6A00]">
+              <div className="bg-[#151515] p-3 rounded-2xl border border-white/5 space-y-1">
+                <div className="flex items-center gap-1.5 text-[#FF6B00]">
                   <Clock className="w-4 h-4" />
                   <span className="text-[11px] font-black uppercase">Live Tokens</span>
                 </div>
-                <p className="text-[11px] text-[#A1A1A1]">Real-time kitchen order tracking</p>
+                <p className="text-[11px] text-[#D9D9D9]">Real-time kitchen order tracking</p>
               </div>
 
-              <div className="bg-[#141414] p-3 rounded-2xl border border-white/5 space-y-1">
+              <div className="bg-[#151515] p-3 rounded-2xl border border-white/5 space-y-1">
                 <div className="flex items-center gap-1.5 text-emerald-400">
                   <Zap className="w-4 h-4" />
                   <span className="text-[11px] font-black uppercase">Zero Queues</span>
                 </div>
-                <p className="text-[11px] text-[#A1A1A1]">Instant counter food collection</p>
+                <p className="text-[11px] text-[#D9D9D9]">Instant counter food collection</p>
               </div>
 
-              <div className="bg-[#141414] p-3 rounded-2xl border border-white/5 space-y-1">
+              <div className="bg-[#151515] p-3 rounded-2xl border border-white/5 space-y-1">
                 <div className="flex items-center gap-1.5 text-amber-400">
                   <Utensils className="w-4 h-4" />
                   <span className="text-[11px] font-black uppercase">Campus Menu</span>
                 </div>
-                <p className="text-[11px] text-[#A1A1A1]">Fresh breakfast & hot meals</p>
+                <p className="text-[11px] text-[#D9D9D9]">Fresh breakfast & hot meals</p>
               </div>
             </div>
           </div>
@@ -214,12 +210,12 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({
             </AnimatePresence>
 
             {/* Authentication Container */}
-            <div className="bg-[#141414] rounded-3xl p-6 sm:p-7 border border-white/8 shadow-2xl space-y-4">
+            <div className="bg-[#151515] rounded-3xl p-6 sm:p-7 border border-white/10 shadow-2xl space-y-4">
               <div className="text-center space-y-1">
                 <h2 className="text-lg sm:text-xl font-black text-white">
                   Enter SVCE Cafe
                 </h2>
-                <p className="text-xs text-[#A1A1A1]">
+                <p className="text-xs text-[#D9D9D9]">
                   Sign in with Google or explore directly as a student
                 </p>
               </div>
@@ -228,11 +224,11 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({
               <button
                 onClick={() => handleGoogleSignIn(false)}
                 disabled={isSigningIn || isRedirecting || isGuestLoading}
-                className="w-full py-3.5 px-4 rounded-2xl bg-[#1C1C1C] hover:bg-[#252525] text-white font-black text-sm border border-white/10 hover:border-[#FF6A00]/50 shadow-md flex items-center justify-center gap-3 cursor-pointer transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed group"
+                className="w-full py-3.5 px-4 rounded-2xl bg-[#000000] hover:bg-[#1C1C1C] text-white font-black text-sm border border-white/10 hover:border-[#FF6B00] shadow-md flex items-center justify-center gap-3 cursor-pointer transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed group"
               >
                 {isSigningIn ? (
                   <>
-                    <span className="w-4 h-4 border-2 border-[#FF6A00] border-t-transparent rounded-full animate-spin" />
+                    <span className="w-4 h-4 border-2 border-[#FF6B00] border-t-transparent rounded-full animate-spin" />
                     <span className="text-stone-300">Connecting to Google...</span>
                   </>
                 ) : (
@@ -267,12 +263,12 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({
               <button
                 onClick={() => handleGoogleSignIn(true)}
                 disabled={isSigningIn || isRedirecting || isGuestLoading}
-                className="w-full py-1 text-[#737373] hover:text-[#A1A1A1] text-[11px] font-medium flex items-center justify-center gap-1.5 cursor-pointer transition-colors disabled:opacity-50"
+                className="w-full py-1 text-[#D9D9D9]/70 hover:text-white text-[11px] font-medium flex items-center justify-center gap-1.5 cursor-pointer transition-colors disabled:opacity-50"
               >
                 {isRedirecting ? (
                   <>
-                    <span className="w-3 h-3 border-2 border-[#FF6A00] border-t-transparent rounded-full animate-spin" />
-                    <span className="text-[#FF7A00]">Redirecting to Google...</span>
+                    <span className="w-3 h-3 border-2 border-[#FF6B00] border-t-transparent rounded-full animate-spin" />
+                    <span className="text-[#FF6B00]">Redirecting to Google...</span>
                   </>
                 ) : (
                   <>
@@ -287,7 +283,7 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-white/8" />
                 </div>
-                <span className="relative px-3 bg-[#141414] text-[10px] uppercase font-black tracking-wider text-stone-500">
+                <span className="relative px-3 bg-[#151515] text-[10px] uppercase font-black tracking-wider text-[#D9D9D9]/70">
                   Or One-Tap Instant Access
                 </span>
               </div>
@@ -296,7 +292,7 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({
               <button
                 onClick={() => handleGuestEntry('student')}
                 disabled={isSigningIn || isRedirecting || isGuestLoading}
-                className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-[#FF6A00] to-[#FF9D2E] hover:from-[#FF7A00] hover:to-[#FFAE47] text-black font-black text-xs sm:text-sm shadow-xl glow-orange-sm flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.98] disabled:opacity-50"
+                className="w-full py-3.5 px-4 rounded-2xl bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-black font-black text-xs sm:text-sm shadow-md flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.98] disabled:opacity-50"
               >
                 {isGuestLoading ? (
                   <>
@@ -314,7 +310,7 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({
 
               {/* Staff / Admin Quick Review Switcher */}
               <div className="pt-2 border-t border-white/8">
-                <p className="text-[10px] text-stone-400 font-bold text-center mb-2">
+                <p className="text-[10px] text-[#D9D9D9]/80 font-bold text-center mb-2">
                   Staff & Administration Review Mode:
                 </p>
                 <div className="grid grid-cols-2 gap-2">
@@ -323,28 +319,28 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({
                     disabled={isSigningIn || isRedirecting || isGuestLoading}
                     className="py-2 px-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/8 text-[11px] font-bold text-stone-300 hover:text-white flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
                   >
-                    <ChefHat className="w-3.5 h-3.5 text-[#FF6A00]" />
+                    <ChefHat className="w-3.5 h-3.5 text-[#FF6B00]" />
                     <span>Kitchen Staff</span>
                   </button>
                   <button
                     onClick={() => handleGuestEntry('admin')}
                     disabled={isSigningIn || isRedirecting || isGuestLoading}
-                    className="py-2 px-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/8 text-[11px] font-bold text-purple-300 hover:text-purple-200 flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
+                    className="py-2 px-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/8 text-[11px] font-bold text-stone-300 hover:text-white flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
                   >
-                    <Shield className="w-3.5 h-3.5 text-purple-400" />
+                    <Shield className="w-3.5 h-3.5 text-stone-400" />
                     <span>Canteen Admin</span>
                   </button>
                 </div>
               </div>
 
               {/* Trust Indicators */}
-              <div className="grid grid-cols-2 gap-2 pt-1 border-t border-white/8 text-[10px] text-[#A1A1A1]">
+              <div className="grid grid-cols-2 gap-2 pt-1 border-t border-white/8 text-[10px] text-[#D9D9D9]">
                 <div className="flex items-center gap-1.5">
                   <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
                   <span>Secure Session</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5 text-[#FF6A00] shrink-0" />
+                  <Clock className="w-3.5 h-3.5 text-[#FF6B00] shrink-0" />
                   <span>Realtime Queue</span>
                 </div>
               </div>
@@ -355,7 +351,7 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({
 
       {/* Footer Info */}
       <footer className="max-w-6xl w-full mx-auto text-center pt-4 border-t border-white/8 relative z-10">
-        <p className="text-xs text-[#737373]">
+        <p className="text-xs text-[#D9D9D9]/70">
           QBite · Sri Venkateswara College of Engineering · Bengaluru, Karnataka
         </p>
       </footer>

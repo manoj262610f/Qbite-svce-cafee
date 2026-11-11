@@ -57,18 +57,18 @@ export const CartPage: React.FC<CartPageProps> = ({
   if (cart.length === 0) {
     return (
       <div className="pb-24 pt-16 px-6 max-w-md mx-auto text-center">
-        <div className="w-20 h-20 rounded-3xl bg-[#141414] border border-white/8 text-[#FF6A00] flex items-center justify-center mx-auto mb-5 shadow-2xl glow-orange-sm">
+        <div className="w-20 h-20 rounded-3xl bg-[#151515] border border-white/10 text-[#FF6B00] flex items-center justify-center mx-auto mb-5 shadow-2xl">
           <ShoppingBag className="w-10 h-10" />
         </div>
         <h2 className="text-2xl font-black text-white tracking-tight">
           Your order tray is empty.
         </h2>
-        <p className="text-xs sm:text-sm text-[#A1A1A1] mt-2 max-w-xs mx-auto leading-relaxed">
+        <p className="text-xs sm:text-sm text-[#D9D9D9] mt-2 max-w-xs mx-auto leading-relaxed">
           Explore delicious South Indian breakfast, lunch thalis, hot snacks and beverages from SVCE Cafe.
         </p>
         <button
           onClick={onBrowseMenu}
-          className="mt-6 py-3.5 px-6 rounded-2xl bg-[#FF6A00] hover:bg-[#FF7A00] text-black font-black text-xs shadow-lg glow-orange-sm inline-flex items-center gap-2 cursor-pointer transition-all active:scale-95"
+          className="mt-6 py-3.5 px-6 rounded-2xl bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-black font-black text-xs shadow-md inline-flex items-center gap-2 cursor-pointer transition-all active:scale-95"
         >
           <UtensilsCrossed className="w-4 h-4 stroke-[2.5]" />
           <span>BROWSE CANTEEN MENU</span>
@@ -85,13 +85,13 @@ export const CartPage: React.FC<CartPageProps> = ({
           <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
             Order Tray
           </h1>
-          <p className="text-xs sm:text-sm text-[#A1A1A1]">
+          <p className="text-xs sm:text-sm text-[#D9D9D9]">
             {cart.length} {cart.length === 1 ? 'item' : 'items'} ready for canteen kitchen fulfillment
           </p>
         </div>
         <button
           onClick={clearCart}
-          className="text-xs font-bold text-[#A1A1A1] hover:text-rose-400 cursor-pointer flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/8 hover:bg-rose-500/10 transition-colors"
+          className="text-xs font-bold text-[#D9D9D9] hover:text-rose-400 cursor-pointer flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/10 hover:bg-rose-500/10 transition-colors"
         >
           <Trash2 className="w-3.5 h-3.5" />
           <span>Clear Tray</span>
@@ -133,23 +133,23 @@ export const CartPage: React.FC<CartPageProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left Column: Items List */}
         <div className="lg:col-span-7 space-y-4">
-          <div className="bg-[#141414] rounded-3xl p-5 border border-white/8 shadow-xl divide-y divide-white/8">
+          <div className="bg-[#151515] rounded-3xl p-5 border border-white/10 shadow-xl divide-y divide-white/8">
             {cart.map((item) => (
               <div key={item.foodId} className="py-4 first:pt-0 last:pb-0 flex items-center justify-between gap-4">
                 <div className="flex-1 min-w-0">
                   <h3 className="font-black text-sm sm:text-base text-white leading-tight truncate">
                     {item.name}
                   </h3>
-                  <p className="text-xs font-mono-token text-[#A1A1A1] mt-1">
+                  <p className="text-xs font-mono-token text-[#D9D9D9] mt-1">
                     ₹{item.price} each · <strong className="text-white font-black">₹{item.price * item.quantity}</strong>
                   </p>
                 </div>
 
                 {/* Stepper */}
-                <div className="flex items-center gap-2 bg-[#1C1C1C] border border-white/10 rounded-xl p-1 shrink-0">
+                <div className="flex items-center gap-2 bg-[#000000] border border-white/10 rounded-xl p-1 shrink-0">
                   <button
                     onClick={() => updateCartQuantity(item.foodId, item.quantity - 1)}
-                    className="w-7 h-7 rounded-lg bg-[#262626] text-stone-200 font-bold flex items-center justify-center cursor-pointer active:scale-95 hover:bg-[#333333] transition-colors"
+                    className="w-7 h-7 rounded-lg bg-[#151515] text-stone-200 font-bold flex items-center justify-center cursor-pointer active:scale-95 hover:bg-[#202020] transition-colors"
                   >
                     <Minus className="w-3.5 h-3.5" />
                   </button>
@@ -158,7 +158,7 @@ export const CartPage: React.FC<CartPageProps> = ({
                   </span>
                   <button
                     onClick={() => updateCartQuantity(item.foodId, item.quantity + 1)}
-                    className="w-7 h-7 rounded-lg bg-[#FF6A00] text-black font-bold flex items-center justify-center cursor-pointer active:scale-95 glow-orange-sm transition-colors"
+                    className="w-7 h-7 rounded-lg bg-[#FF6B00] text-black font-bold flex items-center justify-center cursor-pointer active:scale-95 transition-colors"
                   >
                     <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
                   </button>
@@ -168,15 +168,15 @@ export const CartPage: React.FC<CartPageProps> = ({
           </div>
 
           {/* Pickup Location Info */}
-          <div className="bg-[#141414] rounded-3xl p-5 border border-white/8 shadow-sm space-y-2">
-            <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-[#A1A1A1]">
-              <MapPin className="w-4 h-4 text-[#FF6A00]" />
+          <div className="bg-[#151515] rounded-3xl p-5 border border-white/10 shadow-sm space-y-2">
+            <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-[#D9D9D9]">
+              <MapPin className="w-4 h-4 text-[#FF6B00]" />
               <span>Campus Pickup Counter</span>
             </div>
             <p className="text-sm font-black text-white">
               SVCE Central Canteen · Ground Floor Counters 1 & 2
             </p>
-            <p className="text-xs text-[#737373]">
+            <p className="text-xs text-[#D9D9D9]/80">
               Your order token is generated on checkout. Show the token screen when it changes to READY for instant food collection.
             </p>
           </div>
@@ -184,26 +184,26 @@ export const CartPage: React.FC<CartPageProps> = ({
 
         {/* Right Column: Order Summary & Checkout Action */}
         <div className="lg:col-span-5 space-y-4">
-          <div className="bg-[#141414] rounded-3xl p-6 border border-white/8 shadow-xl space-y-4">
+          <div className="bg-[#151515] rounded-3xl p-6 border border-white/10 shadow-xl space-y-4">
             <h2 className="text-base font-black text-white pb-3 border-b border-white/8">
               Payment Summary
             </h2>
 
             <div className="space-y-2.5 text-xs sm:text-sm">
-              <div className="flex justify-between text-[#A1A1A1]">
+              <div className="flex justify-between text-[#D9D9D9]">
                 <span>Items Subtotal</span>
                 <span className="font-mono-token font-bold text-white">₹{cartSubtotal}</span>
               </div>
-              <div className="flex justify-between text-[#A1A1A1]">
+              <div className="flex justify-between text-[#D9D9D9]">
                 <span>Ordering Option</span>
-                <span className={`font-bold ${isScheduled ? 'text-[#FF9D2E]' : 'text-stone-300'}`}>
+                <span className={`font-bold ${isScheduled ? 'text-[#FF6B00]' : 'text-stone-300'}`}>
                   {isScheduled ? 'Scheduled Order' : 'Order Now'}
                 </span>
               </div>
               {isScheduled && selectedSchedule && (
-                <div className="p-2.5 rounded-xl bg-[#1C160F] border border-[#FF6A00]/30 space-y-1">
+                <div className="p-2.5 rounded-xl bg-[#000000] border border-[#FF6B00]/40 space-y-1">
                   <div className="flex items-center justify-between text-[11px]">
-                    <span className="text-[#FF7A00] font-black uppercase">Pickup Schedule</span>
+                    <span className="text-[#FF6B00] font-black uppercase">Pickup Schedule</span>
                     <button
                       type="button"
                       onClick={() => setShowScheduleModal(true)}
@@ -213,21 +213,21 @@ export const CartPage: React.FC<CartPageProps> = ({
                     </button>
                   </div>
                   <div className="text-xs font-bold text-white">
-                    {selectedSchedule.displayDate} · <span className="font-mono-token text-[#FF6A00]">{selectedSchedule.timeSlot}</span>
+                    {selectedSchedule.displayDate} · <span className="font-mono-token text-[#FF6B00]">{selectedSchedule.timeSlot}</span>
                   </div>
                 </div>
               )}
-              <div className="flex justify-between text-[#A1A1A1]">
+              <div className="flex justify-between text-[#D9D9D9]">
                 <span>Pickup Method</span>
-                <span className="font-bold text-[#FF7A00]">Counter Pickup (Free)</span>
+                <span className="font-bold text-[#FF6B00]">Counter Pickup (Free)</span>
               </div>
-              <div className="flex justify-between text-[#A1A1A1]">
+              <div className="flex justify-between text-[#D9D9D9]">
                 <span>Platform Fee</span>
                 <span className="font-mono-token font-bold text-emerald-400">₹0 (SVCE Free)</span>
               </div>
               <div className="pt-3 border-t border-white/8 flex justify-between text-lg font-black text-white">
                 <span>Total Amount</span>
-                <span className="font-mono-token text-[#FF6A00]">₹{cartTotal}</span>
+                <span className="font-mono-token text-[#FF6B00]">₹{cartTotal}</span>
               </div>
             </div>
 
@@ -236,14 +236,14 @@ export const CartPage: React.FC<CartPageProps> = ({
               <button
                 onClick={handleCheckoutClick}
                 disabled={(!isScheduled && (isCanteenClosed || isCanteenPaused))}
-                className="w-full py-4 px-5 bg-[#FF6A00] hover:bg-[#FF7A00] text-black font-black text-sm rounded-2xl shadow-xl glow-orange-sm flex items-center justify-between cursor-pointer transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-4 px-5 bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-black font-black text-sm rounded-2xl shadow-md flex items-center justify-between cursor-pointer transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <span>Proceed to Checkout</span>
                 <ArrowRight className="w-4 h-4 stroke-[2.5]" />
               </button>
             </div>
 
-            <div className="pt-2 text-[11px] text-stone-500 flex items-center gap-1.5 justify-center">
+            <div className="pt-2 text-[11px] text-[#D9D9D9]/70 flex items-center gap-1.5 justify-center">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
               <span>UPI, QR & Cash accepted at counter</span>
             </div>
@@ -252,12 +252,12 @@ export const CartPage: React.FC<CartPageProps> = ({
       </div>
 
       {/* Mobile Sticky Checkout Bar (only on smaller screens) */}
-      <div className="lg:hidden fixed bottom-16 left-0 right-0 p-4 bg-[#080808]/95 backdrop-blur-xl border-t border-white/8 z-30">
+      <div className="lg:hidden fixed bottom-16 left-0 right-0 p-4 bg-[#000000]/95 backdrop-blur-xl border-t border-white/8 z-30">
         <div className="max-w-md mx-auto">
           <button
             onClick={handleCheckoutClick}
             disabled={(!isScheduled && (isCanteenClosed || isCanteenPaused))}
-            className="w-full py-3.5 px-5 bg-[#FF6A00] hover:bg-[#FF7A00] text-black font-black text-sm rounded-2xl shadow-xl glow-orange-sm flex items-center justify-between cursor-pointer transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-3.5 px-5 bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-black font-black text-sm rounded-2xl shadow-md flex items-center justify-between cursor-pointer transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <div className="text-left leading-tight">
               <span className="text-[10px] uppercase font-bold text-black/70 block">Total</span>

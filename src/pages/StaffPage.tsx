@@ -123,7 +123,7 @@ export const StaffPage: React.FC<StaffPageProps> = ({ onBackToHome }) => {
       {/* Top Staff Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="w-10 h-10 rounded-2xl overflow-hidden bg-[#0D0D0D] border border-white/10 flex items-center justify-center shadow-lg glow-orange-sm shrink-0">
+          <div className="w-10 h-10 rounded-2xl overflow-hidden bg-[#151515] border border-white/10 flex items-center justify-center shrink-0">
             <img
               src="/icons/qbite-icon-192.png"
               alt="QBite"
@@ -135,22 +135,22 @@ export const StaffPage: React.FC<StaffPageProps> = ({ onBackToHome }) => {
             <h2 className="text-xl font-black text-white tracking-tight flex items-center gap-2">
               <span>QBite · Kitchen Portal</span>
             </h2>
-            <p className="text-xs text-[#A1A1A1] font-medium">SVCE Cafe · Real-Time Kitchen Operations</p>
+            <p className="text-xs text-[#D9D9D9] font-medium">SVCE Cafe · Real-Time Kitchen Operations</p>
           </div>
         </div>
 
         <button
           onClick={onBackToHome}
-          className="text-xs font-bold text-stone-300 hover:text-white bg-[#141414] hover:bg-[#1E1E1E] border border-white/10 px-3 py-1.5 rounded-xl cursor-pointer transition-colors"
+          className="text-xs font-bold text-stone-300 hover:text-white bg-[#151515] hover:bg-stone-800 border border-white/10 px-3 py-1.5 rounded-xl cursor-pointer transition-colors"
         >
           Student View
         </button>
       </div>
 
       {/* Kitchen Workload Counter Summary */}
-      <div className="bg-[#141414] text-white rounded-3xl p-4 shadow-xl border border-white/8">
+      <div className="bg-[#151515] text-white rounded-3xl p-4 shadow-xl border border-white/10">
         <div className="flex items-center justify-between pb-2.5 border-b border-white/8 mb-3">
-          <span className="text-[10px] uppercase font-black tracking-widest text-[#FF6A00]">
+          <span className="text-[10px] uppercase font-black tracking-widest text-[#FF6B00]">
             KITCHEN WORKLOAD · COUNTERS 1 & 2
           </span>
           <span className="text-[10px] font-mono-token text-stone-400">
@@ -162,11 +162,11 @@ export const StaffPage: React.FC<StaffPageProps> = ({ onBackToHome }) => {
           <div
             onClick={() => setActiveTab('new')}
             className={`p-2.5 rounded-2xl cursor-pointer transition-all ${
-              activeTab === 'new' ? 'bg-[#FF6A00]/25 border border-[#FF6A00]' : 'bg-[#1C1C1C]'
+              activeTab === 'new' ? 'bg-[#FF6B00] text-black font-black' : 'bg-[#000000]'
             }`}
           >
-            <span className="text-[9px] uppercase font-black text-stone-400 block">NEW</span>
-            <span className="text-2xl font-black font-mono-token text-[#FF7A00]">
+            <span className={`text-[9px] uppercase font-black block ${activeTab === 'new' ? 'text-black/80' : 'text-stone-400'}`}>NEW</span>
+            <span className={`text-2xl font-black font-mono-token ${activeTab === 'new' ? 'text-black' : 'text-[#FF6B00]'}`}>
               {newOrders.length}
             </span>
           </div>
@@ -174,10 +174,10 @@ export const StaffPage: React.FC<StaffPageProps> = ({ onBackToHome }) => {
           <div
             onClick={() => setActiveTab('accepted')}
             className={`p-2.5 rounded-2xl cursor-pointer transition-all ${
-              activeTab === 'accepted' ? 'bg-blue-600/30 border border-blue-500' : 'bg-[#1C1C1C]'
+              activeTab === 'accepted' ? 'bg-blue-600 text-white font-black' : 'bg-[#000000]'
             }`}
           >
-            <span className="text-[9px] uppercase font-black text-stone-400 block">QUEUED</span>
+            <span className={`text-[9px] uppercase font-black block ${activeTab === 'accepted' ? 'text-white/80' : 'text-stone-400'}`}>QUEUED</span>
             <span className="text-2xl font-black font-mono-token text-blue-400">
               {acceptedOrders.length}
             </span>
@@ -186,11 +186,11 @@ export const StaffPage: React.FC<StaffPageProps> = ({ onBackToHome }) => {
           <div
             onClick={() => setActiveTab('preparing')}
             className={`p-2.5 rounded-2xl cursor-pointer transition-all ${
-              activeTab === 'preparing' ? 'bg-[#FF9D2E]/25 border border-[#FF9D2E]' : 'bg-[#1C1C1C]'
+              activeTab === 'preparing' ? 'bg-[#FF6B00] text-black font-black' : 'bg-[#000000]'
             }`}
           >
-            <span className="text-[9px] uppercase font-black text-stone-400 block">COOKING</span>
-            <span className="text-2xl font-black font-mono-token text-[#FF9D2E]">
+            <span className={`text-[9px] uppercase font-black block ${activeTab === 'preparing' ? 'text-black/80' : 'text-stone-400'}`}>COOKING</span>
+            <span className={`text-2xl font-black font-mono-token ${activeTab === 'preparing' ? 'text-black' : 'text-[#FF6B00]'}`}>
               {preparingOrders.length}
             </span>
           </div>
@@ -198,10 +198,10 @@ export const StaffPage: React.FC<StaffPageProps> = ({ onBackToHome }) => {
           <div
             onClick={() => setActiveTab('ready')}
             className={`p-2.5 rounded-2xl cursor-pointer transition-all ${
-              activeTab === 'ready' ? 'bg-emerald-600/30 border border-emerald-500' : 'bg-[#1C1C1C]'
+              activeTab === 'ready' ? 'bg-emerald-600 text-white font-black' : 'bg-[#000000]'
             }`}
           >
-            <span className="text-[9px] uppercase font-black text-stone-400 block">READY</span>
+            <span className={`text-[9px] uppercase font-black block ${activeTab === 'ready' ? 'text-white/80' : 'text-stone-400'}`}>READY</span>
             <span className="text-2xl font-black font-mono-token text-emerald-400">
               {readyOrders.length}
             </span>
@@ -211,13 +211,13 @@ export const StaffPage: React.FC<StaffPageProps> = ({ onBackToHome }) => {
             onClick={() => setActiveTab('scheduled')}
             className={`p-2.5 rounded-2xl cursor-pointer transition-all col-span-2 sm:col-span-1 ${
               activeTab === 'scheduled'
-                ? 'bg-amber-600/30 border border-amber-500'
+                ? 'bg-amber-600 text-white font-black'
                 : urgentScheduledOrders.length > 0
-                ? 'bg-amber-950/40 border border-amber-500/50 glow-orange-sm'
-                : 'bg-[#1C1C1C]'
+                ? 'bg-[#000000] border border-amber-500/50'
+                : 'bg-[#000000]'
             }`}
           >
-            <span className="text-[9px] uppercase font-black text-stone-400 flex items-center justify-center gap-1">
+            <span className={`text-[9px] uppercase font-black flex items-center justify-center gap-1 ${activeTab === 'scheduled' ? 'text-white/80' : 'text-stone-400'}`}>
               <span>SCHEDULED</span>
               {urgentScheduledOrders.length > 0 && (
                 <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
@@ -241,9 +241,9 @@ export const StaffPage: React.FC<StaffPageProps> = ({ onBackToHome }) => {
 
       {/* Urgent Preparation Notification Alert */}
       {urgentScheduledOrders.length > 0 && (
-        <div className="bg-gradient-to-r from-[#2B1705] to-[#1C140C] border border-[#FF6A00] rounded-2xl p-4 shadow-xl glow-orange-sm flex items-center justify-between gap-3 text-xs">
+        <div className="bg-[#151515] border border-[#FF6B00] rounded-2xl p-4 shadow-md flex items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[#FF6A00] text-black flex items-center justify-center shrink-0 animate-pulse">
+            <div className="w-9 h-9 rounded-xl bg-[#FF6B00] text-black flex items-center justify-center shrink-0">
               <Flame className="w-5 h-5 fill-black" />
             </div>
             <div>
@@ -257,7 +257,7 @@ export const StaffPage: React.FC<StaffPageProps> = ({ onBackToHome }) => {
           </div>
           <button
             onClick={() => setActiveTab('scheduled')}
-            className="px-3.5 py-2 rounded-xl bg-[#FF6A00] hover:bg-[#FF7A00] text-black font-black text-xs cursor-pointer shrink-0 transition-colors"
+            className="px-3.5 py-2 rounded-xl bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-black font-black text-xs cursor-pointer shrink-0 transition-colors"
           >
             View Scheduled
           </button>
@@ -272,7 +272,7 @@ export const StaffPage: React.FC<StaffPageProps> = ({ onBackToHome }) => {
           value={searchToken}
           onChange={(e) => setSearchToken(e.target.value)}
           placeholder="Lookup token (e.g. 47) or student name..."
-          className="w-full pl-10 pr-4 py-2.5 bg-[#141414] border border-white/8 rounded-2xl text-xs font-medium text-white placeholder:text-stone-500 focus:outline-none focus:border-[#FF6A00]"
+          className="w-full pl-10 pr-4 py-2.5 bg-[#151515] border border-white/10 rounded-2xl text-xs font-medium text-white placeholder:text-stone-500 focus:outline-none focus:border-[#FF6B00]"
         />
         {searchToken && (
           <button
@@ -285,11 +285,11 @@ export const StaffPage: React.FC<StaffPageProps> = ({ onBackToHome }) => {
       </div>
 
       {/* Pipeline Tabs */}
-      <div className="flex gap-1.5 bg-[#141414] p-1.5 rounded-2xl border border-white/8 overflow-x-auto no-scrollbar">
+      <div className="flex gap-1.5 bg-[#151515] p-1.5 rounded-2xl border border-white/10 overflow-x-auto no-scrollbar">
         <button
           onClick={() => setActiveTab('new')}
           className={`flex-1 py-2 px-3 text-xs font-black rounded-xl whitespace-nowrap cursor-pointer transition-all ${
-            activeTab === 'new' ? 'bg-[#FF6A00] text-black shadow-md glow-orange-sm' : 'text-stone-400 hover:text-white'
+            activeTab === 'new' ? 'bg-[#FF6B00] text-black shadow-sm' : 'text-stone-400 hover:text-white'
           }`}
         >
           New ({newOrders.length})
@@ -297,7 +297,7 @@ export const StaffPage: React.FC<StaffPageProps> = ({ onBackToHome }) => {
         <button
           onClick={() => setActiveTab('accepted')}
           className={`flex-1 py-2 px-3 text-xs font-black rounded-xl whitespace-nowrap cursor-pointer transition-all ${
-            activeTab === 'accepted' ? 'bg-[#FF6A00] text-black shadow-md glow-orange-sm' : 'text-stone-400 hover:text-white'
+            activeTab === 'accepted' ? 'bg-[#FF6B00] text-black shadow-sm' : 'text-stone-400 hover:text-white'
           }`}
         >
           Queued ({acceptedOrders.length})
@@ -305,7 +305,7 @@ export const StaffPage: React.FC<StaffPageProps> = ({ onBackToHome }) => {
         <button
           onClick={() => setActiveTab('preparing')}
           className={`flex-1 py-2 px-3 text-xs font-black rounded-xl whitespace-nowrap cursor-pointer transition-all ${
-            activeTab === 'preparing' ? 'bg-[#FF6A00] text-black shadow-md glow-orange-sm' : 'text-stone-400 hover:text-white'
+            activeTab === 'preparing' ? 'bg-[#FF6B00] text-black shadow-sm' : 'text-stone-400 hover:text-white'
           }`}
         >
           Cooking ({preparingOrders.length})
@@ -313,7 +313,7 @@ export const StaffPage: React.FC<StaffPageProps> = ({ onBackToHome }) => {
         <button
           onClick={() => setActiveTab('ready')}
           className={`flex-1 py-2 px-3 text-xs font-black rounded-xl whitespace-nowrap cursor-pointer transition-all ${
-            activeTab === 'ready' ? 'bg-emerald-500 text-black shadow-md glow-emerald-sm' : 'text-stone-400 hover:text-white'
+            activeTab === 'ready' ? 'bg-emerald-500 text-black shadow-sm' : 'text-stone-400 hover:text-white'
           }`}
         >
           Ready ({readyOrders.length})
@@ -322,7 +322,7 @@ export const StaffPage: React.FC<StaffPageProps> = ({ onBackToHome }) => {
           onClick={() => setActiveTab('scheduled')}
           className={`flex-1 py-2 px-3 text-xs font-black rounded-xl whitespace-nowrap cursor-pointer transition-all flex items-center justify-center gap-1.5 ${
             activeTab === 'scheduled'
-              ? 'bg-amber-500 text-black shadow-md glow-orange-sm'
+              ? 'bg-amber-500 text-black shadow-sm'
               : urgentScheduledOrders.length > 0
               ? 'bg-amber-950/40 text-amber-300 border border-amber-500/40'
               : 'text-stone-400 hover:text-white'
@@ -344,12 +344,12 @@ export const StaffPage: React.FC<StaffPageProps> = ({ onBackToHome }) => {
       {/* Orders List */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {list.length === 0 ? (
-          <div className="bg-[#141414] rounded-3xl p-8 text-center border border-white/8 shadow-md">
+          <div className="bg-[#151515] rounded-3xl p-8 text-center border border-white/10 shadow-md">
             <Clock className="w-10 h-10 text-stone-600 mx-auto mb-2" />
             <p className="text-sm font-bold text-white">
               No orders in {activeTab.toUpperCase()} queue
             </p>
-            <p className="text-xs text-[#A1A1A1] mt-0.5">
+            <p className="text-xs text-[#D9D9D9] mt-0.5">
               New orders submitted by students will appear here automatically in real time.
             </p>
           </div>
@@ -360,13 +360,13 @@ export const StaffPage: React.FC<StaffPageProps> = ({ onBackToHome }) => {
             return (
               <div
                 key={order.id}
-                className="bg-[#141414] rounded-3xl p-5 border border-white/8 shadow-xl space-y-3"
+                className="bg-[#151515] rounded-3xl p-5 border border-white/10 shadow-xl space-y-3"
               >
                 {/* Header: Token, Order ID, Time, Student */}
                 <div className="flex items-start justify-between pb-3 border-b border-white/5">
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="text-3xl font-black font-mono-token text-[#FF6A00]">
+                      <span className="text-3xl font-black font-mono-token text-[#FF6B00]">
                         {order.tokenString}
                       </span>
                       <span className="text-stone-600">·</span>
@@ -376,7 +376,7 @@ export const StaffPage: React.FC<StaffPageProps> = ({ onBackToHome }) => {
                     </div>
                     <p className="text-xs font-bold text-white mt-0.5">
                       {order.userName}
-                      <span className="text-[#A1A1A1] font-normal ml-1">({order.userEmail})</span>
+                      <span className="text-[#D9D9D9] font-normal ml-1">({order.userEmail})</span>
                     </p>
                   </div>
 
@@ -388,7 +388,7 @@ export const StaffPage: React.FC<StaffPageProps> = ({ onBackToHome }) => {
                       className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full inline-block mt-1 ${
                         order.paymentStatus === 'PAID'
                           ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
-                          : 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
+                          : 'bg-[#FF6B00]/15 text-[#FF6B00] border border-[#FF6B00]/30'
                       }`}
                     >
                       {order.paymentStatus === 'PAID' ? 'PAID ✓' : `COLLECT ₹${order.total}`}
@@ -403,13 +403,13 @@ export const StaffPage: React.FC<StaffPageProps> = ({ onBackToHome }) => {
                     <div
                       className={`p-3 rounded-2xl border space-y-1.5 transition-all ${
                         timing.isUrgent
-                          ? 'bg-gradient-to-r from-[#291705] to-[#1F1206] border-[#FF6A00] glow-orange-sm shadow-md'
-                          : 'bg-[#181614] border-[#FF6A00]/30'
+                          ? 'bg-[#000000] border-[#FF6B00] shadow-md'
+                          : 'bg-[#000000] border-[#FF6B00]/30'
                       }`}
                     >
                       <div className="flex items-center justify-between text-xs">
-                        <span className="font-black text-[#FF9D2E] flex items-center gap-1.5">
-                          <CalendarClock className="w-4 h-4 text-[#FF6A00]" />
+                        <span className="font-black text-[#FF6B00] flex items-center gap-1.5">
+                          <CalendarClock className="w-4 h-4 text-[#FF6B00]" />
                           <span>SCHEDULED PICKUP</span>
                         </span>
                         <span className="font-mono-token font-black text-white text-xs">
@@ -426,7 +426,7 @@ export const StaffPage: React.FC<StaffPageProps> = ({ onBackToHome }) => {
                         <span
                           className={`font-mono-token font-bold px-2 py-0.5 rounded-md flex items-center gap-1 ${
                             timing.isUrgent
-                              ? 'bg-[#FF6A00] text-black font-black animate-pulse'
+                              ? 'bg-[#FF6B00] text-black font-black'
                               : timing.isPast
                               ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
                               : 'bg-white/10 text-stone-200'
@@ -445,7 +445,7 @@ export const StaffPage: React.FC<StaffPageProps> = ({ onBackToHome }) => {
                   {order.items.map((item, idx) => (
                     <div key={idx} className="flex justify-between items-center text-stone-200">
                       <span className="font-semibold">
-                        {item.name} <strong className="font-mono-token text-[#FF7A00] ml-1">× {item.quantity}</strong>
+                        {item.name} <strong className="font-mono-token text-[#FF6B00] ml-1">× {item.quantity}</strong>
                       </span>
                       <span className="font-mono-token text-stone-400">
                         ₹{item.price * item.quantity}
@@ -470,7 +470,7 @@ export const StaffPage: React.FC<StaffPageProps> = ({ onBackToHome }) => {
                       <button
                         onClick={() => handleAction(order.id, () => acceptOrder(order.id))}
                         disabled={isProcessingThis}
-                        className="flex-1 py-3 px-4 bg-[#FF6A00] hover:bg-[#FF7A00] text-black font-black text-xs rounded-xl shadow-md glow-orange-sm flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 transition-all active:scale-[0.98]"
+                        className="flex-1 py-3 px-4 bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-black font-black text-xs rounded-xl shadow-md flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 transition-all active:scale-[0.98]"
                       >
                         <Check className="w-4 h-4 stroke-[3]" />
                         <span>ACCEPT ORDER</span>
@@ -503,7 +503,7 @@ export const StaffPage: React.FC<StaffPageProps> = ({ onBackToHome }) => {
                     <button
                       onClick={() => handleAction(order.id, () => markOrderReady(order.id))}
                       disabled={isProcessingThis}
-                      className="w-full py-3.5 px-4 bg-emerald-500 hover:bg-emerald-400 text-black font-black text-xs rounded-xl shadow-lg glow-emerald-sm flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 transition-all active:scale-[0.98]"
+                      className="w-full py-3.5 px-4 bg-emerald-500 hover:bg-emerald-400 text-black font-black text-xs rounded-xl shadow-md flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 transition-all active:scale-[0.98]"
                     >
                       <BellRing className="w-4 h-4" />
                       <span>MARK ORDER READY FOR PICKUP</span>
@@ -517,7 +517,7 @@ export const StaffPage: React.FC<StaffPageProps> = ({ onBackToHome }) => {
                         <button
                           onClick={() => handleAction(order.id, () => markPaymentPaid(order.id))}
                           disabled={isProcessingThis}
-                          className="flex-1 py-3 px-3 bg-amber-500 hover:bg-amber-400 text-black font-black text-xs rounded-xl flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 transition-all"
+                          className="flex-1 py-3 px-3 bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-black font-black text-xs rounded-xl flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 transition-all"
                         >
                           <Banknote className="w-4 h-4" />
                           <span>MARK PAID (₹{order.total})</span>
@@ -527,7 +527,7 @@ export const StaffPage: React.FC<StaffPageProps> = ({ onBackToHome }) => {
                       <button
                         onClick={() => handleAction(order.id, () => completePickup(order.id))}
                         disabled={isProcessingThis}
-                        className="flex-1 py-3 px-4 bg-[#FF6A00] hover:bg-[#FF7A00] text-black font-black text-xs rounded-xl shadow-md glow-orange-sm flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 transition-all active:scale-[0.98]"
+                        className="flex-1 py-3 px-4 bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-black font-black text-xs rounded-xl shadow-md flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 transition-all active:scale-[0.98]"
                       >
                         <PackageCheck className="w-4 h-4 stroke-[2.5]" />
                         <span>COMPLETE PICKUP</span>
@@ -557,7 +557,7 @@ export const StaffPage: React.FC<StaffPageProps> = ({ onBackToHome }) => {
       {/* Reject Order Modal */}
       {rejectDialogOrder && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-          <div className="bg-[#141414] rounded-3xl max-w-sm w-full p-5 shadow-2xl border border-white/10 space-y-4">
+          <div className="bg-[#151515] rounded-3xl max-w-sm w-full p-5 shadow-2xl border border-white/10 space-y-4">
             <div className="flex items-center gap-2.5 text-rose-400">
               <AlertTriangle className="w-5 h-5 shrink-0" />
               <h3 className="font-black text-base text-white">
@@ -565,7 +565,7 @@ export const StaffPage: React.FC<StaffPageProps> = ({ onBackToHome }) => {
               </h3>
             </div>
 
-            <p className="text-xs text-stone-300">
+            <p className="text-xs text-[#D9D9D9]">
               Provide a reason to inform the student why this order could not be fulfilled:
             </p>
 
@@ -582,7 +582,7 @@ export const StaffPage: React.FC<StaffPageProps> = ({ onBackToHome }) => {
                   className={`w-full p-2.5 rounded-xl text-left text-xs font-semibold cursor-pointer border transition-colors ${
                     rejectReason === reason
                       ? 'bg-rose-500/20 border-rose-500 text-rose-300'
-                      : 'bg-[#1C1C1C] border-white/5 text-stone-300 hover:bg-[#252525]'
+                      : 'bg-[#000000] border-white/5 text-stone-300 hover:bg-[#1A1A1A]'
                   }`}
                 >
                   {reason}

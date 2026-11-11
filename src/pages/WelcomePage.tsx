@@ -12,7 +12,10 @@ import {
   ExternalLink,
   Copy,
   Check,
-  Utensils
+  Utensils,
+  CalendarClock,
+  MapPin,
+  HelpCircle
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { QbiteLogo } from '../components/QbiteLogo';
@@ -101,17 +104,18 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({
             </div>
 
             <div className="pt-2">
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-tight">
-                QBite <span className="text-[#FF6B00]">Cafe</span>
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight">
+                QBite – SVCE Cafe <br className="hidden sm:inline" />
+                <span className="text-[#FF6B00]">Online Food Ordering</span>
               </h1>
-              <p className="text-xs sm:text-sm uppercase tracking-[0.25em] text-[#D9D9D9] font-bold mt-1">
-                Sri Venkateswara College of Engineering
+              <p className="text-xs sm:text-sm uppercase tracking-[0.25em] text-[#D9D9D9] font-bold mt-2">
+                Sri Venkateshwara College of Engineering · Campus Canteen
               </p>
-              <p className="text-base sm:text-lg font-bold text-[#FF6B00] mt-3">
+              <p className="text-base sm:text-lg font-bold text-[#FF6B00] mt-2">
                 Be Smart. Leave the Queue.
               </p>
               <p className="text-xs sm:text-sm text-[#D9D9D9] max-w-lg mx-auto lg:mx-0 leading-relaxed mt-2">
-                Order hot meals, breakfast, and snacks from anywhere on campus. Watch your live token update on your phone and collect freshly prepared food with zero queueing.
+                The official online food ordering platform for SVCE students, faculty, and campus staff. Browse hot meals, schedule orders in advance, and collect freshly prepared food with live digital token tracking.
               </p>
             </div>
 
@@ -323,6 +327,101 @@ export const WelcomePage: React.FC<WelcomePageProps> = ({
             </div>
           </div>
         </div>
+
+        {/* SEO Feature Showcase & Informational Section */}
+        <section className="pt-12 sm:pt-16 border-t border-white/10 space-y-8 mt-12" aria-label="About QBite SVCE Cafe Platform">
+          <div className="text-center max-w-3xl mx-auto space-y-2">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#151515] border border-[#FF6B00]/40 text-[#FF6B00] text-[11px] font-black uppercase tracking-wider">
+              <span>Campus Canteen Innovation</span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+              Smart Canteen Food Ordering for SVCE Students
+            </h2>
+            <p className="text-xs sm:text-sm text-[#D9D9D9] leading-relaxed">
+              QBite is built specifically for Sri Venkateshwara College of Engineering (SVCE) to make dining fast, seamless, and queue-free. From instant breakfast orders to scheduled lunch pickups, every order is coordinated with live digital kitchen tokens.
+            </p>
+          </div>
+
+          {/* 4 Feature Pillars with semantic H3 headings */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-left">
+            <article className="bg-[#151515] p-5 rounded-3xl border border-white/10 space-y-2.5 shadow-md hover:border-[#FF6B00]/40 transition-colors">
+              <div className="w-9 h-9 rounded-xl bg-[#000000] border border-white/10 flex items-center justify-center text-[#FF6B00]">
+                <Utensils className="w-4 h-4" />
+              </div>
+              <h3 className="text-sm font-black text-white">Online Food Ordering for SVCE Students</h3>
+              <p className="text-xs text-[#D9D9D9] leading-relaxed">
+                Browse fresh South Indian breakfast (idli, vada, masala dosa, poori), hot lunch meals, North Indian combos, snacks, and beverages with transparent student-friendly prices.
+              </p>
+            </article>
+
+            <article className="bg-[#151515] p-5 rounded-3xl border border-white/10 space-y-2.5 shadow-md hover:border-[#FF6B00]/40 transition-colors">
+              <div className="w-9 h-9 rounded-xl bg-[#000000] border border-white/10 flex items-center justify-center text-[#FF6B00]">
+                <CalendarClock className="w-4 h-4" />
+              </div>
+              <h3 className="text-sm font-black text-white">Schedule Your Order in Advance</h3>
+              <p className="text-xs text-[#D9D9D9] leading-relaxed">
+                Reserve meal pickup ahead of class intervals or college lunch breaks. Select a future time slot during canteen hours so your food is fresh and waiting without standing in lines.
+              </p>
+            </article>
+
+            <article className="bg-[#151515] p-5 rounded-3xl border border-white/10 space-y-2.5 shadow-md hover:border-emerald-500/40 transition-colors">
+              <div className="w-9 h-9 rounded-xl bg-[#000000] border border-white/10 flex items-center justify-center text-emerald-400">
+                <Clock className="w-4 h-4" />
+              </div>
+              <h3 className="text-sm font-black text-white">Live Kitchen Tokens & Real-Time Queue</h3>
+              <p className="text-xs text-[#D9D9D9] leading-relaxed">
+                Receive a live digital token number on your smartphone. Watch status update in real-time ('Pending' &rarr; 'Preparing' &rarr; 'Ready') synced with the canteen counter pickup board.
+              </p>
+            </article>
+
+            <article className="bg-[#151515] p-5 rounded-3xl border border-white/10 space-y-2.5 shadow-md hover:border-amber-500/40 transition-colors">
+              <div className="w-9 h-9 rounded-xl bg-[#000000] border border-white/10 flex items-center justify-center text-amber-400">
+                <Zap className="w-4 h-4" />
+              </div>
+              <h3 className="text-sm font-black text-white">Kitchen Management & Fast Pickup</h3>
+              <p className="text-xs text-[#D9D9D9] leading-relaxed">
+                The dedicated kitchen staff dashboard sequences incoming orders for optimal preparation, ensuring rapid handoff at the counter and eliminating crowded canteen rush.
+              </p>
+            </article>
+          </div>
+
+          {/* Campus Canteen Details & FAQ */}
+          <div className="bg-[#151515] rounded-3xl p-6 sm:p-8 border border-white/10 space-y-6 shadow-xl">
+            <div className="border-b border-white/10 pb-4">
+              <div className="flex items-center gap-2 text-[#FF6B00]">
+                <HelpCircle className="w-4 h-4" />
+                <span className="text-[11px] font-black uppercase tracking-wider">Campus Dining Guide</span>
+              </div>
+              <h3 className="text-lg sm:text-xl font-black text-white mt-1">Frequently Asked Questions · SVCE Canteen</h3>
+              <p className="text-xs text-[#D9D9D9] mt-0.5">Everything SVCE students and faculty need to know about online canteen ordering</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs text-[#D9D9D9] leading-relaxed">
+              <div className="space-y-1.5 bg-[#000000] p-4 rounded-2xl border border-white/5">
+                <h4 className="font-bold text-white text-sm">How do SVCE students order food on QBite?</h4>
+                <p>Simply sign in with your Google account, browse the SVCE canteen menu, select your preferred dishes, and choose between 'Order Now' for earliest preparation or 'Schedule Your Order' for a future pickup slot.</p>
+              </div>
+
+              <div className="space-y-1.5 bg-[#000000] p-4 rounded-2xl border border-white/5">
+                <h4 className="font-bold text-white text-sm">What are the SVCE Cafe operating hours?</h4>
+                <p>The SVCE canteen operates Monday through Saturday from 7:30 AM to 5:30 PM India Standard Time (IST), serving morning breakfast, afternoon lunch combos, evening snacks, and fresh hot tea/coffee.</p>
+              </div>
+
+              <div className="space-y-1.5 bg-[#000000] p-4 rounded-2xl border border-white/5">
+                <h4 className="font-bold text-white text-sm">How does the scheduled orders feature work?</h4>
+                <p>Students can pick a pickup date and time slot within canteen hours with at least 15 minutes of advance notice. The kitchen prepares your food right before your scheduled slot so it remains hot and fresh.</p>
+              </div>
+
+              <div className="space-y-1.5 bg-[#000000] p-4 rounded-2xl border border-white/5">
+                <h4 className="font-bold text-white text-sm">Where is the SVCE Cafe campus location?</h4>
+                <p className="flex items-start gap-1.5">
+                  <MapPin className="w-3.5 h-3.5 text-[#FF6B00] shrink-0 mt-0.5" />
+                  <span>Sri Venkateshwara College of Engineering, Vidyanagar, Kempegowda International Airport Road, Bengaluru, Karnataka 562157.</span>
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
       </main>
 
       {/* Footer Info */}
